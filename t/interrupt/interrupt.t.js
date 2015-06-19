@@ -1,10 +1,10 @@
-require('proof')(2, prove)
+require('proof')(4, prove)
 
 /*
     ___ strings: en_US ___
 
         convert : value, outcome ~ You failed to convert %s to %d.
-        outcome : count, count ~ You have %d #{cat/cats}.
+        outcome : count, count ~ You have %d %{cat/cats}.
 
     ___ en_US ___
  */
@@ -22,6 +22,13 @@ function prove (assert) {
         })(error)
     }
 
+    interrupt.rescue(function (error) {
+        switch (error.type) {
+        case 'convert':
+            assert(error.context, { value: 1 }, 'rescue')
+        }
+    })(interrupt.error(new Error, 'convert', { value: 1 }))
+
     try {
         throw new Error('rethrown')
     } catch (error) {
@@ -33,4 +40,9 @@ function prove (assert) {
     }
 
     interrupt.rescue(function () {})(null, 1)
+
+    interrupt.rescue(function () {
+    }, function (error) {
+        assert(error.message, 'uncaught', 'callback')
+    })(new Error('uncaught'))
 }
