@@ -1,0 +1,32 @@
+{
+    "name":             "interrupt",
+    "version":          "9.9.9",
+    "author":           "Alan Gutierrez <alan@prettyrobots.com>",
+    "description":      "Errors that you can catch by type.",
+    "keywords":
+    [
+                        "error", "try", "catch"
+    ],
+    "main":             "interrupt",
+    "contributors":     [],
+    "homepage":         "https://github.com/bigeasyinterrupt",
+    "bugs":             "https://github.com/bigeasyinterrupt/issues",
+    "license":          "MIT",
+    "main":             "interrupt",
+    "repository":
+    {
+                        "type": "git",
+                        "url": "http://github.com/bigeasy/interrupt.git"
+    },
+    "dependencies":
+    {
+    },
+    "devDependencies":
+    {
+                        "proof":                "0.0.52"
+    },
+    "scripts":
+    {
+                        "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+    }
+}
