@@ -9,8 +9,8 @@
     ],
     "main":             "interrupt",
     "contributors":     [],
-    "homepage":         "https://github.com/bigeasyinterrupt",
-    "bugs":             "https://github.com/bigeasyinterrupt/issues",
+    "homepage":         "https://github.com/bigeasy/interrupt",
+    "bugs":             "https://github.com/bigeasy/interrupt/issues",
     "license":          "MIT",
     "main":             "interrupt",
     "repository":
