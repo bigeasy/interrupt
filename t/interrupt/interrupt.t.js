@@ -1,4 +1,4 @@
-require('proof')(6, prove)
+require('proof')(7, prove)
 
 /*
     ___ strings: en_US ___
@@ -48,4 +48,7 @@ function prove (assert) {
 
     assert(interrupt.type(new Error), null, 'type untyped')
     assert(interrupt.type(interrupt.error(new Error, 'convert')), 'convert', 'type typed')
+    var error = new Error
+    error.type = 'unknown'
+    assert(interrupt.type(error), null, 'type unknown')
 }
