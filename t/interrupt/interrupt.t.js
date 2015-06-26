@@ -46,6 +46,6 @@ function prove (assert) {
         assert(error.message, 'uncaught', 'callback')
     })(new Error('uncaught'))
 
-    assert(interrupt.type(new Error), '', 'type untyped')
+    assert(interrupt.type(new Error), null, 'type untyped')
     assert(interrupt.type(interrupt.error(new Error, 'convert')), 'convert', 'type typed')
 }

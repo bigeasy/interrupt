@@ -32,7 +32,7 @@ Interrupt.prototype.type = function (error) {
     if (error.type && this._types[error.type] === error.typeIdentifier) {
         return error.type
     }
-    return ""
+    return null
 }
 
 Interrupt.prototype.rescue = function (catcher, callback) {
