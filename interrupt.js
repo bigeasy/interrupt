@@ -28,6 +28,13 @@ Interrupt.prototype.panic = function (error, type) {
     throw this._populate(error, type, slice.call(arguments, 2))
 }
 
+Interrupt.prototype.type = function (error) {
+    if (error.type && this._types[error.type] === error.typeIdentifier) {
+        return error.type
+    }
+    return ""
+}
+
 Interrupt.prototype.rescue = function (catcher, callback) {
     callback || (callback = abend)
     return function (error) {
