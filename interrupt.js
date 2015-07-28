@@ -1,5 +1,5 @@
 var slice = [].slice
-var abend = require('abend')
+var eject = require('eject')
 
 // todo: create strings parser.
 function Interrupt () {
@@ -39,7 +39,7 @@ Interrupt.prototype.type = function (error) {
 }
 
 Interrupt.prototype.rescue = function (catcher, callback) {
-    callback || (callback = abend)
+    callback || (callback = eject)
     return function (error) {
         if (error) {
             if (this.type(error) != null) {

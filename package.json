@@ -20,7 +20,7 @@
     },
     "dependencies":
     {
-                        "abend":                "0.0.0"
+                        "eject":                "0.0.2"
     },
     "devDependencies":
     {
