@@ -43,7 +43,7 @@ Interrupt.prototype.rescue = function (catcher, callback) {
     return function (error) {
         if (error) {
             if (this.type(error) != null) {
-                catcher(error)
+                return catcher(error, callback)
             } else {
                 callback(error)
             }
