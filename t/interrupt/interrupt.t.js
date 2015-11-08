@@ -10,7 +10,7 @@ require('proof')(6, prove)
  */
 
 function prove (assert) {
-    var interrupt = require('../..')()
+    var interrupt = require('../..').createInterrupter()
     try {
         interrupt.raise(new Error, 'convert', { value: 1 })
     } catch (error) {

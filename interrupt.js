@@ -50,6 +50,6 @@ Interrupt.prototype.rescue = function (catcher) {
     }
 }
 
-module.exports = function (messages) {
+exports.createInterrupter = function (messages) {
     return new Interrupt
 }
