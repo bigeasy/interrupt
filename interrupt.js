@@ -1,5 +1,4 @@
 var slice = [].slice
-var eject = require('eject')
 
 // todo: create strings parser.
 function Interrupt () {
@@ -38,17 +37,17 @@ Interrupt.prototype.type = function (error) {
     return null
 }
 
-Interrupt.prototype.rescue = function (catcher, callback) {
-    callback || (callback = eject)
+Interrupt.prototype.rescue = function (catcher) {
+    var interrupt = this
     return function (error) {
         if (error) {
-            if (this.type(error) != null) {
-                return catcher(error, callback)
+            if (interrupt.type(error) != null) {
+                return catcher(error)
             } else {
-                callback(error)
+                throw error
             }
         }
-    }.bind(this)
+    }
 }
 
 module.exports = function (messages) {

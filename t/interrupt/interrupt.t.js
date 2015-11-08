@@ -1,4 +1,4 @@
-require('proof')(7, prove)
+require('proof')(6, prove)
 
 /*
     ___ strings: en_US ___
@@ -40,13 +40,6 @@ function prove (assert) {
     }
 
     interrupt.rescue(function () {})(null, 1)
-
-    // todo: I don't believe I've ever used this. looks like one callback too
-    // many.
-    interrupt.rescue(function () {
-    }, function (error) {
-        assert(error.message, 'uncaught', 'callback')
-    })(new Error('uncaught'))
 
     assert(interrupt.type(new Error), null, 'type untyped')
     assert(interrupt.type(interrupt.error(new Error, 'convert')), 'convert', 'type typed')
