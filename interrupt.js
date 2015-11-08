@@ -23,7 +23,7 @@ Interrupt.prototype.error = function (error, type) {
     return this._populate(error, type, slice.call(arguments, 2))
 }
 
-Interrupt.prototype.panic = function (error, type) {
+Interrupt.prototype.raise = function (error, type) {
     throw this._populate(error, type, slice.call(arguments, 2))
 }
 

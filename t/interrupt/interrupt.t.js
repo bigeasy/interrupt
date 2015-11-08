@@ -12,7 +12,7 @@ require('proof')(6, prove)
 function prove (assert) {
     var interrupt = require('../..')()
     try {
-        interrupt.panic(new Error, 'convert', { value: 1 })
+        interrupt.raise(new Error, 'convert', { value: 1 })
     } catch (error) {
         interrupt.rescue(function (error) {
             switch (error.type) {
