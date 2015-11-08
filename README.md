@@ -99,3 +99,98 @@ The above example shows how we can catch an error locally, then wrap it so that
 we know to catch it in the outer most rescue loop. In this example, it would be
 better to log and return, but imagine if you will a much more complicated
 example where the file read is nested deeply in the call stack.
+
+## Diary
+
+Thoughts on future directions before 1.0.
+
+```javascript
+try {
+    try {
+        library.frobinate(1)
+    } catch (error) {
+        // almost certainly a frobination exception.
+        interrupt.raise(new Error, 'frobinate', { cause: error })
+    }
+} catch (error) {
+    interrupt.rescue({
+        forbinate: function (error) {
+            assert.equal(error.context, { value: 1 })
+        },
+        reticulate: function (error) {
+            console.log(error.stack)
+        }
+    })(error)
+}
+```
+
+Named an a map. This is a way to do a catch block, but why not just do a catch
+block inside the function?
+
+```javascript
+try {
+    try {
+        library.frobinate(1)
+    } catch (error) {
+        // almost certainly a frobination exception.
+        interrupt.raise(new Error, 'frobinate', { cause: error })
+    }
+} catch (error) {
+    interrupt.rescue(function (error) {
+        switch (error.type) {
+        case 'badness':
+            require('goodness').reform(error)
+            break
+        case 'frobinate':
+        case 'reticuate':
+            console.log(error.stack)
+            break
+        default:
+            console.log('mystery error!')
+            break
+        }
+    })(error)
+}
+```
+
+The point is to avoid untestable unit test branches. This should be added to the
+documentation, everywhere, that I'm a coverage driven test driven developer, and
+I hate uncovered branches.
+
+Also, with Cadence, I see this happening. Can't explain in the `README.md` how
+cool it is. You'd have to have a lot of Cadence code, or code ported from
+something else to Cadence, to see the precision.
+
+```javascript
+function Service (processor) {
+    this._processor = processor
+}
+
+Service.prototype.serve = cadence(function (async, file) {
+    async([function () {
+        async([function () {
+            fs.readFile(file, 'utf8', async())
+        }, /^ENOENT$/, function (error) {
+            interrupt.raise(new Error, 'readFile', { cause: error })
+        }], function (file) {
+            this._processor.process(file, async())
+        })
+    }, interrupt.rescue(function (error) {
+        switch (error.type) {
+        case 'readFile':
+            console.log(synonymous.format('en_US', [ 'fs' ], error.type, error.context))
+            break
+        case 'badness':
+            require('goodness').reform(error)
+            break
+        case 'frobinate':
+        case 'reticuate':
+            console.log(error.stack)
+            break
+        default:
+            console.log('mystery error!')
+            break
+        }
+    })])
+})
+```
