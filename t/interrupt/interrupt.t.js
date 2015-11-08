@@ -41,6 +41,8 @@ function prove (assert) {
 
     interrupt.rescue(function () {})(null, 1)
 
+    // todo: I don't believe I've ever used this. looks like one callback too
+    // many.
     interrupt.rescue(function () {
     }, function (error) {
         assert(error.message, 'uncaught', 'callback')
