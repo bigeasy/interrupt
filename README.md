@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bigeasy/interrupt.svg)](https://travis-ci.org/bigeasy/interrupt) [![Coverage Status](https://coveralls.io/repos/bigeasy/interrupt/badge.svg?branch=master&service=github)](https://coveralls.io/github/bigeasy/interrupt?branch=master)
+
 Errors that you can catch by type.
 
 Interrupt is part of the [Cadence](https://github.com/bigeasy/cadence) Universe.
