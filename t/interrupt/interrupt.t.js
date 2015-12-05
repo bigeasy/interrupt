@@ -1,4 +1,4 @@
-require('proof')(6, prove)
+require('proof')(5, prove)
 
 /*
     ___ strings: en_US ___
@@ -10,40 +10,61 @@ require('proof')(6, prove)
  */
 
 function prove (assert) {
-    var interrupt = require('../..').createInterrupter()
+    var interrupt = require('../..').createInterrupter('bigeasy.interrupt')
     try {
-        interrupt.raise(new Error, 'convert', { value: 1 })
+        throw interrupt(new Error('convert'), { value: 1 })
     } catch (error) {
-        interrupt.rescue(function (error) {
-            switch (error.type) {
-            case 'convert':
-                assert(error.context, { value: 1 }, 'rescue')
-            }
+        interrupt.rescue('bigeasy.interrupt', /convert/, function (error) {
+            console.log(error.stack)
+            assert(error.value, 1, 'rescue')
         })(error)
     }
 
-    interrupt.rescue(function (error) {
-        switch (error.type) {
-        case 'convert':
-            assert(error.context, { value: 1 }, 'rescue')
-        }
-    })(interrupt.error(new Error, 'convert', { value: 1 }))
-
     try {
-        throw new Error('rethrown')
-    } catch (error) {
         try {
-            interrupt.rescue(function () {})(error)
+            var error = new Error('missed')
+            error.typeIdentifier = {}
+            error.path = '.'
+            throw error
         } catch (error) {
-            assert(error.message, 'rethrown', 'rethrow')
+            interrupt.rescue()(error)
         }
+    } catch (error) {
+        assert(error.message, 'missed', 'missed not an interrupt')
     }
 
-    interrupt.rescue(function () {})(null, 1)
+    try {
+        try {
+            throw interrupt(new Error('convert'), { value: 1 })
+        } catch (error) {
+            interrupt.rescue('bigeasy.missed', function (error) {
+            })(error)
+        }
+    } catch (error) {
+        assert(error.message, 'convert', 'missed not of type')
+    }
 
-    assert(interrupt.type(new Error), null, 'type untyped')
-    assert(interrupt.type(interrupt.error(new Error, 'convert')), 'convert', 'type typed')
-    var error = new Error
-    error.type = 'unknown'
-    assert(interrupt.type(error), null, 'type unknown')
+    try {
+        try {
+            throw interrupt(new Error('format'), { value: 1 })
+        } catch (error) {
+            interrupt.rescue('bigeasy.missed', /parse/, function (error) {
+            })(error)
+        }
+    } catch (error) {
+        assert(error.message, 'format', 'missed regex')
+    }
+
+    try {
+        throw interrupt(new Error('format'), { value: 1 })
+    } catch (error) {
+        interrupt.rescue([
+            'bigeasy.interrupt', function (error) {
+                throw new Error('specific failed')
+            },
+            'bigeasy.interrupt.format', function (error) {
+                assert(error.message, 'format', 'specific')
+            }
+        ])(error)
+    }
 }

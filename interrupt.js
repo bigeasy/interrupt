@@ -1,55 +1,71 @@
+var Supersede = require('supersede')
+var assert = require('assert')
 var slice = [].slice
+var typeIdentifiers = {}
 
-// todo: create strings parser.
-function Interrupt () {
-    this._types = {}
-}
-
-Interrupt.prototype._populate = function (error, type, vargs) {
-    this._types[type] || (this._types[type] = {})
-    error.message = error.type = type
-    error.typeIdentifier = this._types[type]
-    var context = error.context = {}
-    vargs.forEach(function (values) {
-        for (var key in values) {
-            context[key] = values[key]
-        }
-    })
-    error.context = context
-    return error
-}
-
-Interrupt.prototype.error = function (error, type) {
-    return this._populate(error, type, slice.call(arguments, 2))
-}
-
-Interrupt.prototype.raise = function (error, type) {
-    throw this._populate(error, type, slice.call(arguments, 2))
-}
-
-Interrupt.prototype.type = function (error) {
-    if (error.type
-        && this._types[error.type]
-        && this._types[error.type] === error.typeIdentifier
-    ) {
-        return error.type
-    }
-    return null
-}
-
-Interrupt.prototype.rescue = function (catcher) {
-    var interrupt = this
+function rescue (error) {
+    var vargs = slice.call(arguments)
     return function (error) {
-        if (error) {
-            if (interrupt.type(error) != null) {
-                return catcher(error)
+        if (!(error.path && error.typeIdentifier && typeIdentifiers[error.path] == error.typeIdentifier)) {
+            throw error
+        }
+        var cases = [], when, arg
+        var map = new Supersede, state = 'begin'
+        while (arg = vargs.shift()) {
+            if (Array.isArray(arg)) {
+                vargs.unshift.apply(vargs, arg)
             } else {
-                throw error
+                switch (state) {
+                case 'begin':
+                    assert.ok(typeof arg == 'string')
+                    when = { path: ('.' + arg).split('.') }
+                    state = 'when'
+                    break
+                case 'when':
+                    if (arg instanceof RegExp) {
+                        when.regex = arg
+                        state = 'regex'
+                        break
+                    } else {
+                        when.regex = /^/
+                    }
+                case 'regex':
+                    assert.ok(typeof arg == 'function')
+                    when.f = arg
+                    cases.push(when)
+                    state = 'begin'
+                    break
+                }
             }
         }
+        for (var i = 0, I = cases.length; i < I; i++) {
+            when = cases[i]
+            map.set(when.path, when)
+        }
+        var path = ('.' + error.path + '.' + error.message).split('.')
+        var when = map.get(path)
+        if (when == null || !when.regex.test(error.errno || error.message)) {
+            throw error
+        }
+        when.f(error)
     }
 }
 
-exports.createInterrupter = function (messages) {
-    return new Interrupt
+exports.rescue = rescue
+exports.createInterrupter = function (path) {
+    var typeIdentifier = typeIdentifiers[path] = {}
+    function interrupt (error) {
+        // see: http://stackoverflow.com/questions/1382107/whats-a-good-way-to-extend-error-in-javascript
+        var vargs = slice.call(arguments, 1)
+        error.path = path
+        error.typeIdentifier = typeIdentifier
+        vargs.forEach(function (values) {
+            for (var key in values) {
+                error[key] = values[key]
+            }
+        })
+        return error
+    }
+    interrupt.rescue = rescue
+    return interrupt
 }

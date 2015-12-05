@@ -20,7 +20,8 @@
     },
     "dependencies":
     {
-                        "eject":                "0.0.2"
+                        "eject":                "0.0.2",
+                        "supersede":            "0.0.4"
     },
     "devDependencies":
     {
