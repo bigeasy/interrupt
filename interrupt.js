@@ -47,7 +47,7 @@ function rescue (error) {
         if (when == null || !when.regex.test(error.errno || error.message)) {
             throw error
         }
-        when.f(error)
+        return when.f(error)
     }
 }
 
