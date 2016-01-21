@@ -20,7 +20,7 @@
     },
     "dependencies":
     {
-                        "supersede":            "0.0.4"
+                        "supersede":            "1.0.x"
     },
     "devDependencies":
     {
