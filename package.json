@@ -1,33 +1,32 @@
 {
-    "name":             "interrupt",
-    "version":          "1.0.2",
-    "author":           "Alan Gutierrez <alan@prettyrobots.com>",
-    "description":      "Errors that you can catch by type.",
+    "name":                 "interrupt",
+    "version":              "1.0.2",
+    "author":               "Alan Gutierrez <alan@prettyrobots.com>",
+    "description":          "Errors that you can catch by type.",
     "keywords":
     [
-                        "error", "try", "catch"
+                            "error", "try", "catch"
     ],
-    "main":             "interrupt",
-    "contributors":     [],
-    "homepage":         "https://github.com/bigeasy/interrupt",
-    "bugs":             "https://github.com/bigeasy/interrupt/issues",
-    "license":          "MIT",
-    "main":             "interrupt",
+    "main":                 "interrupt",
+    "homepage":             "https://github.com/bigeasy/interrupt",
+    "bugs":                 "https://github.com/bigeasy/interrupt/issues",
+    "license":              "MIT",
+    "main":                 "interrupt",
     "repository":
     {
-                        "type": "git",
-                        "url": "http://github.com/bigeasy/interrupt.git"
+                            "type": "git",
+                            "url": "http://github.com/bigeasy/interrupt.git"
     },
     "dependencies":
     {
-                        "supersede":            "1.x"
+                            "supersede":            "1.x"
     },
     "devDependencies":
     {
-                        "proof":                "1.x"
+                            "proof":                "1.x"
     },
     "scripts":
     {
-                        "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+                            "test": "proof platform win32 && proof test */*/*.t.js || t/test"
     }
 }
