@@ -10,7 +10,7 @@ require('proof')(5, prove)
  */
 
 function prove (assert) {
-    var interrupt = require('../..').createInterrupter('bigeasy.interrupt')
+    var interrupt = require('..').createInterrupter('bigeasy.interrupt')
     try {
         throw interrupt(new Error('convert'), { value: 1 })
     } catch (error) {
