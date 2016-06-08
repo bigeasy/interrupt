@@ -68,7 +68,7 @@ function rescue (error) {
         var when = map.get(path) || MISSING
         for (var i = 0, I = when.specified.length; i < I; i++) {
             var specific = when.specified[i]
-            if (specific.test(error.errno || error.message)) {
+            if (specific.test(error.errno || error.name)) {
                 return specific.f(error)
             }
         }
@@ -83,6 +83,9 @@ exports.createInterrupter = function (path) {
         // see: http://stackoverflow.com/questions/1382107/whats-a-good-way-to-extend-error-in-javascript
         var vargs = slice.call(arguments, 1)
         error.path = path
+        error.name = error.message
+        error.stack = error.stack.replace(error.message, path + ':' + error.message)
+        error.message = path + ':' + error.message
         error.typeIdentifier = typeIdentifier
         vargs.forEach(function (values) {
             for (var key in values) {

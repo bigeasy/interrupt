@@ -41,7 +41,7 @@ function prove (assert) {
             })(error)
         }
     } catch (error) {
-        assert(error.message, 'convert', 'missed not of type')
+        assert(error.message, 'bigeasy.interrupt:convert', 'missed not of type')
     }
 
     try {
@@ -52,7 +52,7 @@ function prove (assert) {
             })(error)
         }
     } catch (error) {
-        assert(error.message, 'format', 'missed regex')
+        assert(error.message, 'bigeasy.interrupt:format', 'missed regex')
     }
 
     try {
@@ -66,7 +66,7 @@ function prove (assert) {
                 throw new Error('specific failed')
             },
             'bigeasy.interrupt', 'format', function (error) {
-                assert(error.message, 'format', 'specific')
+                assert(error.message, 'bigeasy.interrupt:format', 'specific')
             }
         ])(error)
     }
