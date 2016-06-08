@@ -62,6 +62,9 @@ function prove (assert) {
             'bigeasy.interrupt', function (error) {
                 throw new Error('specific failed')
             },
+            'bigeasy.interrupt', 'missed', function (error) {
+                throw new Error('specific failed')
+            },
             'bigeasy.interrupt', 'format', function (error) {
                 assert(error.message, 'format', 'specific')
             }
