@@ -2,6 +2,7 @@ var Supersede = require('supersede')
 var assert = require('assert')
 var slice = [].slice
 var typeIdentifiers = {}
+var MISSING = { specified: [], otherwise: function (error) { throw error } }
 
 function rescue (error) {
     var vargs = slice.call(arguments)
@@ -9,7 +10,7 @@ function rescue (error) {
         if (!(error.path && error.typeIdentifier && typeIdentifiers[error.path] == error.typeIdentifier)) {
             throw error
         }
-        var cases = [], when, arg
+        var cases = {}, test, when, arg
         var map = new Supersede, state = 'begin'
         while (arg = vargs.shift()) {
             if (Array.isArray(arg)) {
@@ -18,36 +19,60 @@ function rescue (error) {
                 switch (state) {
                 case 'begin':
                     assert.ok(typeof arg == 'string')
-                    when = { path: ('.' + arg).split('.') }
+                    when = cases[arg]
+                    if (when == null) {
+                        when = cases[arg] = {
+                            specified: [],
+                            otherwise: MISSING.otherwise
+                        }
+                    }
                     state = 'when'
                     break
                 case 'when':
                     if (arg instanceof RegExp) {
-                        when.regex = arg
+                        test = {
+                            regex: arg,
+                            test: function (property) {
+                                return this.regex.test(property)
+                            },
+                            f: null
+                        }
                         state = 'regex'
-                        break
+                    } else if (typeof arg == 'string') {
+                        test = {
+                            value: arg,
+                            test: function (property) {
+                                return this.value == property
+                            },
+                            f: null
+                        }
+                        state = 'regex'
                     } else {
-                        when.regex = /^/
+                        when.otherwise = arg
+                        state = 'begin'
                     }
+                    break
                 case 'regex':
                     assert.ok(typeof arg == 'function')
-                    when.f = arg
-                    cases.push(when)
+                    test.f = arg
+                    when.specified.push(test)
                     state = 'begin'
                     break
                 }
             }
         }
-        for (var i = 0, I = cases.length; i < I; i++) {
-            when = cases[i]
-            map.set(when.path, when)
+        for (var path in cases) {
+            map.set(('.' + path).split('.'), cases[path])
         }
-        var path = ('.' + error.path + '.' + error.message).split('.')
-        var when = map.get(path)
-        if (when == null || !when.regex.test(error.errno || error.message)) {
-            throw error
+        var path = ('.' + error.path).split('.')
+        var when = map.get(path) || MISSING
+        for (var i = 0, I = when.specified.length; i < I; i++) {
+            var specific = when.specified[i]
+            if (specific.test(error.errno || error.message)) {
+                return specific.f(error)
+            }
         }
-        return when.f(error)
+        return when.otherwise(error)
     }
 }
 
