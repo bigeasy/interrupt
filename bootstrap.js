@@ -28,7 +28,7 @@ exports.createInterrupterCreator = function (_Error) {
                     dump += '\ncause: ' + cause.stack + '\n\nstack:'
                 }
             }
-            message = path + ':' + name + body + dump
+            var message = path + ':' + name + body + dump
             var error = new Error(message)
             for (var key in properties) {
                 error[key] = properties[key]
