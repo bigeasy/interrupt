@@ -9,7 +9,7 @@ exports.createInterrupterCreator = function (_Error) {
             typeof vargs[0] == 'number' ? depth = vargs.shift() : 4
             context = vargs.shift() || {}
             properties = vargs.shift() || {}
-            var keys = Object.keys(context)
+            var keys = Object.keys(context).length
             var body = ''
             var dump = ''
             var stack = ''
@@ -30,6 +30,9 @@ exports.createInterrupterCreator = function (_Error) {
             }
             var message = path + ':' + name + body + dump
             var error = new Error(message)
+            for (var key in context) {
+                error[key] = context[key]
+            }
             for (var key in properties) {
                 error[key] = properties[key]
             }
