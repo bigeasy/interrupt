@@ -1,73 +1,63 @@
-require('proof')(5, prove)
-
-/*
-    ___ strings: en_US ___
-
-        convert : value, outcome ~ You failed to convert %s to %d.
-        outcome : count, count ~ You have %d %{cat/cats}.
-
-    ___ en_US ___
- */
+require('proof')(7, prove)
 
 function prove (assert) {
-    var interrupt = require('..').createInterrupter('bigeasy.interrupt')
-    try {
-        throw interrupt(new Error('convert'), { value: 1 })
-    } catch (error) {
-        interrupt.rescue('bigeasy.interrupt', /convert/, function (error) {
-            console.log(error.stack)
-            assert(error.value, 1, 'rescue')
-        })(error)
-    }
-
+    var interrupt = require('..').createInterrupter('bigeasy.example')
     try {
         try {
-            var error = new Error('missed')
-            error.typeIdentifier = {}
-            error.path = '.'
-            throw error
-        } catch (error) {
-            interrupt.rescue()(error)
+            throw new Error('foo')
+        } catch (e) {
+            throw interrupt('bar', {
+                url: 'http://127.0.0.1:8080/foo',
+                statusCode: 404,
+                headers: {
+                    sent: {
+                        'content-type': 'text/plain',
+                        'content-length': '10'
+                    },
+                    received: {
+                        'content-type': 'text/plain',
+                        'content-length': '10'
+                    }
+                },
+                cause: e
+            }, {
+                value: 1
+            })
         }
-    } catch (error) {
-        assert(error.message, 'missed', 'missed not an interrupt')
+    } catch (e) {
+        assert(/^bigeasy.example:bar$/m.test(e.message), 'message')
+        assert(e.value, 1, 'properties set')
+        assert(e.statusCode, 404, 'context set')
     }
-
     try {
         try {
-            throw interrupt(new Error('convert'), { value: 1 })
-        } catch (error) {
-            interrupt.rescue('bigeasy.missed', function (error) {
-            })(error)
+            throw new Error('foo')
+        } catch (e) {
+            throw interrupt('bar', { cause: e })
         }
-    } catch (error) {
-        assert(error.message, 'bigeasy.interrupt:convert', 'missed not of type')
+    } catch (e) {
+        console.log(e.stack)
+        assert(/^bigeasy.example:bar$/m.test(e.message), 'no context')
+    }
+    try {
+        throw interrupt('bar', 2, { key: 'value' })
+    } catch (e) {
+        console.log(e.stack)
+        assert(/^bigeasy.example:bar$/m.test(e.message), 'no cause')
+    }
+    try {
+        throw interrupt('bar')
+    } catch (e) {
+        console.log(e.stack)
+        assert(/^bigeasy.example:bar$/m.test(e.message), 'nothing but message')
     }
 
-    try {
-        try {
-            throw interrupt(new Error('format'), { value: 1 })
-        } catch (error) {
-            interrupt.rescue('bigeasy.missed', /parse/, function (error) {
-            })(error)
-        }
-    } catch (error) {
-        assert(error.message, 'bigeasy.interrupt:format', 'missed regex')
-    }
+    interrupt = require('../bootstrap').createInterrupterCreator({})('bigeasy.example')
 
     try {
-        throw interrupt(new Error('format'), { value: 1 })
-    } catch (error) {
-        interrupt.rescue([
-            'bigeasy.interrupt', function (error) {
-                throw new Error('specific failed')
-            },
-            'bigeasy.interrupt', 'missed', function (error) {
-                throw new Error('specific failed')
-            },
-            'bigeasy.interrupt', 'format', function (error) {
-                assert(error.message, 'bigeasy.interrupt:format', 'specific')
-            }
-        ])(error)
+        throw interrupt('bar')
+    } catch (e) {
+        console.log(e.stack)
+        assert(/^bigeasy.example:bar$/m.test(e.message), 'no captureStackTrace')
     }
 }
