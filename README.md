@@ -1,5 +1,33 @@
 [![Build Status](https://travis-ci.org/bigeasy/interrupt.svg)](https://travis-ci.org/bigeasy/interrupt) [![Coverage Status](https://coveralls.io/repos/bigeasy/interrupt/badge.svg?branch=master&service=github)](https://coveralls.io/github/bigeasy/interrupt?branch=master)
 
+*TODO*: Refactor this diatribe. I don't care about type anymore. JavaScript and
+espeically Node.js is not so terribly mysterious that you cannot guess what will
+be thrown. Adding an `interrupt` property would be enough, I believe, to make
+sure you catch this exception by type.
+
+First, this is about Node.js.
+
+Let me tell you about this assuming Node.js. When you throw a message, you want
+everything you'd hope the user would tell you about the error in the `stack`.
+The `stack` will get dumped to standard out by the default exception handler.
+This is what is most likely to come your way in a GitHub issue. It is what is
+mostly likely to be written to a log message.
+
+And then...
+
+It's advantage is the lengths it will go to to preserve context and make a
+meaningful stack message. I've found that the context I desire for these
+exceptions must be captured when thrown. The message you'd want to see in a log
+message, the message you want to see in a user's bug report must be formatted
+and ready to go. It must be the likely message. You can't put the necessary
+information in the exception so that a message might be formatted if the user so
+chooses. You want to smash as much information in `stack` so that the likely
+outcome is.
+
+Then maybe it is about Browserify.
+
+This will work in the browser, but it does depend upon `util.inspect`.
+
 Errors that you can catch by type.
 
 Interrupt is part of the [Cadence](https://github.com/bigeasy/cadence) Universe.
