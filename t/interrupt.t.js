@@ -1,4 +1,4 @@
-require('proof')(8, prove)
+require('proof')(9, prove)
 
 function prove (assert) {
     var interrupt = require('..').createInterrupter('bigeasy.example')
@@ -29,6 +29,7 @@ function prove (assert) {
         }
     } catch (e) {
         assert(/^bigeasy.example#bar$/m.test(e.message), 'message')
+        assert(e.interrupt, 'bigeasy.example#bar', 'interrupt')
         assert(e.value, 1, 'properties set')
         assert(e.statusCode, 404, 'context set')
     }

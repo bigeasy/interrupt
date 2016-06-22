@@ -34,6 +34,7 @@ exports.createInterrupterCreator = function (_Error) {
             if (options.cause) {
                 error.cause = options.cause
             }
+            error.interrupt = path + '#' + name
             if (_Error.captureStackTrace) {
                 _Error.captureStackTrace(error, options.callee || ejector)
             }
