@@ -17,7 +17,6 @@
     },
     "dependencies":
     {
-                            "supersede":            "1.x"
     },
     "devDependencies":
     {
