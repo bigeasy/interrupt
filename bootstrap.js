@@ -14,16 +14,17 @@ exports.createInterrupterCreator = function (_Error) {
             var body = ''
             var dump = ''
             var stack = ''
+            var qualifier = path + '#' + name
             if (keys != 0 || options.cause) {
                 body = '\n'
                 if (keys != 0) {
                     dump = '\n' + util.inspect(context, { depth: depth }) + '\n'
                 }
                 if (options.cause != null) {
-                    dump += '\ncause: ' + options.cause.stack + '\n\nstack:'
+                    dump += '\ncause: ' + options.cause.stack + '\n\nstack: ' + qualifier
                 }
             }
-            var message = path + '#' + name + body + dump
+            var message = qualifier + body + dump
             var error = new Error(message)
             for (var key in context) {
                 error[key] = context[key]
