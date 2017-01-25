@@ -1,7 +1,10 @@
 {
     "name":                 "interrupt",
     "version":              "2.1.1",
-    "description":          "Errors that you can catch by type.",
+    "description":
+
+      "Errors that you can catch by type.",
+
     "keywords":
     [
                             "error", "try", "catch"
@@ -20,7 +23,7 @@
     },
     "devDependencies":
     {
-                            "proof":                "1.2.x"
+                            "proof":                        "1.2.x"
     },
     "main":                 "interrupt",
     "scripts":
