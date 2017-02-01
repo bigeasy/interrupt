@@ -3,52 +3,64 @@ var util = require('util')
 
 exports.createInterrupterCreator = function (_Error) {
     return function (path) {
-        var ejector = function (options) {
-            var name = options.name
-            var context = options.context || {}
-            var properties = options.properties || {}
-            var callee = options.callee || ejector
-            var vargs = slice.call(arguments)
-            var depth = options.depth || null
-            var keys = Object.keys(context).length
+        function vargs (vargs, callee) {
+            var name = vargs.shift(), cause, context, options
+            if (vargs[0] instanceof Error) {
+                cause = vargs.shift()
+            } else {
+                cause = null
+            }
+            context = vargs.shift() || {}
+            options = vargs.shift() || {}
+            if (cause != null) {
+                options.cause = cause
+            }
+            return {
+                name: name,
+                context: context,
+                options: options,
+                callee: options.callee || callee
+            }
+        }
+        function ejector (name, cause, context, options) {
+            return eject(vargs(slice.call(arguments), ejector))
+        }
+        function eject (args) {
+            var properties = args.options.properties || {}
+            var keys = Object.keys(args.context).length
             var body = ''
             var dump = ''
             var stack = ''
-            var qualifier = path + '#' + name
-            if (keys != 0 || options.cause) {
+            var qualifier = path + '#' + args.name
+            if (keys != 0 || args.options.cause) {
                 body = '\n'
                 if (keys != 0) {
-                    dump = '\n' + util.inspect(context, { depth: depth }) + '\n'
+                    dump = '\n' + util.inspect(args.context, { depth: args.options.depth || null }) + '\n'
                 }
-                if (options.cause != null) {
-                    dump += '\ncause: ' + options.cause.stack + '\n\nstack: ' + qualifier
+                if ('cause' in args.options) {
+                    dump += '\ncause: ' + args.options.cause.stack + '\n\nstack: ' + qualifier
                 }
             }
             var message = qualifier + body + dump
             var error = new Error(message)
-            for (var key in context) {
-                error[key] = context[key]
+            for (var key in args.context) {
+                error[key] = args.context[key]
             }
-            for (var key in properties) {
-                error[key] = properties[key]
+            for (var key in args.options.properties) {
+                error[key] = args.options.properties[key]
             }
-            if (options.cause) {
-                error.cause = options.cause
+            if (args.options.cause) {
+                error.cause = args.options.cause
             }
-            error.interrupt = path + '#' + name
+            error.interrupt = path + '#' + args.name
             if (_Error.captureStackTrace) {
-                _Error.captureStackTrace(error, options.callee || ejector)
+                _Error.captureStackTrace(error, args.options.callee || ejector)
             }
             return error
         }
-        var assert = ejector.assert = function (condition, options) {
+        ejector.assert = function (condition) {
             if (!condition) {
-                var copy = {}
-                for (var key in options) {
-                    copy[key] = options[key]
-                }
-                copy.callee = assert
-                throw ejector(options)
+                throw eject(vargs(slice.call(arguments, 1), ejector.assert))
             }
         }
         return ejector
