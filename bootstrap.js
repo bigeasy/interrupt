@@ -35,7 +35,7 @@ exports.createInterrupterCreator = function (_Error) {
             if (keys != 0 || args.options.cause) {
                 body = '\n'
                 if (keys != 0) {
-                    dump = '\n' + util.inspect(args.context, { depth: args.options.depth || null }) + '\n'
+                    dump = '\n' + util.inspect(args.context, { depth: args.options.depth || Infinity }) + '\n'
                 }
                 if ('cause' in args.options) {
                     dump += '\ncause: ' + args.options.cause.stack + '\n\nstack: ' + qualifier
