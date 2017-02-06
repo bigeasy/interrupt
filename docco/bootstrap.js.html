@@ -58,52 +58,64 @@
 
 exports.createInterrupterCreator = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">_Error</span>) </span>{
     <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">path</span>) </span>{
-        <span class="hljs-keyword">var</span> ejector = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">options</span>) </span>{
-            <span class="hljs-keyword">var</span> name = options.name
-            <span class="hljs-keyword">var</span> context = options.context || {}
-            <span class="hljs-keyword">var</span> properties = options.properties || {}
-            <span class="hljs-keyword">var</span> callee = options.callee || ejector
-            <span class="hljs-keyword">var</span> vargs = slice.call(<span class="hljs-built_in">arguments</span>)
-            <span class="hljs-keyword">var</span> depth = options.depth || <span class="hljs-literal">null</span>
-            <span class="hljs-keyword">var</span> keys = <span class="hljs-built_in">Object</span>.keys(context).length
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">vargs</span> (<span class="hljs-params">vargs, callee</span>) </span>{
+            <span class="hljs-keyword">var</span> name = vargs.shift(), cause, context, options
+            <span class="hljs-keyword">if</span> (vargs[<span class="hljs-number">0</span>] <span class="hljs-keyword">instanceof</span> <span class="hljs-built_in">Error</span>) {
+                cause = vargs.shift()
+            } <span class="hljs-keyword">else</span> {
+                cause = <span class="hljs-literal">null</span>
+            }
+            context = vargs.shift() || {}
+            options = vargs.shift() || {}
+            <span class="hljs-keyword">if</span> (cause != <span class="hljs-literal">null</span>) {
+                options.cause = cause
+            }
+            <span class="hljs-keyword">return</span> {
+                <span class="hljs-attr">name</span>: name,
+                <span class="hljs-attr">context</span>: context,
+                <span class="hljs-attr">options</span>: options,
+                <span class="hljs-attr">callee</span>: options.callee || callee
+            }
+        }
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">ejector</span> (<span class="hljs-params">name, cause, context, options</span>) </span>{
+            <span class="hljs-keyword">return</span> eject(vargs(slice.call(<span class="hljs-built_in">arguments</span>), ejector))
+        }
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">eject</span> (<span class="hljs-params">args</span>) </span>{
+            <span class="hljs-keyword">var</span> properties = args.options.properties || {}
+            <span class="hljs-keyword">var</span> keys = <span class="hljs-built_in">Object</span>.keys(args.context).length
             <span class="hljs-keyword">var</span> body = <span class="hljs-string">''</span>
             <span class="hljs-keyword">var</span> dump = <span class="hljs-string">''</span>
             <span class="hljs-keyword">var</span> stack = <span class="hljs-string">''</span>
-            <span class="hljs-keyword">var</span> qualifier = path + <span class="hljs-string">'#'</span> + name
-            <span class="hljs-keyword">if</span> (keys != <span class="hljs-number">0</span> || options.cause) {
+            <span class="hljs-keyword">var</span> qualifier = path + <span class="hljs-string">'#'</span> + args.name
+            <span class="hljs-keyword">if</span> (keys != <span class="hljs-number">0</span> || args.options.cause) {
                 body = <span class="hljs-string">'\n'</span>
                 <span class="hljs-keyword">if</span> (keys != <span class="hljs-number">0</span>) {
-                    dump = <span class="hljs-string">'\n'</span> + util.inspect(context, { <span class="hljs-attr">depth</span>: depth }) + <span class="hljs-string">'\n'</span>
+                    dump = <span class="hljs-string">'\n'</span> + util.inspect(args.context, { <span class="hljs-attr">depth</span>: args.options.depth || <span class="hljs-literal">Infinity</span> }) + <span class="hljs-string">'\n'</span>
                 }
-                <span class="hljs-keyword">if</span> (options.cause != <span class="hljs-literal">null</span>) {
-                    dump += <span class="hljs-string">'\ncause: '</span> + options.cause.stack + <span class="hljs-string">'\n\nstack: '</span> + qualifier
+                <span class="hljs-keyword">if</span> (<span class="hljs-string">'cause'</span> <span class="hljs-keyword">in</span> args.options) {
+                    dump += <span class="hljs-string">'\ncause: '</span> + args.options.cause.stack + <span class="hljs-string">'\n\nstack: '</span> + qualifier
                 }
             }
             <span class="hljs-keyword">var</span> message = qualifier + body + dump
             <span class="hljs-keyword">var</span> error = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(message)
-            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> context) {
-                error[key] = context[key]
+            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> args.context) {
+                error[key] = args.context[key]
             }
-            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> properties) {
-                error[key] = properties[key]
+            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> args.options.properties) {
+                error[key] = args.options.properties[key]
             }
-            <span class="hljs-keyword">if</span> (options.cause) {
-                error.cause = options.cause
+            <span class="hljs-keyword">if</span> (args.options.cause) {
+                error.cause = args.options.cause
             }
-            error.interrupt = path + <span class="hljs-string">'#'</span> + name
+            error.interrupt = path + <span class="hljs-string">'#'</span> + args.name
             <span class="hljs-keyword">if</span> (_Error.captureStackTrace) {
-                _Error.captureStackTrace(error, options.callee || ejector)
+                _Error.captureStackTrace(error, args.options.callee || ejector)
             }
             <span class="hljs-keyword">return</span> error
         }
-        <span class="hljs-keyword">var</span> assert = ejector.assert = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">condition, options</span>) </span>{
+        ejector.assert = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">condition</span>) </span>{
             <span class="hljs-keyword">if</span> (!condition) {
-                <span class="hljs-keyword">var</span> copy = {}
-                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> options) {
-                    copy[key] = options[key]
-                }
-                copy.callee = asser
-                <span class="hljs-keyword">throw</span> ejector(options)
+                <span class="hljs-keyword">throw</span> eject(vargs(slice.call(<span class="hljs-built_in">arguments</span>, <span class="hljs-number">1</span>), ejector.assert))
             }
         }
         <span class="hljs-keyword">return</span> ejector
