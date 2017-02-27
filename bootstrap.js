@@ -54,7 +54,7 @@ exports.createInterrupterCreator = function (_Error) {
             }
             error.interrupt = path + '#' + args.name
             if (_Error.captureStackTrace) {
-                _Error.captureStackTrace(error, args.options.callee || ejector)
+                _Error.captureStackTrace(error, args.callee)
             }
             return error
         }
