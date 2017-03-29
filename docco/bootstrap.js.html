@@ -92,7 +92,7 @@ exports.createInterrupterCreator = <span class="hljs-function"><span class="hljs
                 <span class="hljs-keyword">if</span> (keys != <span class="hljs-number">0</span>) {
                     dump = <span class="hljs-string">'\n'</span> + util.inspect(args.context, { <span class="hljs-attr">depth</span>: args.options.depth || <span class="hljs-literal">Infinity</span> }) + <span class="hljs-string">'\n'</span>
                 }
-                <span class="hljs-keyword">if</span> (<span class="hljs-string">'cause'</span> <span class="hljs-keyword">in</span> args.options) {
+                <span class="hljs-keyword">if</span> (args.options.cause <span class="hljs-keyword">instanceof</span> <span class="hljs-built_in">Error</span>) {
                     dump += <span class="hljs-string">'\ncause: '</span> + args.options.cause.stack + <span class="hljs-string">'\n\nstack: '</span> + qualifier
                 }
             }
@@ -109,7 +109,7 @@ exports.createInterrupterCreator = <span class="hljs-function"><span class="hljs
             }
             error.interrupt = path + <span class="hljs-string">'#'</span> + args.name
             <span class="hljs-keyword">if</span> (_Error.captureStackTrace) {
-                _Error.captureStackTrace(error, args.options.callee || ejector)
+                _Error.captureStackTrace(error, args.callee)
             }
             <span class="hljs-keyword">return</span> error
         }
@@ -120,9 +120,7 @@ exports.createInterrupterCreator = <span class="hljs-function"><span class="hljs
         }
         <span class="hljs-keyword">return</span> ejector
     }
-}
-
-</pre></div></div>
+}</pre></div></div>
 
         </li>
 
