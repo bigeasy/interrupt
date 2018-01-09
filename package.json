@@ -16,7 +16,7 @@
     "repository":
     {
                             "type": "git",
-                            "url": "http://github.com/bigeasy/interrupt.git"
+                            "url": "bigeasy/interrupt"
     },
     "dependencies":
     {
