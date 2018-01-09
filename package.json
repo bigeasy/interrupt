@@ -1,6 +1,6 @@
 {
     "name":                 "interrupt",
-    "version":              "5.0.5",
+    "version":              "5.0.6",
     "description":
 
       "Errors that you can catch by type.",
