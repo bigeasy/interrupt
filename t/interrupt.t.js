@@ -42,7 +42,6 @@ function prove (assert) {
         assert(/^bigeasy.example#bar$/m.test(e.message), 'no context')
         // TODO Assert cause.
     }
-    return
     try {
         throw interrupt('bar', { depth: 2, key: 'value' })
     } catch (e) {
