@@ -4,16 +4,20 @@ var util = require('util')
 exports.createInterrupterCreator = function (_Error) {
     return function (path) {
         function vargs (vargs, callee) {
-            var name = vargs.shift(), cause, context, options
+            var name = vargs.shift(), cause, context, options = {}
             if (vargs[0] instanceof Error) {
-                cause = vargs.shift()
+                console.log('foo!!!!')
+                options.cause = vargs.shift()
+                options.causes = [ options.cause ]
+            } else if (Array.isArray(vargs[0])) {
+                options.causes = vargs.shift()
+                options.cause = options.causes[0]
             } else {
-                cause = null
+                options.causes = []
             }
             context = vargs.shift() || {}
-            options = vargs.shift() || {}
-            if (cause != null) {
-                options.cause = cause
+            for (var key in vargs[0]) {
+                options[key] = vargs[0][key]
             }
             return {
                 name: name,
@@ -30,17 +34,22 @@ exports.createInterrupterCreator = function (_Error) {
             var keys = Object.keys(args.context).length
             var body = ''
             var dump = ''
-            var stack = ''
+            var cause = ''
             var qualifier = path + '#' + args.name
-            if (keys != 0 || args.options.cause) {
+            if (keys != 0 || args.options.causes.length != 0) {
                 body = '\n'
                 if (keys != 0) {
                     dump = '\n' + util.inspect(args.context, { depth: args.options.depth || Infinity }) + '\n'
                 }
-                if (args.options.cause instanceof Error) {
-                    stack = args.options.cause.stack.replace(/^/gm, '    ')
-                    dump += '\ncause:\n\n' + stack + '\n\nstack:\n'
+
+                for (var i = 0, I = args.options.causes.length; i < I; i++) {
+                    var cause = args.options.causes[i]
+                    cause = (cause instanceof Error) ? cause.stack : cause.toString()
+                    cause = cause.replace(/^/gm, '    ')
+                    dump += '\ncause:\n\n' + cause + '\n'
                 }
+
+                dump += '\nstack:\n'
             }
             var message = qualifier + body + dump
             var error = new Error(message)
@@ -50,6 +59,7 @@ exports.createInterrupterCreator = function (_Error) {
             for (var key in args.options.properties) {
                 error[key] = args.options.properties[key]
             }
+            error.causes = args.options.causes
             if (args.options.cause) {
                 error.cause = args.options.cause
             }

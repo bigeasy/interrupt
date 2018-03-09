@@ -1,4 +1,4 @@
-require('proof')(9, prove)
+require('proof')(12, prove)
 
 function prove (assert) {
     var interrupt = require('..').createInterrupter('bigeasy.example')
@@ -40,6 +40,28 @@ function prove (assert) {
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#bar$/m.test(e.message), 'no context')
+        assert(e.cause.message, 'foo', 'cause')
+        // TODO Assert cause.
+    }
+    try {
+        try {
+            throw new Error('foo')
+        } catch (foo) {
+            try {
+                try {
+                    throw new Error('bar')
+                } catch (bar) {
+                    throw interrupt('baz', bar)
+                }
+            } catch (baz) {
+                console.log(baz.stack)
+                throw interrupt('quux', [ foo, baz ])
+            }
+        }
+    } catch (e) {
+        console.log(e.stack)
+        assert(/^bigeasy.example#quux$/m.test(e.message), 'nested mulitple causes')
+        assert(e.causes[1].cause.message, 'bar', 'nested')
         // TODO Assert cause.
     }
     try {
