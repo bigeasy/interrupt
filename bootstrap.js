@@ -38,7 +38,8 @@ exports.createInterrupterCreator = function (_Error) {
                     dump = '\n' + util.inspect(args.context, { depth: args.options.depth || Infinity }) + '\n'
                 }
                 if (args.options.cause instanceof Error) {
-                    dump += '\ncause: ' + args.options.cause.stack + '\n\nstack: ' + qualifier
+                    stack = args.options.cause.stack.replace(/^/gm, '    ')
+                    dump += '\ncause:\n\n' + stack + '\n\nstack:\n'
                 }
             }
             var message = qualifier + body + dump

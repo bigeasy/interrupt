@@ -38,9 +38,11 @@ function prove (assert) {
             throw interrupt('bar', e)
         }
     } catch (e) {
+        console.log(e.stack)
         assert(/^bigeasy.example#bar$/m.test(e.message), 'no context')
         // TODO Assert cause.
     }
+    return
     try {
         throw interrupt('bar', { depth: 2, key: 'value' })
     } catch (e) {
