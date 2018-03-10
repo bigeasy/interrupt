@@ -60,9 +60,11 @@ function interrupt (args, path, _Error) {
         error.cause = args.options.cause
     }
     error.interrupt = path + '#' + args.name
-    // if (_Error.captureStackTrace) {
-    //     _Error.captureStackTrace(error, args.callee)
-    // }
+    // FYI It is faster to use `Error.captureStackTrace` than it is to try to
+    // strip the stack frames using a regular expression or string manipulation.
+    if (_Error.captureStackTrace) {
+        _Error.captureStackTrace(error, args.callee)
+    }
     return error
 }
 
