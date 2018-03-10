@@ -4,7 +4,6 @@ var util = require('util')
 function vargs (vargs, callee) {
     var name = vargs.shift(), cause, context, options = {}
     if (vargs[0] instanceof Error) {
-        console.log('foo!!!!')
         options.cause = vargs.shift()
         options.causes = [ options.cause ]
     } else if (Array.isArray(vargs[0])) {
@@ -65,20 +64,21 @@ function interrupt (args, path, _Error) {
     error.interrupt = path + '#' + args.name
     // FYI It is faster to use `Error.captureStackTrace` than it is to try to
     // strip the stack frames using a regular expression or string manipulation.
-    if (_Error.captureStackTrace) {
-        _Error.captureStackTrace(error, args.callee)
-    }
+    _Error.captureStackTrace(error, args.callee)
     return error
 }
 
-exports.createInterrupterCreator = function (_Error) {
+exports.createInterrupterCreator = function (Error) {
+    if (typeof Error.captureStackTrace != 'function') {
+        Error = { captureStackTrace: function () {} }
+    }
     return function (path) {
         function ejector (name, cause, context, options) {
-            return interrupt(vargs(slice.call(arguments), ejector), path, _Error)
+            return interrupt(vargs(slice.call(arguments), ejector), path, Error)
         }
         ejector.assert = function (condition) {
             if (!condition) {
-                throw interrupt(vargs(slice.call(arguments, 1), ejector.assert), path, _Error)
+                throw interrupt(vargs(slice.call(arguments, 1), ejector.assert), path, Error)
             }
         }
         return ejector

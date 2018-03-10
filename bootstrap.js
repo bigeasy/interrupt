@@ -1,6 +1,14 @@
 var slice = [].slice
 var util = require('util')
 
+function InterruptError (message, Error, callee) {
+    this.message = message
+    // FYI It is faster to use `Error.captureStackTrace` than it is to try to
+    // strip the stack frames using a regular expression or string manipulation.
+    Error.captureStackTrace(this, callee)
+}
+util.inherits(InterruptError, Error)
+
 function vargs (vargs, callee) {
     var name = vargs.shift(), cause, context, options = {}
     if (vargs[0] instanceof Error) {
@@ -50,7 +58,7 @@ function interrupt (args, path, _Error) {
     dump += '\nstack:\n'
 
     var message = qualifier + body + dump
-    var error = new Error(message)
+    var error = new InterruptError(message, _Error, args.callee)
     for (var key in args.context) {
         error[key] = args.context[key]
     }
@@ -62,9 +70,6 @@ function interrupt (args, path, _Error) {
         error.cause = args.options.cause
     }
     error.interrupt = path + '#' + args.name
-    // FYI It is faster to use `Error.captureStackTrace` than it is to try to
-    // strip the stack frames using a regular expression or string manipulation.
-    _Error.captureStackTrace(error, args.callee)
     return error
 }
 
