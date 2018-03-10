@@ -4,7 +4,6 @@ var util = require('util')
 function vargs (vargs, callee) {
     var name = vargs.shift(), cause, context, options = {}
     if (vargs[0] instanceof Error) {
-        console.log('foo!!!!')
         options.cause = vargs.shift()
         options.causes = [ options.cause ]
     } else if (Array.isArray(vargs[0])) {
