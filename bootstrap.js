@@ -44,9 +44,12 @@ function interrupt (args, path, _Error) {
             cause = cause.replace(/^/gm, '    ')
             dump += '\ncause:\n\n' + cause + '\n'
         }
-
-        dump += '\nstack:\n'
+    } else {
+        dump += '\n'
     }
+
+    dump += '\nstack:\n'
+
     var message = qualifier + body + dump
     var error = new Error(message)
     for (var key in args.context) {
