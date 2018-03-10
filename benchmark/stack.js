@@ -2,9 +2,7 @@ var Benchmark = require('benchmark')
 
 var suite = new Benchmark.Suite('async', { /*minSamples: 100*/ })
 
-function body (async) { async()(null, 1) }
-
-var interrupt = require('../interrupt').createInterrupter('x')
+var interrupt = require('../bootstrap').createInterrupterCreator(Error)('x')
 
 function fn () {
     interrupt('x')
