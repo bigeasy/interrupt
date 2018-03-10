@@ -1,5 +1,6 @@
 var slice = [].slice
 var util = require('util')
+var JSON5 = require('json5')
 
 function InterruptError (message, Error, callee) {
     this.message = message
@@ -42,7 +43,7 @@ function interrupt (args, path, _Error) {
     if (keys != 0 || args.options.causes.length != 0) {
         body = '\n'
         if (keys != 0) {
-            dump = '\n' + util.inspect(args.context, { depth: args.options.depth || Infinity }) + '\n'
+            dump = '\n' + JSON5.stringify(args.context, null, 4) + '\n'
         }
 
         for (var i = 0, I = args.options.causes.length; i < I; i++) {
