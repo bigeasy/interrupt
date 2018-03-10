@@ -44,9 +44,12 @@ function interrupt (args, path, _Error) {
             cause = cause.replace(/^/gm, '    ')
             dump += '\ncause:\n\n' + cause + '\n'
         }
-
-        dump += '\nstack:\n'
+    } else {
+        dump += '\n'
     }
+
+    dump += '\nstack:\n'
+
     var message = qualifier + body + dump
     var error = new Error(message)
     for (var key in args.context) {
@@ -60,6 +63,8 @@ function interrupt (args, path, _Error) {
         error.cause = args.options.cause
     }
     error.interrupt = path + '#' + args.name
+    // FYI It is faster to use `Error.captureStackTrace` than it is to try to
+    // strip the stack frames using a regular expression or string manipulation.
     if (_Error.captureStackTrace) {
         _Error.captureStackTrace(error, args.callee)
     }
