@@ -60,9 +60,9 @@ function interrupt (args, path, _Error) {
         error.cause = args.options.cause
     }
     error.interrupt = path + '#' + args.name
-    // if (_Error.captureStackTrace) {
-    //     _Error.captureStackTrace(error, args.callee)
-    // }
+    if (_Error.captureStackTrace) {
+        _Error.captureStackTrace(error, args.callee)
+    }
     return error
 }
 
