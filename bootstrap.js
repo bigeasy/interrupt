@@ -19,6 +19,9 @@ function vargs (vargs, callee) {
         options.causes = vargs.shift()
         options.cause = options.causes[0]
     } else {
+        if (vargs[0] == null) {
+            vargs.shift()
+        }
         options.causes = []
     }
     context = vargs.shift() || {}
