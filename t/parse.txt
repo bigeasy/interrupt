@@ -1,0 +1,64 @@
+
+Error: bigeasy.example#quux
+
+cause:
+
+    Error: foo
+        at prove (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:49:19)
+        at /Users/alan/git/ecma/bluey/interrupt/node_modules/proof/scaffold.js:82:40
+        at call (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:145:22)
+        at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:278:19)
+        at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:289:17)
+        at execute (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:306:5)
+        at f (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:362:13)
+        at module.exports (/Users/alan/git/ecma/bluey/interrupt/node_modules/proof/index.js:5:26)
+        at Object.<anonymous> (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:1:79)
+        at Module._compile (module.js:635:30)
+
+cause:
+
+    Error: bigeasy.example#baz
+
+    cause:
+
+        Error: bar
+            at prove (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:53:27)
+            at /Users/alan/git/ecma/bluey/interrupt/node_modules/proof/scaffold.js:82:40
+            at call (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:145:22)
+            at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:278:19)
+            at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:289:17)
+            at execute (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:306:5)
+            at f (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:362:13)
+            at module.exports (/Users/alan/git/ecma/bluey/interrupt/node_modules/proof/index.js:5:26)
+            at Object.<anonymous> (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:1:79)
+            at Module._compile (module.js:635:30)
+
+    stack:
+
+        at prove (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:55:27)
+        at /Users/alan/git/ecma/bluey/interrupt/node_modules/proof/scaffold.js:82:40
+        at call (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:145:22)
+        at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:278:19)
+        at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:289:17)
+        at execute (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:306:5)
+        at f (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:362:13)
+        at module.exports (/Users/alan/git/ecma/bluey/interrupt/node_modules/proof/index.js:5:26)
+        at Object.<anonymous> (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:1:79)
+        at Module._compile (module.js:635:30)
+
+cause:
+
+    1
+
+stack:
+
+    at prove (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:59:23)
+    at /Users/alan/git/ecma/bluey/interrupt/node_modules/proof/scaffold.js:82:40
+    at call (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:145:22)
+    at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:278:19)
+    at invoke (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:289:17)
+    at execute (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:306:5)
+    at f (/Users/alan/git/ecma/bluey/interrupt/node_modules/cadence/cadence.js:362:13)
+    at module.exports (/Users/alan/git/ecma/bluey/interrupt/node_modules/proof/index.js:5:26)
+    at Object.<anonymous> (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:1:79)
+    at Module._compile (module.js:635:30)
