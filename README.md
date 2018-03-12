@@ -2,30 +2,40 @@
 
 ## Why?
 
-Interrupt is an `Error` generator that supports nested exceptions, context for
-exceptions and complete error reports on fatal error exit. It does this using
-the `stack` property which is specific to Node.js and does not attempt to create
-a library that is useful across all JavaScript implementations.
+Exceptions are useful. I like the concept. I've always been able to program
+try/catch in Node.js regardless of whether a function is synchronous or
+asynchronous because I've always programmed with `Cadence` which has a nice
+implementation of asynchronous `try`/`catch` that pre-dates `await`.
 
-Why not attempt to make it work across all implementations?
+Interrupt is an `Error` generator allows me to gather up errors from many
+different waiting asynchronous calls and report them in a bouquet of failure on
+the command line and in my server logs. Interrupt supports nested exceptions,
+context for exceptions and complete error reports on fatal error exit. It does
+this using the `stack` property which is specific to Node.js.
+
+Interrupt does not attempt to create a library that is useful across all
+JavaScript implementations. Why not attempt to make it work across all
+implementations?
 
 In JavaScript, Error defined as some arbitrary object with an `Error` type and a
 `message` property. It is, in itself, not very useful.
 
 The error type is supposed to be subclassed the way it is in other languages,
-but for years `Error` would not subclass without addition work. Furthermore, it
-was the only suggested use of subclassing in this prototypical language.
+but for years `Error` would not subclass without [addition work](https://coderwall.com/p/m3-cqw/subclassing-error-in-javascript-is-harder-than-it-seems). Furthermore, it
+was the only suggested use of subclassing in this prototypical language, so it
+never did feel quite right. Finally, unlike other languages, you can't catch an
+exception based on type. It was a behavior borrowed from other languages without
+the key benefit; that you could build type based `catch` ladder.
 
 The very useful stack trace you get in Node.js is a Node.js specific extension
-for Node.js. In order for `Error` to be useful those of us who use Node.js we've
-had to add a non-standard property that we in turn depend upon for meaningful
-fatal error exits.
+for Node.js. In order for `Error` to be useful to Node.js we've had to add a
+non-standard property that we in turn depend upon for meaningful fatal error
+exits.
 
-Exceptions are useful and I've always been able to program try/catch in Node.js
-regardless of whether a function is synchronous or asynchronous because I've
-always programmed with Cadence. This `Error` generator allows me to gather up
-errors from many different waiting asynchronous calls and report them in a
-bouquet of failure on the command line and in my server logs.
+Interrupt organizes `Error` with custom properties so that you can start to
+program with exceptions and use the patterns that are common to other languages.
+It creates meaningful error reports by stuffing `message` with a plain-text,
+human-readable, machine-parsable error report.
 
 ## Overview
 
