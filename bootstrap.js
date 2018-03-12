@@ -36,13 +36,13 @@ function vargs (vargs, callee) {
     }
 }
 
-function interrupt (args, path, _Error) {
+function interrupt (args, qualifier, _Error) {
     var properties = args.options.properties || {}
     var keys = Object.keys(args.context).length
     var body = ''
     var dump = ''
     var cause = ''
-    var qualifier = path + '#' + args.name
+    var qualified = qualifier + '#' + args.name
     if (keys != 0 || args.options.causes.length != 0) {
         body = '\n'
         if (keys != 0) {
@@ -61,7 +61,7 @@ function interrupt (args, path, _Error) {
 
     dump += '\nstack:\n'
 
-    var message = qualifier + body + dump
+    var message = qualified + body + dump
     var error = new InterruptError(message, _Error, args.callee)
     for (var key in args.context) {
         error[key] = args.context[key]
@@ -73,7 +73,9 @@ function interrupt (args, path, _Error) {
     if (args.options.cause) {
         error.cause = args.options.cause
     }
-    error.interrupt = path + '#' + args.name
+    error.qualifier = qualifier
+    error.qualified = qualified
+    error.name = args.name
     return error
 }
 
@@ -81,13 +83,13 @@ exports.createInterrupterCreator = function (Error) {
     if (typeof Error.captureStackTrace != 'function') {
         Error = { captureStackTrace: function () {} }
     }
-    return function (path) {
+    return function (qualifier) {
         function ejector (name, cause, context, options) {
-            return interrupt(vargs(slice.call(arguments), ejector), path, Error)
+            return interrupt(vargs(slice.call(arguments), ejector), qualifier, Error)
         }
         ejector.assert = function (condition) {
             if (!condition) {
-                throw interrupt(vargs(slice.call(arguments, 1), ejector.assert), path, Error)
+                throw interrupt(vargs(slice.call(arguments, 1), ejector.assert), qualifier, Error)
             }
         }
         return ejector

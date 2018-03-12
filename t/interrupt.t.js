@@ -28,7 +28,7 @@ function prove (assert) {
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#bar$/m.test(e.message), 'message')
-        assert(e.interrupt, 'bigeasy.example#bar', 'interrupt')
+        assert(e.qualified, 'bigeasy.example#bar', 'interrupt')
         assert(e.value, 1, 'properties set')
         assert(e.statusCode, 404, 'context set')
     }
