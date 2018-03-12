@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/bigeasy/interrupt.svg)](https://travis-ci.org/bigeasy/interrupt) [![Coverage Status](https://coveralls.io/repos/bigeasy/interrupt/badge.svg?branch=master&service=github)](https://coveralls.io/github/bigeasy/interrupt?branch=master)
 
+## Why?
+
 Interrupt is an `Error` generator that supports nested exceptions, context for
 exceptions and complete error reports on fatal error exit. It does this using
 the `stack` property which is specific to Node.js and does not attempt to create
@@ -25,23 +27,33 @@ always programmed with Cadence. This `Error` generator allows me to gather up
 errors from many different waiting asynchronous calls and report them in a
 bouquet of failure on the command line and in my server logs.
 
+## Overview
+
 This library generates and `Error` that is specific to Node.js and generally
 more useful than the `Error` that comes with Node.js. This is fine because the
 useful bits of `Error` that comes with Node.js are already non-standard and the
 standard itself is not very useful at all.
 
-The problem with Error is that it reports one and only one message with very
-little context other than the error message and stack trace. There are
-additional concepts in exception handling missing in JavaScript that Interrupt
-re-introduces.
+JavaScript's minimal `Error` lacks support for some of the most common concepts
+in exception handling found in other languages. Interrupt re-introduces:
 
  * One or more nested exceptions as causes.
  * Context for each exception in the form of attached properties.
- * Nested exceptions and context preserved in the `Error.stack` and extracted by
- parsing `Error.stack`.
+ * Single statement delcare and throw exceptions.
+ * Plain-text, human-readable and machine-parsable reports that include all of
+ the above.
+ * Plain-text, human-readable and machine-parsable that work with default
+ Node.js error reporting.
 
-Appears to be a piffle but it is pretty effective and easier to use than
-fiddling with `Error` directly even with ES6 support for classical inheritance.
+Interrupt may appear to be a piffle but it is pretty effective and easier to use
+than fiddling with `Error` directly even with ES6 support for classical
+inheritance.
+
+In addition to the useful report with nested exceptions, the ability to declare
+and error, set context properties and throw it in one statement reduces chatter.
+Exceptions are off the happy path and a lot of chatter to setup an exception is
+aesethtically unpleasing. Interrupt makes it possible to throw a detailed
+exception with a one liner (or one statementer.)
 
 ```javascript
 var interrupt = require('.').createInterrupter('module')
@@ -100,6 +112,8 @@ error logging implementations. It does not require a special
 `unhandledException` method to get a detailed report. It works well with the
 standard error logging of Node.js which prints `Error.stack` to the standard
 error stream.
+
+## Pasring Errors
 
 In addition to being human readable the error can be parsed.
 
@@ -188,7 +202,7 @@ error properties. I've never found a use for it, but there it is.
 
 The human readability and completeness has been incredibly helpful, however.
 
-## Catching Interrupts
+## Catching By Classification
 
 Interrupt uses the `Error.message` property as report. It is designed to be a
 plain-text, human-readable report that can display in your terminal.
