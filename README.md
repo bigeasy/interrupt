@@ -1,8 +1,38 @@
 [![Build Status](https://travis-ci.org/bigeasy/interrupt.svg)](https://travis-ci.org/bigeasy/interrupt) [![Coverage Status](https://coveralls.io/repos/bigeasy/interrupt/badge.svg?branch=master&service=github)](https://coveralls.io/github/bigeasy/interrupt?branch=master)
 
+Interrupt is an `Error` generator that supports nested exceptions, context for
+exceptions and complete error reports on fatal error exit. It does this using
+the `stack` property which is specific to Node.js and does not attempt to create
+a library that is useful across all JavaScript implementations.
+
+Why not attempt to make it work across all implementations?
+
+In JavaScript, Error defined as some arbitrary object with an `Error` type and a
+`message` property. It is, in itself, not very useful.
+
+The error type is supposed to be subclassed the way it is in other languages,
+but for years `Error` would not subclass without addition work. Furthermore, it
+was the only suggested use of subclassing in this prototypical language.
+
+The very useful stack trace you get in Node.js is a Node.js specific extension
+for Node.js. In order for `Error` to be useful those of us who use Node.js we've
+had to add a non-standard property that we in turn depend upon for meaningful
+fatal error exits.
+
+Exceptions are useful and I've always been able to program try/catch in Node.js
+regardless of whether a function is synchronous or asynchronous because I've
+always programmed with Cadence. This `Error` generator allows me to gather up
+errors from many different waiting asynchronous calls and report them in a
+bouquet of failure on the command line and in my server logs.
+
+This library generates and `Error` that is specific to Node.js and generally
+more useful than the `Error` that comes with Node.js. This is fine because the
+useful bits of `Error` that comes with Node.js are already non-standard and the
+standard itself is not very useful at all.
+
 The problem with Error is that it reports one and only one message with very
 little context other than the error message and stack trace. There are
-additioanl concepts in exception handling missing in JavaScript that Interrupt
+additional concepts in exception handling missing in JavaScript that Interrupt
 re-introduces.
 
  * One or more nested exceptions as causes.
@@ -11,7 +41,7 @@ re-introduces.
  parsing `Error.stack`.
 
 Appears to be a piffle but it is pretty effective and easier to use than
-fiddling with `Error` directly even with ES6 support for classical inheritence.
+fiddling with `Error` directly even with ES6 support for classical inheritance.
 
 ```javascript
 var interrupt = require('.').createInterrupter('module')
@@ -160,37 +190,8 @@ The human readability and completeness has been incredibly helpful, however.
 
 ## Catching Interrupts
 
-Rather than have an if/else ladder that is probing with `instanceof` , I use a
-library I created [Rescue](https://gihub.com/bigeasy/resuce) to catch Interrupt
-generated exceptions by their qualified names.
-
-```javascript
-var rescue = require('rescue')
-
-var object = null
-try {
-    try {
-        console.log(object.value)
-    } catch (e) {
-        throw inerrupt('foo', e, { object: object })
-    }
-} catch (e) {
-    rescue(/^module#foo$/m, function (e) {
-        console.log('unable to write object: ', e.object)
-    })(e)
-}
-```
-
-In the above, the `rescue` function returns a function that test an exception's
-message against the regular expression and if it matches call the given catcher
-function. The exception is multi-line because the qualified name of the
-exception is on the first line of the message.
-
-Please note that when you inspect the `message` property of an `Error` it does
-not include the file and line where the exception was thrown nor the exception
-type. That is added by the uncaught exception handler when printing to standard
-out.
-
+Interrupt uses the `Error.message` property as report. It is designed to be a
+plain-text, human-readable report that can display in your terminal.
 
 ```javascript
 var rescue = require('rescue')
@@ -233,12 +234,57 @@ stack:
 
 ```
 
-The `message` property does not include the stack nor the type information. The
-first line is the qualified exception name. You can match against that name
-using the following regular expression.
+Note that when you inspect the `message` property of an `Error` it does not
+include the file and line where the exception was thrown nor the exception type.
+That is added by the uncaught exception handler when printing to standard out.
+
+In most textbook examples of try/catch, the author uses an if/else ladder that
+is probing with `instanceof`. Interrupt adds the properties `qualifier`, `name`
+and `qualified` that you can use in `switch` statement or `if`/`else` ladder.
 
 ```javascript
-/^module#foo$/m
+try {
+    f()
+} catch (e) {
+    switch (e.qualified) {
+    case: 'bigeasy.example#fs':
+        console.log('I/O error with code: ' + e.cause.code)
+        break
+    case: 'bigeasy.example#http':
+        console.log('HTTPO error with code: ' + e.statusCcode)
+        break
+    default:
+        throw error
+    }
+}
 ```
 
-The `m` switch will cause `$` to match the end of a line, not the end of string.
+
+I use a library I created [Rescue](https://gihub.com/bigeasy/resuce) to catch
+Interrupt generated exceptions by their qualified names.
+
+```javascript
+var rescue = require('rescue')
+
+var object = null
+try {
+    try {
+        console.log(object.value)
+    } catch (e) {
+        throw inerrupt('foo', e, { object: object })
+    }
+} catch (e) {
+    rescue(/^module#foo$/m, function (e) {
+        console.log('unable to write object: ', e.object)
+    })(e)
+}
+```
+
+In the above, the `rescue` function returns a function that tests an exception's
+message against the regular expression and if it matches call the given catcher
+function. The `m` switch will cause `$` to match the end of a line, not the end
+of string. The exception is multi-line because the qualified name of the exception is on
+the first line of the message.
+
+This is what I like to do for now, but I'll probably move to `switch` statements
+now that I've finalized Interrupt.
