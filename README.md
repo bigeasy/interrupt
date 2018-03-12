@@ -113,11 +113,11 @@ error logging implementations. It does not require a special
 standard error logging of Node.js which prints `Error.stack` to the standard
 error stream.
 
-## Pasring Errors
+## Parsing Errors
 
 In addition to being human readable the error can be parsed.
 
-```
+```javascript
 var parser = require('interrupt/parse')
 
 var interrupt = require('.').createInterrupter('module')
