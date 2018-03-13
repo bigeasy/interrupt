@@ -312,3 +312,10 @@ the first line of the message.
 
 This is what I like to do for now, but I'll probably move to `switch` statements
 now that I've finalized Interrupt.
+
+## State of the Argument
+
+Two different thoughts on the state of subclassed `Error` for exceptions in
+JavaScript, the
+[pro](https://medium.com/@xjamundx/custom-javascript-errors-in-es6-aa891b173f87)
+and [con](http://gunargessner.com/subclassing-exception/).
