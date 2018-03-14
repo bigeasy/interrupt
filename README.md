@@ -4,14 +4,14 @@
 
 Exceptions are useful. I like the concept. I've always been able to program
 try/catch in Node.js regardless of whether a function is synchronous or
-asynchronous because I've always programmed with `Cadence` which has a nice
-implementation of asynchronous `try`/`catch` that pre-dates `await`.
+asynchronous because I've always programmed with `cadence` which has a nice
+implementation of asynchronous `try`/`catch`.
 
-Interrupt is an `Error` generator allows me to gather up errors from many
-different waiting asynchronous calls and report them in a bouquet of failure on
-the command line and in my server logs. Interrupt supports nested exceptions,
-context for exceptions and complete error reports on fatal error exit. It does
-this using the `stack` property which is specific to Node.js.
+Interrupt as an `Error` generator allows me to gather up errors from many
+different waiting asynchronous calls and report them in a bouquet of failures
+on the command line and in my server logs. Interrupt supports nested
+exceptions, context for exceptions and complete error reports on fatal error
+exit. It does this using the `stack` property which is specific to Node.js.
 
 Interrupt does not attempt to create a library that is useful across all
 JavaScript implementations. Why not attempt to make it work across all
@@ -21,16 +21,14 @@ In JavaScript, Error defined as some arbitrary object with an `Error` type and a
 `message` property. It is, in itself, not very useful.
 
 The error type is supposed to be subclassed the way it is in other languages,
-but for years `Error` would not subclass without [addition work](https://coderwall.com/p/m3-cqw/subclassing-error-in-javascript-is-harder-than-it-seems). Furthermore, it
+but for years `Error` would not subclass without [additional work](https://coderwall.com/p/m3-cqw/subclassing-error-in-javascript-is-harder-than-it-seems). Furthermore, it
 was the only suggested use of subclassing in this prototypical language, so it
 never did feel quite right. Finally, unlike other languages, you can't catch an
 exception based on type. It was a behavior borrowed from other languages without
-the key benefit; that you could build type based `catch` ladder.
+the key benefit; that you could build type-based `catch` ladder.
 
-The very useful stack trace you get in Node.js is a Node.js specific extension
-for Node.js. In order for `Error` to be useful to Node.js we've had to add a
-non-standard property that we in turn depend upon for meaningful fatal error
-exits.
+In order for `Error` to be useful to Node.js we've had to add a non-standard
+`stack` property that we in turn depend upon for meaningful fatal error exits.
 
 Interrupt organizes `Error` with custom properties so that you can start to
 program with exceptions and use the patterns that are common to other languages.
@@ -39,30 +37,27 @@ human-readable, machine-parsable error report.
 
 ## Overview
 
-This library generates and `Error` that is specific to Node.js and generally
-more useful than the `Error` that comes with Node.js. This is fine because the
-useful bits of `Error` that comes with Node.js are already non-standard and the
-standard itself is not very useful at all.
+This library generates an `Error` that is more useful than the `Error` that
+comes with Node.js. This is fine because the useful bits of `Error` that comes
+with Node.js are already non-standard and the standard itself is not very
+useful at all.
 
 JavaScript's minimal `Error` lacks support for some of the most common concepts
 in exception handling found in other languages. Interrupt re-introduces:
 
  * One or more nested exceptions as causes.
  * Context for each exception in the form of attached properties.
- * Single statement delcare and throw exceptions.
+ * Single statement declare and throw exceptions.
  * Plain-text, human-readable and machine-parsable reports that include all of
- the above.
- * Plain-text, human-readable and machine-parsable that work with default
- Node.js error reporting.
+ the above and work with default Node.js error reporting.
 
-Interrupt may appear to be a piffle but it is pretty effective and easier to use
-than fiddling with `Error` directly even with ES6 support for classical
-inheritance.
+Interrupt may appear to be trivial but it is effective and easier than fiddling
+with `Error` directly (even with ES6 support for classical inheritance).
 
-In addition to the useful report with nested exceptions, the ability to declare
-and error, set context properties and throw it in one statement reduces chatter.
+In addition to the report with nested exceptions, the ability to declare
+an error, set context properties and throw it in one statement reduces chatter.
 Exceptions are off the happy path and a lot of chatter to setup an exception is
-aesethtically unpleasing. Interrupt makes it possible to throw a detailed
+aesthetically unpleasing. Interrupt makes it possible to throw a detailed
 exception with a one liner (or one statementer.)
 
 ```javascript
@@ -125,7 +120,7 @@ error stream.
 
 ## Parsing Errors
 
-In addition to being human readable the error can be parsed.
+In addition to being human-readable the error can be parsed.
 
 ```javascript
 var parser = require('interrupt/parse')
@@ -210,7 +205,7 @@ at some point, if you record enough state in the error context, you could go
 back over your logs extracting errors and parsing them for application specific
 error properties. I've never found a use for it, but there it is.
 
-The human readability and completeness has been incredibly helpful, however.
+The human-readability and completeness has been incredibly helpful, however.
 
 ## Catching By Classification
 
@@ -284,8 +279,8 @@ try {
 ```
 
 
-I use a library I created [Rescue](https://gihub.com/bigeasy/resuce) to catch
-Interrupt generated exceptions by their qualified names.
+I use a library I created [Rescue](https://gihub.com/bigeasy/rescue) to catch
+Interrupt-generated exceptions by their qualified names.
 
 ```javascript
 var rescue = require('rescue')
@@ -305,10 +300,10 @@ try {
 ```
 
 In the above, the `rescue` function returns a function that tests an exception's
-message against the regular expression and if it matches call the given catcher
+message against the regular expression and if it matches calls the given catcher
 function. The `m` switch will cause `$` to match the end of a line, not the end
-of string. The exception is multi-line because the qualified name of the exception is on
-the first line of the message.
+of string. The exception message is multi-line, but the qualified name of the
+exception is on the first line.
 
 This is what I like to do for now, but I'll probably move to `switch` statements
 now that I've finalized Interrupt.
