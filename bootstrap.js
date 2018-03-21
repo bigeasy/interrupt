@@ -2,13 +2,13 @@ var slice = [].slice
 var util = require('util')
 var JSON5 = require('json5')
 
-function InterruptError (message, Error, callee) {
+function Interrupt (message, Error, callee) {
     this.message = message
     // FYI It is faster to use `Error.captureStackTrace` than it is to try to
     // strip the stack frames using a regular expression or string manipulation.
     Error.captureStackTrace(this, callee)
 }
-util.inherits(InterruptError, Error)
+util.inherits(Interrupt, Error)
 
 function vargs (vargs, callee) {
     var name = vargs.shift(), cause, context, options = {}
@@ -62,7 +62,7 @@ function interrupt (args, qualifier, _Error) {
     dump += '\nstack:\n'
 
     var message = qualified + body + dump
-    var error = new InterruptError(message, _Error, args.callee)
+    var error = new Interrupt(message, _Error, args.callee)
     for (var key in args.context) {
         error[key] = args.context[key]
     }
