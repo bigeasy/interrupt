@@ -7,9 +7,9 @@ var unstacker = require('stacktrace-parser')
 
 function parse (stack, isRoot) {
     var $
-    if (/^(?:Error: )[\w\d.]+#[\w\d.]+\n[^\u0000]+\nstack:\n/m.test(stack)) {
-        stack = stack.replace(/^[^\u0000]*\n(Error: [\w\d.]+#[\w\d.]+\n)/, '$1')
-        stack = stack.replace(/^Error: /, '')
+    if (/^(?:Interrupt: )[\w\d.]+#[\w\d.]+\n[^\u0000]+\nstack:\n/m.test(stack)) {
+        stack = stack.replace(/^[^\u0000]*\n(Interrupt: [\w\d.]+#[\w\d.]+\n)/, '$1')
+        stack = stack.replace(/^Interrupt: /, '')
         $ = /^([\w\d.]+)#([\w\d.]+)\n/.exec(stack)
         var object = {
             type: 'Interrupt',

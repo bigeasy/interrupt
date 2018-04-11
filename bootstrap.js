@@ -3,6 +3,7 @@ var util = require('util')
 var JSON5 = require('json5')
 
 function Interrupt (message, Error, callee) {
+    this.name = 'Interrupt'
     this.message = message
     // FYI It is faster to use `Error.captureStackTrace` than it is to try to
     // strip the stack frames using a regular expression or string manipulation.

@@ -1,5 +1,5 @@
 
-Error: bigeasy.example#quux
+Interrupt: bigeasy.example#quux
 
 cause:
 
@@ -17,7 +17,7 @@ cause:
 
 cause:
 
-    Error: bigeasy.example#baz
+    Interrupt: bigeasy.example#baz
 
     cause:
 
