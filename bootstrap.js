@@ -11,7 +11,7 @@ function Interrupt (message, Error, callee) {
 util.inherits(Interrupt, Error)
 
 function vargs (vargs, callee) {
-    var name = vargs.shift(), cause, context, options = {}
+    var label = vargs.shift(), cause, context, options = {}
     if (vargs[0] instanceof Error) {
         options.cause = vargs.shift()
         options.causes = [ options.cause ]
@@ -29,7 +29,7 @@ function vargs (vargs, callee) {
         options[key] = vargs[0][key]
     }
     return {
-        name: name,
+        label: label,
         context: context,
         options: options,
         callee: options.callee || callee
@@ -42,7 +42,7 @@ function interrupt (args, qualifier, _Error) {
     var body = ''
     var dump = ''
     var cause = ''
-    var qualified = qualifier + '#' + args.name
+    var qualified = qualifier + '#' + args.label
     if (keys != 0 || args.options.causes.length != 0) {
         body = '\n'
         if (keys != 0) {
@@ -84,7 +84,7 @@ function interrupt (args, qualifier, _Error) {
     }
     error.qualifier = qualifier
     error.qualified = qualified
-    error.name = args.name
+    error.label = args.label
     return error
 }
 
@@ -93,7 +93,7 @@ exports.createInterrupterCreator = function (Error) {
         Error = { captureStackTrace: function () {} }
     }
     return function (qualifier) {
-        function ejector (name, cause, context, options) {
+        function ejector (label, cause, context, options) {
             return interrupt(vargs(slice.call(arguments), ejector), qualifier, Error)
         }
         ejector.assert = function (condition) {
