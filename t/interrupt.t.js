@@ -6,9 +6,12 @@ function prove (assert) {
         try {
             throw new Error('foo')
         } catch (e) {
+            var error = new Error('x')
+            error.code = 'ENOENT'
             throw interrupt('bar', {
                 url: 'http://127.0.0.1:8080/foo',
                 statusCode: 404,
+                error: error,
                 headers: {
                     sent: {
                         'content-type': 'text/plain',
@@ -18,7 +21,7 @@ function prove (assert) {
                         'content-type': 'text/plain',
                         'content-length': '10'
                     }
-                },
+                }
             }, {
                 properties: {
                     value: 1

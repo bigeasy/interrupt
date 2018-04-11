@@ -46,7 +46,16 @@ function interrupt (args, qualifier, _Error) {
     if (keys != 0 || args.options.causes.length != 0) {
         body = '\n'
         if (keys != 0) {
-            dump = '\n' + JSON5.stringify(args.context, null, 4) + '\n'
+            dump = '\n' + JSON5.stringify(args.context, function (key, value) {
+                if (value instanceof Error) {
+                    var object = { message: value.message, stack: value.stack }
+                    for (var key in value) {
+                        object[key] = value[key]
+                    }
+                    return object
+                }
+                return value
+            }, 4) + '\n'
         }
 
         for (var i = 0, I = args.options.causes.length; i < I; i++) {
