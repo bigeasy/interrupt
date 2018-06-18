@@ -1,6 +1,10 @@
 
 Interrupt: bigeasy.example#quux
 
+{
+    a: 1
+}
+
 cause:
 
     Error: foo
