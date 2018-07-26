@@ -1,0 +1,9 @@
+/.*
+/*.md
+/bootstrap_.js
+/benchmark
+/coverage
+/docs
+/node_modules
+/notes
+/t
