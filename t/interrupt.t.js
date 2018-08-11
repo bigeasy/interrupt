@@ -1,50 +1,44 @@
-require('proof')(13, prove)
+require('proof')(15, prove)
 
 function prove (assert) {
-    var interrupt = require('..').createInterrupter('bigeasy.example')
+    var Interrupt = require('..').createInterrupter('bigeasy.example')
     try {
-        try {
-            throw new Error('foo')
-        } catch (e) {
-            var error = new Error('x')
-            error.code = 'ENOENT'
-            throw interrupt('bar', {
-                url: 'http://127.0.0.1:8080/foo',
-                statusCode: 404,
-                error: error,
-                headers: {
-                    sent: {
-                        'content-type': 'text/plain',
-                        'content-length': '10'
-                    },
-                    received: {
-                        'content-type': 'text/plain',
-                        'content-length': '10'
-                    }
+        var error = new Error('x')
+        error.code = 'ENOENT'
+        throw new Interrupt('bar', {
+            url: 'http://127.0.0.1:8080/foo',
+            statusCode: 404,
+            error: error, // Test JSON5 serialization of error ojbects.
+            headers: {
+                sent: {
+                    'content-type': 'text/plain',
+                    'content-length': '10'
+                },
+                received: {
+                    'content-type': 'text/plain',
+                    'content-length': '10'
                 }
-            }, {
-                properties: {
-                    value: 1
-                }
-            })
-        }
+            }
+        }, {
+            value: 1
+        })
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#bar$/m.test(e.message), 'message')
         assert(e.qualified, 'bigeasy.example#bar', 'interrupt')
-        assert(e.value, 1, 'properties set')
         assert(e.statusCode, 404, 'context set')
+        assert(e.value, 1, 'properties set')
     }
     try {
         try {
             throw new Error('foo')
         } catch (e) {
-            throw interrupt('bar', e)
+            throw new Interrupt('bar', { cause: e })
         }
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#bar$/m.test(e.message), 'no context')
-        assert(e.cause.message, 'foo', 'cause')
+        assert(e.causes[0].message, 'foo', 'cause')
         // TODO Assert cause.
     }
     try {
@@ -55,47 +49,49 @@ function prove (assert) {
                 try {
                     throw new Error('bar')
                 } catch (bar) {
-                    throw interrupt('baz', bar)
+                    throw new Interrupt('baz', { cause: bar, value: 2 })
                 }
             } catch (baz) {
                 console.log(baz.stack)
-                throw interrupt('quux', [ foo, baz, 1 ])
+                throw new Interrupt('quux', { causes: [[ foo ], [ baz, { value: 1 } ], [ 1 ]] })
             }
         }
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#quux$/m.test(e.message), 'nested mulitple causes')
-        assert(e.causes[1].cause.message, 'bar', 'nested')
+        assert(e.contexts[1].value, 1, 'cause context')
+        assert(e.causes[1].causes[0].message, 'bar', 'nested')
         assert(e.causes[2], 1, 'nested and not an `Error`')
         // TODO Assert cause.
     }
     try {
-        throw interrupt('bar', { depth: 2, key: 'value' })
+        throw new Interrupt('bar', { depth: 2, key: 'value' })
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#bar$/m.test(e.message), 'no cause')
     }
     try {
-        throw interrupt('bar')
+        throw new Interrupt('bar')
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#bar$/m.test(e.message), 'nothing but message')
     }
 
-    interrupt.assert(true, 'assert')
+    Interrupt.assert(true, 'assert')
     try {
-        interrupt.assert(false, 'assert')
+        Interrupt.assert(false, 'assert')
     } catch (e) {
         console.log(e.stack)
         assert(/^bigeasy.example#assert$/m.test(e.message), 'assert failed')
     }
 
-    interrupt = require('../bootstrap').createInterrupterCreator({})('bigeasy.example')
+    Interrupt = require('../bootstrap').createInterrupterCreator(function () {})('bigeasy.example')
 
     try {
-        throw interrupt('bar')
+        throw new Interrupt('foo', { causes: [[ new Interrupt('bar', { value: 1 } ), { value: 1 } ]] })
     } catch (e) {
-        console.log(e.stack)
-        assert(/^bigeasy.example#bar$/m.test(e.message), 'no captureStackTrace')
+        console.log(e.message)
+        assert(e.stack == null, 'no capture stack trace')
+        assert(/^bigeasy.example#foo$/m.test(e.message), 'no captureStackTrace')
     }
 }

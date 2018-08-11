@@ -17,7 +17,8 @@ function parse (stack, isRoot) {
             name: $[2],
             stack: null,
             context: null,
-            causes: []
+            causes: [],
+            contexts: []
         }
         stack = stack.replace(/.*?\n+(?=[^\n])/, '')
         var chunks = stack.split(/^(?:cause|stack):$/gm)
@@ -27,7 +28,15 @@ function parse (stack, isRoot) {
         }
         object.stack = unstacker.parse(chunks.pop())
         while (chunks.length) {
-            object.causes.push(parse(chunks.shift().replace(/^    /gm, ''), false))
+            var dedented = chunks.shift().replace(/^    /gm, '')
+            var $ = /(\n\{[^\u0000]*?\n\})([^\u0000]*)/m.exec(dedented)
+            if ($) {
+                object.contexts.push(JSON5.parse($[1]))
+                object.causes.push(parse($[2], false))
+            } else {
+                object.contexts.push(null)
+                object.causes.push(parse(dedented, false))
+            }
         }
         return object
     }

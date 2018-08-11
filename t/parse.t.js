@@ -1,4 +1,4 @@
-require('proof')(3, prove)
+require('proof')(4, prove)
 
 function prove (okay) {
     var fs = require('fs')
@@ -9,4 +9,5 @@ function prove (okay) {
     okay(parsed.context, { a: 1 }, 'parsed context')
     okay(parsed.causes[2], '1', 'parsed nested')
     okay(parse(''), null, 'parsed nope')
+    okay(parsed.causes[1].contexts[0], { a: { c: 3  } }, 'parsed error context')
 }
