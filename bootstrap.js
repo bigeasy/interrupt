@@ -98,7 +98,7 @@ exports.createInterrupterCreator = function (Error) {
         var Qualified = Interrupt.bind(null, qualifier)
         Qualified.assert = function (condition, label, context, properties, callee) {
             if (!condition) {
-                throw new Interrupt(qualifier, label, condition, properties, coalesce(callee, Qualified.assert))
+                throw new Interrupt(qualifier, label, context, properties, coalesce(callee, Qualified.assert))
             }
         }
         return Qualified
