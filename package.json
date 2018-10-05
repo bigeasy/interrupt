@@ -21,7 +21,7 @@
     "dependencies":
     {
                             "extant":                       "1.0.x",
-                            "json5":                        "2.0.1",
+                            "json5":                        "2.1.0",
                             "stacktrace-parser":            "0.1.4"
     },
     "devDependencies":
