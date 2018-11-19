@@ -2,10 +2,8 @@ var util = require('util')
 
 var coalesce = require('extant')
 
-var JSON5 = require('json5')
-
 function stringify (object) {
-    return JSON5.stringify(object, function (key, value) {
+    return JSON.stringify(object, function (key, value) {
         if (value instanceof Error) {
             var object = { message: value.message, stack: value.stack }
             for (var key in value) {

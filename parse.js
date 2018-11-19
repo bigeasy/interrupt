@@ -2,7 +2,6 @@ module.exports = function (stack) {
     return parse(stack, true)
 }
 
-var JSON5 = require('json5')
 var unstacker = require('stacktrace-parser')
 
 function parse (stack, isRoot) {
@@ -24,14 +23,14 @@ function parse (stack, isRoot) {
         var chunks = stack.split(/^(?:cause|stack):$/gm)
         var context = chunks.shift()
         if (/\S/.test(context)) {
-            object.context = JSON5.parse(context)
+            object.context = JSON.parse(context)
         }
         object.stack = unstacker.parse(chunks.pop())
         while (chunks.length) {
             var dedented = chunks.shift().replace(/^    /gm, '')
             var $ = /(\n\{[^\u0000]*?\n\})([^\u0000]*)/m.exec(dedented)
             if ($) {
-                object.contexts.push(JSON5.parse($[1]))
+                object.contexts.push(JSON.parse($[1]))
                 object.causes.push(parse($[2], false))
             } else {
                 object.contexts.push(null)

@@ -2,7 +2,7 @@
 Interrupt: bigeasy.example#quux
 
 {
-    a: 1,
+    "a": 1
 }
 
 cause:
@@ -26,15 +26,15 @@ cause:
     cause:
 
         {
-            a: {
-               c: 3,
-            },
+            "a": {
+               "c": 3
+            }
         }
 
         Error: bar
 
         {
-            b: 2,
+            "b": 2
         }
 
             at prove (/Users/alan/git/ecma/bluey/interrupt/t/interrupt.t.js:53:27)
