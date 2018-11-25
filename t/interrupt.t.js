@@ -1,6 +1,6 @@
 require('proof')(15, prove)
 
-function prove (assert) {
+function prove (okay) {
     var Interrupt = require('..').createInterrupter('bigeasy.example')
     try {
         var error = new Error('x')
@@ -24,10 +24,10 @@ function prove (assert) {
         })
     } catch (e) {
         console.log(e.stack)
-        assert(/^bigeasy.example#bar$/m.test(e.message), 'message')
-        assert(e.qualified, 'bigeasy.example#bar', 'interrupt')
-        assert(e.statusCode, 404, 'context set')
-        assert(e.value, 1, 'properties set')
+        okay(/^bigeasy.example#bar$/m.test(e.message), 'message')
+        okay(e.qualified, 'bigeasy.example#bar', 'interrupt')
+        okay(e.statusCode, 404, 'context set')
+        okay(e.value, 1, 'properties set')
     }
     try {
         try {
@@ -37,8 +37,8 @@ function prove (assert) {
         }
     } catch (e) {
         console.log(e.stack)
-        assert(/^bigeasy.example#bar$/m.test(e.message), 'no context')
-        assert(e.causes[0].message, 'foo', 'cause')
+        okay(/^bigeasy.example#bar$/m.test(e.message), 'no context')
+        okay(e.causes[0].message, 'foo', 'cause')
         // TODO Assert cause.
     }
     try {
@@ -58,23 +58,23 @@ function prove (assert) {
         }
     } catch (e) {
         console.log(e.stack)
-        assert(/^bigeasy.example#quux$/m.test(e.message), 'nested mulitple causes')
-        assert(e.contexts[1].value, 1, 'cause context')
-        assert(e.causes[1].causes[0].message, 'bar', 'nested')
-        assert(e.causes[2], 1, 'nested and not an `Error`')
+        okay(/^bigeasy.example#quux$/m.test(e.message), 'nested mulitple causes')
+        okay(e.contexts[1].value, 1, 'cause context')
+        okay(e.causes[1].causes[0].message, 'bar', 'nested')
+        okay(e.causes[2], 1, 'nested and not an `Error`')
         // TODO Assert cause.
     }
     try {
         throw new Interrupt('bar', { depth: 2, key: 'value' })
     } catch (e) {
         console.log(e.stack)
-        assert(/^bigeasy.example#bar$/m.test(e.message), 'no cause')
+        okay(/^bigeasy.example#bar$/m.test(e.message), 'no cause')
     }
     try {
         throw new Interrupt('bar')
     } catch (e) {
         console.log(e.stack)
-        assert(/^bigeasy.example#bar$/m.test(e.message), 'nothing but message')
+        okay(/^bigeasy.example#bar$/m.test(e.message), 'nothing but message')
     }
 
     Interrupt.assert(true, 'assert')
@@ -82,7 +82,7 @@ function prove (assert) {
         Interrupt.assert(false, 'assert')
     } catch (e) {
         console.log(e.stack)
-        assert(/^bigeasy.example#assert$/m.test(e.message), 'assert failed')
+        okay(/^bigeasy.example#assert$/m.test(e.message), 'assert failed')
     }
 
     Interrupt = require('../bootstrap').createInterrupterCreator(function () {})('bigeasy.example')
@@ -91,7 +91,7 @@ function prove (assert) {
         throw new Interrupt('foo', { causes: [[ new Interrupt('bar', { value: 1 } ), { value: 1 } ]] })
     } catch (e) {
         console.log(e.message)
-        assert(e.stack == null, 'no capture stack trace')
-        assert(/^bigeasy.example#foo$/m.test(e.message), 'no captureStackTrace')
+        okay(e.stack == null, 'no capture stack trace')
+        okay(/^bigeasy.example#foo$/m.test(e.message), 'no captureStackTrace')
     }
 }
