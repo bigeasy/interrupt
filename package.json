@@ -21,7 +21,7 @@
     "dependencies":
     {
                             "extant":                       "1.0.x",
-                            "stacktrace-parser":            "0.1.4"
+                            "stacktrace-parser":            "0.1.5"
     },
     "devDependencies":
     {
