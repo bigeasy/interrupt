@@ -20,16 +20,15 @@
     },
     "dependencies":
     {
-                            "extant":                       "1.0.x",
-                            "stacktrace-parser":            "0.1.5"
+                            "extant":                       "1.0.x"
     },
     "devDependencies":
     {
-                            "proof":                        "7.0.x"
+                            "stacktrace-parser":            "0.1.5"
     },
     "main":                 "interrupt",
     "scripts":
     {
-                            "test": "proof test test/*.t.js"
+                            "test": "mocha"
     }
 }
