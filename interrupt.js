@@ -45,10 +45,10 @@ exports.create = function (name) {
             const [
                 message, causes, context, properties, callee
             ] = _vargs(vargs, null)
-            const keys = Object.keys(context).length
             let dump = message
             const contexts = []
             const _causes = []
+            const keys = Object.keys(context).length
             if (keys != 0 || causes.length) {
                 dump += '\n'
 
@@ -79,6 +79,7 @@ exports.create = function (name) {
 
             dump += '\nstack:\n'
             super(dump)
+            this.label = message
 
             // FYI It is faster to use `Error.captureStackTrace` again than
             // it is to try to strip the stack frames created by `Error`
