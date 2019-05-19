@@ -24,7 +24,7 @@
     },
     "devDependencies":
     {
-                            "stacktrace-parser":            "0.1.5"
+                            "stacktrace-parser":            "0.1.6"
     },
     "main":                 "interrupt",
     "scripts":
