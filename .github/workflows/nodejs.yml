@@ -27,7 +27,7 @@ jobs:
         CI: true
     - name: generate codecov report
       run: nyc report --reporter=text-lcov > coverage.lcov
-    - uses: codecov/codecov-action@v1.0.2
-      with:
-        token: ${{secrets.CODECOV_TOKEN}} #required
-        file: ./coverage.lcov
+    - name: ship coverage to codecov
+      run: codecov
+      env:
+        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
