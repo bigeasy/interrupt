@@ -25,3 +25,5 @@ jobs:
       run: nyc npm test
       env:
         CI: true
+    - name: ship coverage to codecov
+      run: codecov
