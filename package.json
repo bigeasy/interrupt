@@ -24,11 +24,12 @@
     },
     "devDependencies":
     {
+                            "proof":                        "^8.0.0-alpha.7",
                             "stacktrace-parser":            "0.1.7"
     },
     "main":                 "interrupt",
     "scripts":
     {
-                            "test": "mocha"
+                            "test": "proof test/*.test.js"
     }
 }
