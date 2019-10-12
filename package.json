@@ -20,7 +20,7 @@
     },
     "dependencies":
     {
-                            "extant":                       "1.0.x"
+                            "extant":                       "^1.0.15"
     },
     "devDependencies":
     {
