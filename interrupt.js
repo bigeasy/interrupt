@@ -80,6 +80,8 @@ exports.create = function (name) {
             dump += '\nstack:\n'
             super(dump)
 
+            this.name = name
+
             // FYI It is faster to use `Error.captureStackTrace` again than
             // it is to try to strip the stack frames created by `Error`
             // using a regular expression or string manipulation. You know
@@ -90,10 +92,10 @@ exports.create = function (name) {
             }
 
             const assign = Object.assign({
-                label: message, name, causes: _causes, contexts
+                label: message, causes: _causes, contexts
             }, context, properties)
             for (const property in assign) {
-                Object.defineProperty(this, property, { value: context[property] })
+                Object.defineProperty(this, property, { value: assign[property] })
             }
         }
 
