@@ -79,7 +79,6 @@ exports.create = function (name) {
 
             dump += '\nstack:\n'
             super(dump)
-            this.label = message
 
             // FYI It is faster to use `Error.captureStackTrace` again than
             // it is to try to strip the stack frames created by `Error`
@@ -90,12 +89,12 @@ exports.create = function (name) {
                 Error.captureStackTrace(this, callee)
             }
 
-            this.name = name
-
-            Object.assign(this, context, properties)
-
-            this.causes = _causes
-            this.contexts = contexts
+            const assign = Object.assign({
+                label: message, name, causes: _causes, contexts
+            }, context, properties)
+            for (const property in assign) {
+                Object.defineProperty(this, property, { value: context[property] })
+            }
         }
 
         static assert (condition, ...vargs) {
