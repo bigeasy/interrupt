@@ -24,7 +24,7 @@
     },
     "devDependencies":
     {
-                            "proof":                        "8.0.0-alpha.7",
+                            "proof":                        "8.0.0-alpha.12",
                             "stacktrace-parser":            "0.1.7"
     },
     "main":                 "interrupt",
