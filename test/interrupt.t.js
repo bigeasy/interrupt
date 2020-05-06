@@ -1,4 +1,4 @@
-require('proof')(25, (okay) => {
+require('proof')(26, (okay) => {
     const Interrupt = require('..')
     const Test = { Error: Interrupt.create('Test.Error') }
     {
@@ -9,6 +9,7 @@ require('proof')(25, (okay) => {
             throw new Test.Error
         } catch (error) {
             console.log(error.stack)
+            okay(error.name, 'Test.Error', 'error name')
             okay(error instanceof Test.Error, 'is derived error')
             okay(error instanceof Interrupt.Error, 'is interrupt error')
             okay(error instanceof Error, 'is error')

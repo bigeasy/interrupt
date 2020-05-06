@@ -39,7 +39,7 @@ exports.create = function (name) {
         constructor (...vargs) {
             if (vargs.length == 0) {
                 super()
-                this.name = name
+                Object.defineProperty(this, "name", { value: name, enumerable: false })
                 return
             }
             const [
@@ -80,7 +80,7 @@ exports.create = function (name) {
             dump += '\nstack:\n'
             super(dump)
 
-            this.name = name
+            Object.defineProperty(this, "name", { value: name, enumerable: false })
 
             // FYI It is faster to use `Error.captureStackTrace` again than
             // it is to try to strip the stack frames created by `Error`
