@@ -25,7 +25,7 @@
     "devDependencies":
     {
                             "proof":                        "^9.0.0",
-                            "stacktrace-parser":            "0.1.9"
+                            "stacktrace-parser":            "0.1.10"
     },
     "main":                 "interrupt",
     "scripts":
