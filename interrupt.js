@@ -1,3 +1,4 @@
+const assert = require('assert')
 const coalesce = require('extant')
 
 function stringify (object) {
@@ -32,70 +33,86 @@ function _vargs (vargs, callee) {
     ]
 }
 
-class Interrupt extends Error {}
+class Interrupt extends Error {
+    constructor (name, vargs) {
+        if (vargs.length == 0) {
+            super()
+            Object.defineProperty(this, "name", {
+                value: this.constructor.name,
+                enumerable: false
+            })
+            return
+        }
+        const [
+            message, causes, context, properties, callee
+        ] = _vargs(vargs, null)
+        let dump = message
+        const contexts = []
+        const _causes = []
+        const keys = Object.keys(context).length
+        if (keys != 0 || causes.length) {
+            dump += '\n'
 
-exports.create = function (name) {
-    const interrupt = class extends Interrupt {
+            if (keys != 0) {
+                dump += '\n' + stringify(context) + '\n'
+            }
+
+            for (let i = 0, I = causes.length; i < I; i++) {
+                const cause = Array.isArray(causes[i]) ? causes[i] : [ causes[i] ]
+                const text = (cause[0] instanceof Error)
+                    ? coalesce(cause[0].stack, cause[0].message)
+                    : cause[0].toString()
+                const indented = text.replace(/^/gm, '    ')
+                if (cause.length == 1) {
+                    dump += '\ncause:\n\n' + indented + '\n'
+                } else {
+                    const contextualized = stringify(cause[1]).replace(/^/gm, '    ')
+                    dump += '\ncause:\n\n' + contextualized + '\n\n' + indented + '\n'
+                }
+                _causes.push(cause[0])
+                // TODO Note that nullishness makes this useful and `||`
+                // doesn't always do it.
+                contexts.push(coalesce(cause[1]))
+            }
+        } else {
+            dump += '\n'
+        }
+
+        dump += '\nstack:\n'
+        super(dump)
+
+        Object.defineProperty(this, "name", {
+            value: this.constructor.name,
+            enumerable: false
+        })
+
+        // FYI It is faster to use `Error.captureStackTrace` again than
+        // it is to try to strip the stack frames created by `Error`
+        // using a regular expression or string manipulation. You know
+        // because you tried.
+
+        if (callee != null) {
+            Error.captureStackTrace(this, callee)
+        }
+
+        const assign = Object.assign({
+            label: message, causes: _causes, contexts
+        }, context, properties)
+        for (const property in assign) {
+            assert(property != 'name')
+            Object.defineProperty(this, property, { value: assign[property] })
+        }
+    }
+}
+
+exports.create = function (name, superclass = Interrupt) {
+    assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
+    const interrupt = class extends superclass {
         constructor (...vargs) {
-            if (vargs.length == 0) {
-                super()
-                Object.defineProperty(this, "name", { value: name, enumerable: false })
-                return
-            }
-            const [
-                message, causes, context, properties, callee
-            ] = _vargs(vargs, null)
-            let dump = message
-            const contexts = []
-            const _causes = []
-            const keys = Object.keys(context).length
-            if (keys != 0 || causes.length) {
-                dump += '\n'
-
-                if (keys != 0) {
-                    dump += '\n' + stringify(context) + '\n'
-                }
-
-                for (let i = 0, I = causes.length; i < I; i++) {
-                    const cause = Array.isArray(causes[i]) ? causes[i] : [ causes[i] ]
-                    const text = (cause[0] instanceof Error)
-                        ? coalesce(cause[0].stack, cause[0].message)
-                        : cause[0].toString()
-                    const indented = text.replace(/^/gm, '    ')
-                    if (cause.length == 1) {
-                        dump += '\ncause:\n\n' + indented + '\n'
-                    } else {
-                        const contextualized = stringify(cause[1]).replace(/^/gm, '    ')
-                        dump += '\ncause:\n\n' + contextualized + '\n\n' + indented + '\n'
-                    }
-                    _causes.push(cause[0])
-                    // TODO Note that nullishness makes this useful and `||`
-                    // doesn't always do it.
-                    contexts.push(coalesce(cause[1]))
-                }
+            if (superclass == Interrupt) {
+                super(name, vargs)
             } else {
-                dump += '\n'
-            }
-
-            dump += '\nstack:\n'
-            super(dump)
-
-            Object.defineProperty(this, "name", { value: name, enumerable: false })
-
-            // FYI It is faster to use `Error.captureStackTrace` again than
-            // it is to try to strip the stack frames created by `Error`
-            // using a regular expression or string manipulation. You know
-            // because you tried.
-
-            if (callee != null) {
-                Error.captureStackTrace(this, callee)
-            }
-
-            const assign = Object.assign({
-                label: message, causes: _causes, contexts
-            }, context, properties)
-            for (const property in assign) {
-                Object.defineProperty(this, property, { value: assign[property] })
+                super(...vargs)
             }
         }
 

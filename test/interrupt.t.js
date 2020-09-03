@@ -1,4 +1,4 @@
-require('proof')(26, (okay) => {
+require('proof')(30, okay => {
     const Interrupt = require('..')
     const Test = { Error: Interrupt.create('Test.Error') }
     {
@@ -104,5 +104,25 @@ require('proof')(26, (okay) => {
             okay(/^Test\.Error: message$/m.test(error.stack), 'assert stack header')
             okay(/^message$/m.test(error.message), 'assert message')
         }
+    }
+    {
+        Test.SubError = Interrupt.create('Test.SubError', Test.Error)
+        try {
+            throw new Test.SubError('message')
+        } catch (error) {
+            console.log(error.stack)
+            okay(error instanceof Test.SubError, 'is new class')
+            okay(error instanceof Test.Error, 'is subclass')
+            okay(error.name, 'Test.SubError', 'has correct name')
+        }
+    }
+    {
+        const test = []
+        try {
+            Interrupt.create('Test.BadError', Error)
+        } catch (error) {
+            test.push(error.name)
+        }
+        okay(test, [ 'AssertionError' ], 'incorrect superclass type')
     }
 })
