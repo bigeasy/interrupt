@@ -34,7 +34,7 @@ function _message (messages, varg, merge) {
         }
         return varg
     }
-    const message = messages[varg[0][0]]
+    const message = messages[varg]
     if (message != null) {
         merge.code = varg
         return [ message ]
