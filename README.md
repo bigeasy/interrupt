@@ -30,11 +30,12 @@ Interrupt as an `Error` generator allows me to gather up errors from many
 different waiting asynchronous calls and report them in a bouquet of failures
 on the command line and in my server logs. Interrupt supports nested
 exceptions, context for exceptions and complete error reports on fatal error
-exit. It does this using the `stack` property which is specific to Node.js.
+exit.
 
-Interrupt does not attempt to create a library that is useful across all
-JavaScript implementations. Why not attempt to make it work across all
-implementations?
+It does this using the `stack` property which is specific to Node.js and
+Interrupt is therefore Node.js specific. If there is interest in using Interrupt
+outside of Node.js, let me know where and I'll have a look at what it would take
+to adapt it to a new JavaScript environment.
 
 In JavaScript, Error defined as some arbitrary object with an `Error` type and a
 `message` property. It is, in itself, not very useful.
@@ -80,7 +81,49 @@ aesthetically unpleasing. Interrupt makes it possible to throw a detailed
 exception with a one liner (or one statementer.)
 
 ```javascript
-var interrupt = require('.').createInterrupter('module')
+const Interrupt = reuqire('interrupt')
+
+class Foo {
+    constructor () {
+    }
+
+    static Error = Interrupt.create('Foo.Error', 'FOO', {
+        'NOT_FOUND': 'cannot get %s, item does not exist',
+        'KEY_NOT_STRING': 'key must be a string'
+    })
+
+    put (key, value) {
+        Foo.Error.assert(typeof key == 'string', 'KEY_NOT_STRING')
+        this._values[key] = value
+    }
+
+    get (key) {
+        Foo.Error.assert(typeof key == 'string', 'KEY_NOT_STRING')
+        const got = this._values[key]
+        if (got == null) {
+            throw new Foo.Error([ 'NOT_FOUND', key ])
+        }
+    }
+}
+
+const foo = new Foo
+
+try {
+    foo.put(1, 'a')
+} catch (error) {
+    assert(error.code == 'FOO_KEY_NOT_STRING')
+    console.log(error.stack)
+}
+
+foo.put('a', 1)
+
+try {
+    foo.get('b')
+} catch(error) {
+    console.log(error.stack)
+}
+
+interrupt = require('.').createInterrupter('module')
 
 var object = null
 try {
