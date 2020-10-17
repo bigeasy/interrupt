@@ -11,7 +11,7 @@ require('proof')(35, okay => {
             console.log(error.stack)
             okay(error.name, 'Test.Error', 'error name')
             okay(error instanceof Test.Error, 'is derived error')
-            okay(error instanceof Interrupt.Error, 'is interrupt error')
+            okay(error instanceof Interrupt, 'is interrupt error')
             okay(error instanceof Error, 'is error')
             okay(/^Test\.Error$/m.test(error.stack), 'no message stack header')
             okay(error.message, '', 'no message')

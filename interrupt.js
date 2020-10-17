@@ -123,32 +123,32 @@ class Interrupt extends Error {
             Object.defineProperty(this, property, { value: assign[property] })
         }
     }
-}
 
-exports.create = function (name, ...vargs) {
-    const prefix = typeof vargs[0] == 'string' ? vargs.shift() : name.toUpperCase()
-    const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
-    const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
-    assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
-    const interrupt = class extends superclass {
-        constructor (...vargs) {
-            if (superclass == Interrupt) {
-                super(messages, name, vargs)
-            } else {
-                super(...vargs)
+    static create (name, ...vargs) {
+        const prefix = typeof vargs[0] == 'string' ? vargs.shift() : name.toUpperCase()
+        const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
+        const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
+        assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
+        const interrupt = class extends superclass {
+            constructor (...vargs) {
+                if (superclass == Interrupt) {
+                    super(messages, name, vargs)
+                } else {
+                    super(...vargs)
+                }
+            }
+
+            static assert (condition, ...vargs) {
+                if (!condition) {
+                    vargs.unshift(null)
+                    vargs.push(interrupt.assert)
+                    throw new (Function.prototype.bind.apply(interrupt, vargs))
+                }
             }
         }
-
-        static assert (condition, ...vargs) {
-            if (!condition) {
-                vargs.unshift(null)
-                vargs.push(interrupt.assert)
-                throw new (Function.prototype.bind.apply(interrupt, vargs))
-            }
-        }
+        Object.defineProperty(interrupt, "name", { value: name })
+        return interrupt
     }
-    Object.defineProperty(interrupt, "name", { value: name })
-    return interrupt
 }
 
-exports.Error = Interrupt
+module.exports = Interrupt
