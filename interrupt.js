@@ -1,5 +1,7 @@
+const util = require('util')
 const assert = require('assert')
 const coalesce = require('extant')
+const departure = require('departure')
 
 function stringify (object) {
     return JSON.stringify(object, function (key, value) {
@@ -23,18 +25,36 @@ function _causes (vargs) {
     return []
 }
 
-function _vargs (vargs, callee) {
+function _message (messages, varg, merge) {
+    if (Array.isArray(varg)) {
+        const message = messages[varg[0]]
+        if (message != null) {
+            merge.code = varg[0]
+            varg[0] = message
+        }
+        return varg
+    }
+    const message = messages[varg[0][0]]
+    if (message != null) {
+        merge.code = varg
+        return [ message ]
+    }
+    return [ varg ]
+}
+
+function _vargs (messages, vargs, callee) {
+    const merge = {}
     return [
-        vargs.shift(),
+        util.format.apply(util, _message(messages, vargs.shift(), merge)),
         _causes(vargs),
-        coalesce(vargs.shift(), {}),
+        { ...merge, ...coalesce(vargs.shift(), {}) },
         coalesce(vargs.shift(), {}),
         coalesce(callee, vargs.shift())
     ]
 }
 
 class Interrupt extends Error {
-    constructor (name, vargs) {
+    constructor (messages, name, vargs) {
         if (vargs.length == 0) {
             super()
             Object.defineProperty(this, "name", {
@@ -45,7 +65,7 @@ class Interrupt extends Error {
         }
         const [
             message, causes, context, properties, callee
-        ] = _vargs(vargs, null)
+        ] = _vargs(messages, vargs, null)
         let dump = message
         const contexts = []
         const _causes = []
@@ -105,12 +125,15 @@ class Interrupt extends Error {
     }
 }
 
-exports.create = function (name, superclass = Interrupt) {
+exports.create = function (name, ...vargs) {
+    const prefix = typeof vargs[0] == 'string' ? vargs.shift() : name.toUpperCase()
+    const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
+    const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
     assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
     const interrupt = class extends superclass {
         constructor (...vargs) {
             if (superclass == Interrupt) {
-                super(name, vargs)
+                super(messages, name, vargs)
             } else {
                 super(...vargs)
             }
@@ -118,9 +141,9 @@ exports.create = function (name, superclass = Interrupt) {
 
         static assert (condition, ...vargs) {
             if (!condition) {
-                const bound = [ null ]
-                bound.push.apply(bound, _vargs(vargs, interrupt.assert))
-                throw new (Function.prototype.bind.apply(interrupt, bound))
+                vargs.unshift(null)
+                vargs.push(interrupt.assert)
+                throw new (Function.prototype.bind.apply(interrupt, vargs))
             }
         }
     }

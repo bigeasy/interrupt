@@ -1,4 +1,4 @@
-require('proof')(30, okay => {
+require('proof')(31, okay => {
     const Interrupt = require('..')
     const Test = { Error: Interrupt.create('Test.Error') }
     {
@@ -124,5 +124,12 @@ require('proof')(30, okay => {
             test.push(error.name)
         }
         okay(test, [ 'AssertionError' ], 'incorrect superclass type')
+    }
+    {
+        try {
+            throw new Test.Error([ 'formatted %s', 'yes' ] )
+        } catch (error) {
+            okay(/^formatted yes$/m.test(error.message), 'format message')
+        }
     }
 })
