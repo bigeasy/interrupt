@@ -154,4 +154,31 @@ require('proof')(35, okay => {
             console.log(error.stack)
         }
     }
+    {
+        const Test = {
+            Error: Interrupt.create('Test.Error', {
+                one: 'one',
+                two: 'two',
+                root: 'root'
+            })
+        }
+        const hello = new Error('hello')
+        const world = new Error('world')
+        const one = new Test.Error('one', [ hello, hello, hello ], { id: 1, x: 4 })
+        const two = new Test.Error('one', [ world, world ], { id: 1, x: 5 })
+        const three = new Test.Error('one', [ hello, world ], { id: 1, x: 6 })
+        const four = new Test.Error('two', [ hello, world ], { id: 1, x: 7 })
+        const interrupt = new Test.Error('three')
+        const error = new Test.Error('root', [
+            one, one, two, two, three, four, new Test.Error,
+            interrupt, interrupt,
+            new Test.Error('no context', new Error), 1
+        ], { id: 2, x: 8 })
+        console.log(error.stack)
+        console.log(Interrupt.dedup(error))
+        console.log(Interrupt.dedup(error, error => {
+            return [ error.name, error.code || error.message, error.id || null ]
+        }))
+        console.log(Interrupt.dedup(new Error))
+    }
 })
