@@ -135,7 +135,6 @@ class Interrupt extends Error {
     }
 
     static create (name, ...vargs) {
-        const prefix = typeof vargs[0] == 'string' ? vargs.shift() : name.toUpperCase()
         const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
         const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
         assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
