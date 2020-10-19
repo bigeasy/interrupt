@@ -1,3 +1,16 @@
+## Mon Oct 19 16:53:27 CDT 2020
+
+Could use `sprintf` to create formatted messages, but I don't know that I really
+want formatted messages. For my purposes it is enough to have the contextual
+JSON dumped and to avoid thinking too hard about how to compose an error
+message.
+
+Not even sure I like the `util.format` foratting that is there now.
+
+With the `util.format` I'm likely to duplicate arguments, one to format and one
+to the context dump, but maybe the formatted message and the context are often
+different. Dedup is enough of a win for this iteration.
+
 ## Mon Oct 19 15:41:53 CDT 2020
 
 There are some trade offs to consider with including messages in the stack
