@@ -31,6 +31,12 @@
 const Interrupt = require('.')
 //
 
+// We'll use `assert` to illustrate some of our points in this document.
+
+//
+const assert = require('assert')
+//
+
 // Now that you have `Interrupt` in your code you can define an Error class to
 // use in your application with `Interrupt.create()`.
 //
@@ -41,10 +47,6 @@ const Interrupt = require('.')
 //  * `superclass` &mdash; Optional superclass from which the new class is
 //  derrived. The given superclass **must** be a descendent of `Interrupt`. If
 //  not provided the superclass will be derived from `Interrupt` directly.
-//  * `prefix` &mdash; Optional prefix to affix to error codes. If none is
-//  provided an error prefix is generated from the error name. The default
-//  generated prefix will take the class name, strip `Error`, `.Error` from the
-//  end of the name and covert it to all upper case.
 //  * `messages` &mdash; Optional map of error codes for `util.format()` error
 //  messages.
 //
@@ -64,33 +66,31 @@ const FooError = Interrupt.create('FooError', {
 // the user not to call it directly.
 
 //
-console.log('FooError is a descendent of Interrupt:', FooError.prototype instanceof Interrupt)
+assert(FooError.prototype instanceof Interrupt)
 //
 
 // The generated `FooError` class has a `messages` property that will list the
 // messages by error code.
 
 //
-console.log('FooError codes and messages...')
+console.log('--- FooError codes and messages ---\n')
 
-for (const code of FooError.messages) {
-    console.log(`${code} => ${FooError.messages[code]}`)
+for (const code in FooError.messages) {
+    console.log('%s => %s', code, FooError.messages[code])
 }
+
 //
 
 // Now we can raise exceptions of type `FooError`.
-//
-// **TODO** Prefixes are too much magic. This looks wrong. Let's go ahead and do
-// the error messages first.
-//
-// **TODO** Also, for your purposes, the code can be disambiguated by the type
-// of class that throws the code.
 
 //
+console.log('\n--- Throw a FooError ---\n')
+
 try {
     throw new FooError('FOO_NOT_READY')
 } catch (error) {
-    assert(error.code == 'FOO_NOT_FOUND')
-    console.log(`Caught error; code ${error.code}`)
+    assert(error.code == 'FOO_NOT_READY')
+    console.log('Caught error of type %s with code %s. Stack trace follows.\n', error.name, error.code)
+
     console.log(error.stack)
 }

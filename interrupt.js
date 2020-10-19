@@ -155,7 +155,8 @@ class Interrupt extends Error {
                 }
             }
         }
-        Object.defineProperty(interrupt, "name", { value: name })
+        Object.defineProperty(interrupt, 'name', { value: name })
+        Object.defineProperty(interrupt, 'messages', { value: messages })
         return interrupt
     }
 
