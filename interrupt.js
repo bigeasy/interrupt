@@ -51,7 +51,6 @@ function _vargs (messages, vargs, callee) {
         util.format.apply(util, _message(messages, vargs.shift(), merge)),
         _causes(vargs),
         { ...merge, ...coalesce(vargs.shift(), {}) },
-        coalesce(vargs.shift(), {}),
         coalesce(callee, vargs.shift())
     ]
 }
@@ -72,21 +71,21 @@ class Interrupt extends Error {
             return
         }
         const [
-            message, causes, context, properties, callee
+            message, $causes, context, callee
         ] = _vargs(messages, vargs, null)
         let dump = message
         const contexts = []
-        const _causes = []
+        const causes = []
         const keys = Object.keys(context).length
-        if (keys != 0 || causes.length) {
+        if (keys != 0 || $causes.length) {
             dump += '\n'
 
             if (keys != 0) {
                 dump += '\n' + stringify(context) + '\n'
             }
 
-            for (let i = 0, I = causes.length; i < I; i++) {
-                const cause = Array.isArray(causes[i]) ? causes[i] : [ causes[i] ]
+            for (let i = 0, I = $causes.length; i < I; i++) {
+                const cause = Array.isArray($causes[i]) ? $causes[i] : [ $causes[i] ]
                 const text = (cause[0] instanceof Error)
                     ? coalesce(cause[0].stack, cause[0].message)
                     : cause[0].toString()
@@ -97,7 +96,7 @@ class Interrupt extends Error {
                     const contextualized = stringify(cause[1]).replace(/^/gm, '    ')
                     dump += '\ncause:\n\n' + contextualized + '\n\n' + indented + '\n'
                 }
-                _causes.push(cause[0])
+                causes.push(cause[0])
                 // TODO Note that nullishness makes this useful and `||`
                 // doesn't always do it.
                 contexts.push(coalesce(cause[1]))
@@ -125,9 +124,7 @@ class Interrupt extends Error {
             Error.captureStackTrace(this, callee)
         }
 
-        const assign = Object.assign({
-            label: message, causes: _causes, contexts
-        }, context, properties)
+        const assign = { label: message, causes, contexts, ...context }
         for (const property in assign) {
             assert(property != 'name')
             Object.defineProperty(this, property, { value: assign[property] })

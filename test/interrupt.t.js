@@ -1,4 +1,4 @@
-require('proof')(35, okay => {
+require('proof')(29, okay => {
     const Interrupt = require('..')
     const Test = { Error: Interrupt.create('Test.Error') }
     {
@@ -24,23 +24,6 @@ require('proof')(35, okay => {
             console.log(error.stack)
             okay(/^Test\.Error: message$/m.test(error.stack), 'message only stack header')
             okay(/^message$/m.test(error.message), 'message only message')
-        }
-    }
-    {
-        try {
-            throw new Test.Error('message', {
-                context: 1
-            }, {
-                property: 1
-            })
-        } catch (error) {
-            console.log(error.stack)
-            okay(/^Test\.Error: message$/m.test(error.stack), 'context stack header')
-            okay(/^message$/m.test(error.message), 'context message')
-            okay(/"context"/.test(error.stack), 'stack context')
-            okay(!/"property"/.test(error.stack), 'no stack properties')
-            okay(error.context, 1, 'context set')
-            okay(error.property, 1, 'property set')
         }
     }
     {
