@@ -24,7 +24,7 @@
     },
     "devDependencies":
     {
-                            "keyify":                       "2.0.4",
+                            "keyify":                       "2.0.5",
                             "proof":                        "^9.0.0",
                             "stacktrace-parser":            "0.1.10"
     },
