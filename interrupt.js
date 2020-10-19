@@ -50,8 +50,10 @@ function _vargs (messages, vargs, callee) {
     return [
         util.format.apply(util, _message(messages, vargs.shift(), merge)),
         _causes(vargs),
-        { ...merge, ...coalesce(vargs.shift(), {}) },
-        coalesce(callee, vargs.shift())
+        typeof vargs[0] == 'object'
+            ? { ...merge, ...coalesce(vargs.shift(), {}) }
+            : merge,
+        coalesce(vargs.shift())
     ]
 }
 
