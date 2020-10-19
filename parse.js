@@ -6,8 +6,8 @@ var unstacker = require('stacktrace-parser')
 
 function parse (stack, isRoot) {
     var $
-    if (/^(?:Interrupt: )[\w\d.]+#[\w\d.]+\n[^\u0000]+\nstack:\n/m.test(stack)) {
-        stack = stack.replace(/^[^\u0000]*\n(Interrupt: [\w\d.]+#[\w\d.]+\n)/, '$1')
+    if (/^(?:Interrupt: )[\w\d.]+#[\w\d.]+\n[\S\s]+\nstack:\n/m.test(stack)) {
+        stack = stack.replace(/^[\S\s]*\n(Interrupt: [\w\d.]+#[\w\d.]+\n)/, '$1')
         stack = stack.replace(/^Interrupt: /, '')
         $ = /^([\w\d.]+)#([\w\d.]+)\n/.exec(stack)
         var object = {
@@ -28,7 +28,7 @@ function parse (stack, isRoot) {
         object.stack = unstacker.parse(chunks.pop())
         while (chunks.length) {
             var dedented = chunks.shift().replace(/^    /gm, '')
-            var $ = /(\n\{[^\u0000]*?\n\})([^\u0000]*)/m.exec(dedented)
+            var $ = /(\n\{[\S\s]*?\n\})([\S\s]*)/m.exec(dedented)
             if ($) {
                 object.contexts.push(JSON.parse($[1]))
                 object.causes.push(parse($[2], false))
