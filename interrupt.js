@@ -128,6 +128,9 @@ class Interrupt extends Error {
 
         const assign = { label: message, causes, contexts, ...context }
         for (const property in assign) {
+            // TODO No. This is bad. Not everyone is going to unit test their
+            // exceptions and you don't check this with `assert` which gets unit
+            // test coverage to it is on a clear path to production.
             assert(property != 'name')
             Object.defineProperty(this, property, { value: assign[property] })
         }
