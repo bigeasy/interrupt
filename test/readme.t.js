@@ -11,15 +11,15 @@
 // exceptions, context for exceptions and complete error reports on fatal error
 // exit.
 
+// Interrupt generates elaborate stack trace messages that include formatted
+// messages, contextual data and the stack traces of nested exceptions. You can
+// view examples of these stack traces by running this program.
+
 // It does this using the `stack` property which is specific to Node.js and
 // Interrupt is therefore Node.js specific. If there is interest in using
 // Interrupt outside of Node.js, let me know where and I'll have a look at what
 // it would take to adapt it to a new JavaScript environment.
 
-// Interrupt generates elaborate stack trace messages that include formatted
-// messages, contextual data and the stack traces of nested exceptions. You can
-// view examples of these stack traces by running this program.
-//
 // ```
 // node readme
 // ```
@@ -30,7 +30,9 @@
 // idea of where in your code the exception occurred.
 
 // Not always though, because sometimes the errors occur in the Node.js event
-// loop while handling sockets and files.
+// loop while handling sockets and files. To help out when strack traces are
+// short and stubby, Interrupt lets you add formatted messages and context
+// information, usually with a simple one liner.
 
 // This readme document is a unit test from the Interrupt source code. It uses
 // the [Proof](https://github.com/bigeasy/proof) unit test framework. We'll be
@@ -45,8 +47,8 @@
 // node test/readme.t.js
 // ```
 //
-// The only way to see the stack traces is to run this test at the command line,
-// so please do so.
+// The only way to see the elaborate stack trace output is to run this test at
+// the command line, so please do so.
 //
 // Out unit test begins here
 
@@ -89,10 +91,10 @@ require('proof')(11, okay => {
 
     //
     const FooError = Interrupt.create('FooError', {
-        'FOO_NOT_READY': 'not ready to process your request',
+        FOO_NOT_READY: 'not ready to process your request',
         FOO_INVALID_JSON: 'unable to parse JSON string',
-        'FOO_INVALID_ARGMUMENT': 'invalid argument value',
-        'FOO_NOT_FOUND': 'unable to find a value for key; key %s'
+        FOO_INVALID_ARGMUMENT: 'invalid argument value',
+        FOO_NOT_FOUND: 'unable to find a value for key; key %s'
     })
     //
 
@@ -106,22 +108,21 @@ require('proof')(11, okay => {
 
     //
     console.log('--- generated Interrupt codes and messages ---')
-
     for (const code in FooError.messages) {
         console.log('%s => %s', code, FooError.messages[code])
     }
 
     //
-    console.log('--- throwing an Interrupt derived Error ---')
 
     // We'll jump right in and show you the basic features with a quick example.
     // You're really going to want to run this from the command line to see the
     // stack trace output.
 
     //
+    console.log('--- throwing an Interrupt derived Error ---')
     {
-        // A parse function that can raise an exception. We catch the JSON
-        // expection and wrap it an exception that provides more context.
+        // _A parse function that can raise an exception. We catch the JSON
+        // expection and wrap it an exception that provides more context._
         function parse (string) {
             try {
                 return JSON.parse(string)
@@ -130,20 +131,39 @@ require('proof')(11, okay => {
             }
         }
         try {
-            // Parse some garbage.
+            // _Parse some garbage._
             parse('!#@%')
         } catch (error) {
-            // Here is all the information gathered in the `Interrupt`.
+            // _Here is all the information gathered in the `Interrupt`._
             okay(error instanceof Interrupt, 'error is an Interrupt')
             okay(error instanceof Error, 'an Interrupt is an Error')
-            okay(error.code, 'FOO_INVALID_JSON', 'code is correct')
-            okay(error.string, '!#@%', 'important dubugging context set')
+            okay(error.code, 'FOO_INVALID_JSON', 'the code is key into the message map')
+            okay(error.string, '!#@%', 'contextual property set')
             okay(error.causes.length, 1, 'we have nested causes')
             okay(error.causes[0] instanceof SyntaxError, 'the nested cause is a JSON error')
-            // You can see this from the command line.
+            // _You can see the stack trace from the command line._
             console.log(error.stack)
         }
     }
+    //
+
+    //
+
+    // **TODO**: No more catching by type claims. Point people at `rescue` for
+    // that, since that is where that happens.
+    //
+    // Here is a real to do list for the documentation.
+    //
+    //  * Formatted messages. (Really do want to use sprintf.)
+    //  * Object properties.
+    //  * Unserialized properties (just set them.)
+    //  * Named parameters.
+
+    //
+    {
+    }
+
+    //
 
     //
     // **TODO** What follows is from a first swipe. Much better to introduce the
@@ -153,8 +173,7 @@ require('proof')(11, okay => {
     // Now we can raise exceptions of type `FooError`.
 
     //
-    console.log('\n--- Throw a FooError ---\n')
-
+    console.log('\n--- throw a FooError ---\n')
     try {
         throw new FooError('FOO_NOT_READY')
     } catch (error) {
