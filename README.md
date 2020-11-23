@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/bigeasy/interrupt/branch/master/graph/badge.svg)](https://codecov.io/gh/bigeasy/interrupt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comparator function builder.
+Nested exceptions with elaborate stack traces for Node.js.
 
 | What          | Where                                         |
 | --- | --- |
