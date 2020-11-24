@@ -44,8 +44,10 @@
 // git clone git@github.com:bigeasy/interrupt.git
 // cd interrupt
 // npm install --no-package-lock --no-save
-// node test/readme.t.js
+// node --async-stack-traces test/readme.t.js
 // ```
+// Note that we are running with `--async-stack-traces` enabled and to enjoy all
+// the features discussed in this readme you need to be running Node.js 14.
 //
 // The only way to see the elaborate stack trace output is to run this test at
 // the command line, so please do so.
@@ -53,7 +55,7 @@
 // Out unit test begins here
 
 //
-require('proof')(11, okay => {
+require('proof')(16, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```
@@ -162,8 +164,470 @@ require('proof')(11, okay => {
     //
     {
     }
+    //
+
+    // ## Class Member Errors
+    //
+    // When creating an error class using Interrupt, if you want to avoid name
+    // collisions with the numerous errors that are already in the global
+    // namespace, you can assign it as a static member to a class in your module
+    // and give it a dot qualified name.
+    //
+    console.log('--- qualified Error class names ---\n')
+    {
+        function Syntax () {
+        }
+
+        Syntax.prototype.validate = function (string) {
+            Syntax.Error.assert(string != null, 'SYNTAX_IS_NULL')
+            return ~string.indexOf('hippopotomus')
+        }
+
+        Syntax.Error = Interrupt.create('Syntax.Error', {
+            SYNTAX_IS_NULL: 'the syntax validation method received a null argument'
+        })
+
+        try {
+            const syntax = new Syntax
+            console.log(`Syntax is valid? ${syntax.validate(null)}`)
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.name, 'Syntax.Error', 'name allowed to have dot qualifiers')
+        }
+    }
+    //
+
+    // These days I'm targeting Node.js 12 or greater, which has a `static`
+    // keyword that makes declaration easier.
 
     //
+    console.log('--- qualified Error class names in ES6 classes ---\n')
+    {
+        class Syntax {
+            static Error = Interrupt.create('Syntax.Error', {
+                SYNTAX_IS_NULL: 'the syntax validate method received a null argument'
+            })
+
+            validate (string) {
+                Syntax.Error.assert(string != null, 'SYNTAX_IS_NULL')
+                return ~string.indexOf('hippopotomus')
+            }
+        }
+
+        try {
+            const syntax = new Syntax
+            console.log(`Syntax is valid? ${syntax.validate(null)}`)
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.name, 'Syntax.Error', 'name allowed to have dot qualifiers in ES6 classes')
+        }
+    }
+    //
+
+    // Often times you invoke system functions that produce stubby contextless
+    // errors like `EBADFD` stack trace at all. This is an [known issue in
+    // Node.js](https://github.com/nodejs/node/issues/30944).
+
+    //
+    console.log('\n--- file system call with no stack information ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_FILE: 'unable to read file %s'
+            })
+
+            async read (filename) {
+                    return await fs.readFile(filename)
+            }
+        }
+
+        try {
+            const reader = new Reader
+            await reader.read(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+        }
+    }
+
+    // If you see this error in your production error logs, how are you supposed
+    // to know where in your code it orginates?
+
+    // Well, you can wrap the file system call in an application exception.
+    // That's what we're here for.
+
+    //
+    console.log('\n--- a try/catch block around a single file system call ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_FILE: 'unable to read file %s'
+            })
+
+            async read (filename) {
+                try {
+                    return await fs.readFile(filename)
+                } catch (error) {
+                    throw new Reader.Error([ 'UNABLE_TO_READ_FILE', filename ], error)
+                }
+            }
+        }
+
+        try {
+            const reader = new Reader
+            await reader.read(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'UNABLE_TO_READ_FILE')
+        }
+    }
+    //
+
+    // However, now you have a catch block you need to unit test. I am fond of
+    // unit test coverage and really don't trust uncovered catch blocks. I don't
+    // want to start running untested code just when things are starting to go
+    // sideways.
+
+    // If you're doing work with the file system you're going to want to wrap a
+    // lot of calls in this fashion, but you're going to generate a lot of these
+    // catch blocks and then you have to figure out some way to generate errors.
+    // This is particularly difficult with file handles, if you open, read and
+    // close in a single function, you can test a failure to open by deleting
+    // the file, but how do you test close?
+
+    //
+    console.log('\n--- a try/catch block for each of four file system calls ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_OPEN_FILE: 'unable to open file %s',
+                UNABLE_TO_READ_FILE: 'unable to read file %s',
+                UNABLE_TO_STAT_FILE: 'unable to stat file %s',
+                UNABLE_TO_CLOSE_FILE: 'unable to close file %s'
+            })
+
+            async read (filename) {
+                // _It is not difficult to test this catch block._
+                let handle
+                try {
+                    handle = await fs.open(filename, 'r')
+                } catch (error) {
+                    throw new Reader.Error([ 'UNABLE_TO_OPEN_FILE', filename ], error)
+                }
+                // _But how would you test this one? What sort of file
+                // permission trickery do you have to set up in your unit test
+                // to create a file you can open but you cannot stat? Do you
+                // have to run your tests as root to to do it?_
+                let stat
+                try {
+                    stat = await handle.stat()
+                } catch (error) {
+                    throw new Reader.Error([ 'UNABLE_TO_STAT_FILE', filename ], error)
+                }
+                const buffer = Buffer.alloc(stat.size)
+                // _How about a file you've been allowed to open for reading
+                // that you're not actually allowed to read?_
+                try {
+                    await handle.read(buffer, 0, buffer.length, 0)
+                } catch (error) {
+                    throw new Reader.Error([ 'UNABLE_TO_READ_FILE', filename ], error)
+                }
+                // _How about a file you've been allowed to open for reading
+                // that you've stat'd and read that you're not allowed to
+                // close?_
+                try {
+                    await handle.close()
+                } catch (error) {
+                    throw new Reader.Error([ 'UNABLE_TO_CLOSE_FILE', filename ], error)
+                }
+                return buffer
+            }
+        }
+
+        const reader = new Reader
+
+        const source = await reader.read(__filename)
+        okay(/hippopotomus/.test(source), 'found hippopotomus in source')
+
+        try {
+            const reader = new Reader
+            await reader.read(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
+        }
+    }
+    //
+
+    // Of course, dear reader you're now screaming at your screen. Why not wrap
+    // all four operations in a single catch block?
+
+    //
+    console.log('\n--- a monolithic try/catch block for four file system calls ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_FILE: 'unable to read file %s'
+            })
+
+            async read (filename) {
+                try {
+                    const handle = await fs.open(filename, 'r')
+                    const stat = await handle.stat()
+                    const buffer = Buffer.alloc(stat.size)
+                    await handle.read(buffer, 0, buffer.length, 0)
+                    await handle.close()
+                    return buffer
+                } catch (error) {
+                    throw new Reader.Error([ 'UNABLE_TO_READ_FILE', filename ], error)
+                }
+            }
+        }
+
+        const reader = new Reader
+
+        try {
+            const reader = new Reader
+            await reader.read(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'UNABLE_TO_READ_FILE', 'monolithic catch block')
+        }
+
+        const source = await reader.read(__filename)
+        okay(/hippopotomus/.test(source), 'found hippopotomus in source')
+    }
+    //
+
+    // Well, dear reader, yes, that's how exceptions are _supposed_ to work, and
+    // in other languages like Java where stack traces are maintained you'd know
+    // exactly which file system operation failed, but this is JavaScript. In
+    // this simple example you'll know the error came from the try block and you
+    // can determine which call failed from the error message thanks to the
+    // context provided by the single catch block, but in a more complicated
+    // try block you have to read through the code to try it, and in ever more
+    // complicatd code there maybe mutliple opens, reads, stats, and closes to
+    // chose from. If you're trying to match a single stack trace obtained from
+    // one of a hundred machines in production with the file system function
+    // call that generated it, a line number sure is nice.
+
+    // And for that we have `Interrupt.resolve` which resolves a `Promise` and
+    // wraps the exception if it rejects.
+
+    // **TODO** Somewhere I should just write a blog post about my coding style,
+    // not to bless the world with my genius (◔_◔) but to just point out that
+    // the stuff I write is `async`/`await`, code coverage matters, whatever
+    // else...
+
+    //
+    console.log('\n--- a monolithic try/catch block for four file system calls ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_OPEN_FILE: 'unable to open file %s',
+                UNABLE_TO_READ_FILE: 'unable to read file %s',
+                UNABLE_TO_STAT_FILE: 'unable to stat file %s',
+                UNABLE_TO_CLOSE_FILE: 'unable to close file %s'
+            })
+
+            async read (filename) {
+                const handle = await Reader.Error.resolve(fs.open(filename, 'r'), [ 'UNABLE_TO_OPEN_FILE', filename ])
+                const stat = await Reader.Error.resolve(handle.stat(), [ 'UNABLE_TO_STAT_FILE', filename ])
+                const buffer = Buffer.alloc(stat.size)
+                await Reader.Error.resolve(handle.read(buffer, 0, buffer.length, 0), [ 'UNABLE_TO_READ_FILE', filename ])
+                await Reader.Error.resolve(handle.close(), [ 'UNABLE_TO_CLOSE_FILE', filename ])
+                return buffer
+            }
+        }
+
+        const reader = new Reader
+
+        const source = await reader.read(__filename)
+        okay(/hippopotomus/.test(source), 'found hippopotomus in source')
+
+        try {
+            const reader = new Reader
+            await reader.read(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
+        }
+    }
+    //
+
+    // Unfortunately, the above will only work on Node.js 14 and above and only
+    // with `--async-stack-traces` enabled. In time `async` stack traces will be
+    // the default and until then you have options.
+
+    // This is however, rather verbose, so Interrupt provides a way to create a
+    // resolver function you can use in a function to encapsulate common
+    // properties.
+
+    //
+    {
+        /* and that example would go here, and `sprintf` is decided */
+    }
+    //
+
+    // Now we dance.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs')
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_OPEN_FILE: 'unable to open file %s',
+                UNABLE_TO_READ_FILE: 'unable to read file %s',
+                UNABLE_TO_STAT_FILE: 'unable to stat file %s',
+                UNABLE_TO_CLOSE_FILE: 'unable to close file %s'
+            })
+
+            async read (filename, callback) {
+                fs.readFile(filename, (error, body) => {
+                    if (error) {
+                        callback(new Reader.Error([ 'UNABLE_TO_READ_FILE', filename ], error))
+                    } else {
+                        callback(null, body)
+                    }
+                })
+            }
+        }
+
+        const reader = new Reader
+
+        reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
+            if (error) {
+                console.log(error.stack)
+            } else {
+                console.log(/hippopotomus/.test(body.toString()))
+            }
+        })
+    }
+
+    {
+        const path = require('path')
+        const fs = require('fs')
+
+        function encase (message, callback) {
+            return function (...vargs) {
+                if (vargs[0] != null) {
+                    callback(new Reader.Error(message, vargs[0]))
+                } else {
+                    callback.apply(null, vargs)
+                }
+            }
+        }
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_FILE: 'unable to read file %s'
+            })
+
+            async read (filename, callback) {
+                fs.readFile(filename, encase([ 'UNABLE_TO_READ_FILE', filename ], callback))
+            }
+        }
+
+        const reader = new Reader
+
+        reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
+            if (error) {
+                console.log(error.stack)
+            } else {
+                console.log(/hippopotomus/.test(body.toString()))
+            }
+        })
+    }
+
+    await new Promise(resolve => {
+        const path = require('path')
+        const fs = require('fs')
+
+        function encase (message, callback) {
+            return function (...vargs) {
+                function constructor (message) {
+                    // **TODO** Document stack adjustment above all this.
+                    return new Reader.Error(message, vargs[0], constructor)
+                }
+                if (vargs[0] != null) {
+                    callback(message(constructor))
+                } else {
+                    callback.apply(null, vargs)
+                }
+            }
+        }
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_FILE: 'unable to read file %s'
+            })
+
+            async read (filename, callback) {
+                fs.readFile(filename, encase($ => $([ 'UNABLE_TO_READ_FILE', filename ]), callback))
+            }
+        }
+
+        const reader = new Reader
+        reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
+            if (error) {
+                console.log(error.stack)
+            } else {
+                console.log(/hippopotomus/.test(body.toString()))
+            }
+            resolve()
+        })
+    })
+
+    await new Promise(resolve => {
+        const path = require('path')
+        const fs = require('fs')
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_FILE: 'unable to read file %s'
+            })
+
+            async read (filename, callback) {
+                fs.readFile(filename, Reader.Error.callback($ => $([ 'UNABLE_TO_READ_FILE', filename ]), callback))
+            }
+        }
+
+        const reader = new Reader
+
+        reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
+            if (error) {
+                console.log(error.stack)
+            } else {
+                console.log(/hippopotomus/.test(body.toString()))
+            }
+            resolve()
+        })
+    })
+    return
+
 
     //
     // **TODO** What follows is from a first swipe. Much better to introduce the

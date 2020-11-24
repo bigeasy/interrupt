@@ -45,16 +45,16 @@ function _message (messages, varg, merge) {
     return [ varg ]
 }
 
-function _vargs (messages, vargs, callee) {
+function _vargs (messages, vargs) {
     const merge = {}
-    return [
-        util.format.apply(util, _message(messages, vargs.shift(), merge)),
-        _causes(vargs),
-        typeof vargs[0] == 'object'
-            ? { ...merge, ...coalesce(vargs.shift(), {}) }
-            : merge,
-        coalesce(vargs.shift())
-    ]
+    const message = util.format.apply(util, _message(messages, vargs.shift(), merge))
+    return {
+        // **TODO** Code and message separate.
+        message: message,
+        causes: _causes(vargs),
+        context: typeof vargs[0] == 'object' ? { ...coalesce(vargs.shift(), {}), ...merge } : merge,
+        callee: coalesce(vargs.shift())
+    }
 }
 
 class Interrupt extends Error {
@@ -72,22 +72,21 @@ class Interrupt extends Error {
             })
             return
         }
-        const [
-            message, $causes, context, callee
-        ] = _vargs(messages, vargs, null)
-        let dump = message
+        const args = _vargs(messages, vargs)
+        console.log(args)
+        let dump = args.message
         const contexts = []
         const causes = []
-        const keys = Object.keys(context).length
-        if (keys != 0 || $causes.length) {
+        const keys = Object.keys(args.context).length
+        if (keys != 0 || args.causes.length) {
             dump += '\n'
 
             if (keys != 0) {
-                dump += '\n' + stringify(context) + '\n'
+                dump += '\n' + stringify(args.context) + '\n'
             }
 
-            for (let i = 0, I = $causes.length; i < I; i++) {
-                const cause = Array.isArray($causes[i]) ? $causes[i] : [ $causes[i] ]
+            for (let i = 0, I = args.causes.length; i < I; i++) {
+                const cause = Array.isArray(args.causes[i]) ? args.causes[i] : [ args.causes[i] ]
                 const text = (cause[0] instanceof Error)
                     ? coalesce(cause[0].stack, cause[0].message)
                     : cause[0].toString()
@@ -110,7 +109,7 @@ class Interrupt extends Error {
         dump += '\nstack:\n'
         super(dump)
 
-        MATERIAL.set(this, { message, context })
+        MATERIAL.set(this, { message: args.message, context: args.context })
 
         Object.defineProperty(this, "name", {
             value: this.constructor.name,
@@ -122,11 +121,11 @@ class Interrupt extends Error {
         // using a regular expression or string manipulation. You know
         // because you tried.
 
-        if (callee != null) {
-            Error.captureStackTrace(this, callee)
+        if (args.callee != null) {
+            Error.captureStackTrace(this, args.callee)
         }
 
-        const assign = { label: message, causes, contexts, ...context }
+        const assign = { label: args.message, causes: args.causes, contexts, ...args.context }
         for (const property in assign) {
             // TODO No. This is bad. Not everyone is going to unit test their
             // exceptions and you don't check this with `assert` which gets unit
@@ -153,6 +152,64 @@ class Interrupt extends Error {
                 if (!condition) {
                     vargs.unshift(null)
                     vargs.push(interrupt.assert)
+                    throw new (Function.prototype.bind.apply(interrupt, vargs))
+                }
+            }
+
+            static resolver (context, callee = null) {
+                vargs.unshift('')
+                const resolver = function (f, ...vargs) {
+                    const named = _named(vargs)
+                    named.context = { ...context, ...named.context }
+                    named.callee || (named.callee = callee || resolver)
+                    return interrupt.resolve(f, named)
+                }
+                return resolver
+            }
+
+            static callback (message, callback) {
+                return function (...cvargs) {
+                    function constructor (...vargs) {
+                        vargs.splice(1, 0, cvargs[0])
+                        if (typeof vargs[vargs.length - 1] != 'function') {
+                            vargs.push(constructor)
+                        }
+                        return new (Function.prototype.bind.apply(interrupt, vargs))
+                    }
+                    if (cvargs[0] == null) {
+                        callback.apply(null, cvargs)
+                    } else {
+                        callback(message(constructor))
+                    }
+                }
+            }
+
+            static async resolve (f, ...vargs) {
+                try {
+                    if (typeof f == 'function') {
+                        f = f()
+                    }
+                    return await f
+                } catch (error) {
+                    vargs.splice(1, 0, error)
+                    vargs.unshift(null)
+                    if (typeof vargs[vargs.length - 1] != 'function') {
+                        vargs.push(interrupt.resolve)
+                    }
+                    throw new (Function.prototype.bind.apply(interrupt, vargs))
+                }
+            }
+
+            static invoke (f, ...vargs) {
+                try {
+                    if (typeof f == 'function') {
+                        f = f()
+                    }
+                    return f
+                } catch (error) {
+                    vargs.splice(1, 0, error)
+                    vargs.unshift(null)
+                    vargs.push(interrupt.attempt)
                     throw new (Function.prototype.bind.apply(interrupt, vargs))
                 }
             }
