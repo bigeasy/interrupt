@@ -110,7 +110,7 @@ require('proof')(29, okay => {
     }
     {
         try {
-            throw new Test.Error([ 'formatted %s', 'yes' ] )
+            throw new Test.Error('formatted %(yes)s', { yes: 'yes' })
         } catch (error) {
             okay(/^formatted yes$/m.test(error.message), 'format message')
         }
@@ -119,7 +119,7 @@ require('proof')(29, okay => {
         const Test = {
             Coded: Interrupt.create('Test.Coded', {
                 unformatted: 'unformatted message',
-                formatted: 'formatted message %s'
+                formatted: 'formatted message %(yes)s'
             })
         }
         try {
@@ -130,7 +130,7 @@ require('proof')(29, okay => {
             console.log(error.stack)
         }
         try {
-            throw new Test.Coded([ 'formatted', 'yes' ])
+            throw new Test.Coded('formatted', { yes: 'yes' })
         } catch (error) {
             okay(/^formatted message yes$/m.test(error.message), 'formatted message')
             okay(error.code, 'formatted', 'formatted message code')

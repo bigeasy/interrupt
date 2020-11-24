@@ -21,7 +21,8 @@
     "dependencies":
     {
                             "extant":                       "^1.0.15",
-                            "keyify":                       "2.0.5"
+                            "keyify":                       "2.0.5",
+                            "sprintf-js":                   "1.1.2"
     },
     "devDependencies":
     {

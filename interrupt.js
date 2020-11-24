@@ -5,6 +5,7 @@ const departure = require('departure')
 const Keyify = require('keyify')
 const MATERIAL = new WeakMap
 const location = require('./location')
+const sprintf = require('sprintf-js').sprintf
 
 function stringify (object) {
     return JSON.stringify(object, function (key, value) {
@@ -46,15 +47,36 @@ function _message (messages, varg, merge) {
 }
 
 function _vargs (messages, vargs) {
-    const merge = {}
-    const message = util.format.apply(util, _message(messages, vargs.shift(), merge))
-    return {
-        // **TODO** Code and message separate.
-        message: message,
-        causes: _causes(vargs),
-        context: typeof vargs[0] == 'object' ? { ...coalesce(vargs.shift(), {}), ...merge } : merge,
-        callee: coalesce(vargs.shift())
+    const named = {
+        format: vargs.shift(),
+        message: null,
+        code: null,
+        causes: [],
+        context: null,
+        callee: null
     }
+    if (messages[named.format]) {
+        named.code = named.format
+        named.format = messages[named.code]
+    }
+    if (vargs[0] instanceof Error) {
+        named.causes.push(vargs.shift())
+    } else if (Array.isArray(vargs[0])) {
+        // **TODO** Going to say that contexts for errors, it's dubious. If you
+        // really want to give context to errors you should wrap them in an
+        // Interrupt, which is more consistent and therefor easier to document.
+        // We'll have to revisit Destructible to make this happen.
+        named.causes.push.apply(named.causes, vargs.shift())
+    }
+    if (typeof vargs[0] == 'object' && vargs[0] != null) {
+        named.context = vargs.shift()
+    } else {
+        named.context = {}
+    }
+    if (typeof vargs[vargs.length - 1] == 'function') {
+        named.callee = vargs.pop()
+    }
+    return named
 }
 
 class Interrupt extends Error {
@@ -73,7 +95,7 @@ class Interrupt extends Error {
             return
         }
         const args = _vargs(messages, vargs)
-        console.log(args)
+        args.message = sprintf(args.format, args.context)
         let dump = args.message
         const contexts = []
         const causes = []
@@ -121,20 +143,27 @@ class Interrupt extends Error {
         // using a regular expression or string manipulation. You know
         // because you tried.
 
+        //
         if (args.callee != null) {
             Error.captureStackTrace(this, args.callee)
         }
 
         const assign = { label: args.message, causes: args.causes, contexts, ...args.context }
+        if (args.code) {
+            assign.code = args.code
+        }
+        const IGNORE = [ 'message', 'code', 'name' ]
         for (const property in assign) {
-            // TODO No. This is bad. Not everyone is going to unit test their
-            // exceptions and you don't check this with `assert` which gets unit
-            // test coverage to it is on a clear path to production.
-            assert(property != 'name')
-            Object.defineProperty(this, property, { value: assign[property] })
+            if (! ~IGNORE.indexOf(property) || this[property] == null) {
+                Object.defineProperty(this, property, { value: assign[property] })
+            }
         }
     }
 
+    // **TODO** Wouldn't it be nice to have some sort of way to specify
+    // properties by code? Like which subsystem or a severity?
+
+    //
     static create (name, ...vargs) {
         const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
         const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
@@ -171,6 +200,7 @@ class Interrupt extends Error {
                 return function (...cvargs) {
                     function constructor (...vargs) {
                         vargs.splice(1, 0, cvargs[0])
+                        vargs.unshift(null)
                         if (typeof vargs[vargs.length - 1] != 'function') {
                             vargs.push(constructor)
                         }
