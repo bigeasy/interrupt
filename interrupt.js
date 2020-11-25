@@ -72,17 +72,13 @@ class Interrupt extends Error {
         const options = Class.options.apply(null, vargs)
         // **TODO** We can extract this and reuse it for "contexts".
         let dump
-        const format = Class.messages[options.code]
-        if (format == null) {
-            dump = options.code
-        } else {
-            try {
-                dump = sprintf(format, options.context)
-            } catch (error) {
-                // **TODO** Instrument errors somehow? Maybe a second context that
-                // reports Interrupt errors.
-                dump = options.code
-            }
+        const format = Class.messages[options.code] || options.code
+        try {
+            dump = sprintf(format, options.context)
+        } catch (error) {
+            // **TODO** Instrument errors somehow? Maybe a second context that
+            // reports Interrupt errors.
+            dump = format
         }
         const contexts = []
         const errors = []

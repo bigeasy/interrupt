@@ -684,7 +684,6 @@ require('proof')(23, async okay => {
             okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
         }
     }
-    return
     //
 
     // Of course, dear reader you're now screaming at your screen. Why not wrap
