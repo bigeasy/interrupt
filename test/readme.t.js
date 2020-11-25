@@ -626,10 +626,10 @@ require('proof')(23, async okay => {
 
         class Reader {
             static Error = Interrupt.create('Reader.Error', {
-                UNABLE_TO_OPEN_FILE: 'unable to open file %s',
-                UNABLE_TO_READ_FILE: 'unable to read file %s',
-                UNABLE_TO_STAT_FILE: 'unable to stat file %s',
-                UNABLE_TO_CLOSE_FILE: 'unable to close file %s'
+                UNABLE_TO_OPEN_FILE: 'unable to open file %(filename)s',
+                UNABLE_TO_READ_FILE: 'unable to read file %(filename)s',
+                UNABLE_TO_STAT_FILE: 'unable to stat file %(filename)s',
+                UNABLE_TO_CLOSE_FILE: 'unable to close file %(filename)s'
             })
 
             async read (filename) {
@@ -684,6 +684,7 @@ require('proof')(23, async okay => {
             okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
         }
     }
+    return
     //
 
     // Of course, dear reader you're now screaming at your screen. Why not wrap
@@ -759,10 +760,10 @@ require('proof')(23, async okay => {
 
         class Reader {
             static Error = Interrupt.create('Reader.Error', {
-                UNABLE_TO_OPEN_FILE: 'unable to open file %s',
-                UNABLE_TO_READ_FILE: 'unable to read file %s',
-                UNABLE_TO_STAT_FILE: 'unable to stat file %s',
-                UNABLE_TO_CLOSE_FILE: 'unable to close file %s'
+                UNABLE_TO_OPEN_FILE: 'unable to open file %(filename)s',
+                UNABLE_TO_READ_FILE: 'unable to read file %(filename)s',
+                UNABLE_TO_STAT_FILE: 'unable to stat file %(filename)s',
+                UNABLE_TO_CLOSE_FILE: 'unable to close file %(filename)s'
             })
 
             async read (filename) {
@@ -859,7 +860,7 @@ require('proof')(23, async okay => {
 
         class Reader {
             static Error = Interrupt.create('Reader.Error', {
-                UNABLE_TO_READ_FILE: 'unable to read file %s'
+                UNABLE_TO_READ_FILE: 'unable to read file %(filename)s'
             })
 
             async read (filename, callback) {
