@@ -12,6 +12,8 @@ const Keyify = require('keyify')
 // material for use in creating de-duplications.
 const MATERIAL = new WeakMap
 
+const Classes = new WeakMap
+
 // **TODO** Does this work if there is no stack trace at all?
 
 // Parse the file and line number from a Node.js stack trace.
@@ -51,7 +53,7 @@ class Interrupt extends Error {
     // not going to be as accommodating as all that.
 
     //
-    constructor (Protected, Class, name, vargs) {
+    constructor (Protected, Class, name, vargs, Meta) {
         assert(PROTECTED === Protected, 'Interrupt constructor is not a public interface')
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
@@ -72,7 +74,10 @@ class Interrupt extends Error {
         const options = Class.options.apply(null, vargs)
         // **TODO** We can extract this and reuse it for "contexts".
         let dump
-        const format = Class.messages[options.code] || options.code
+        const code = typeof options.code == 'symbol'
+            ? Meta.codes.get(options.code) || null
+            : options.code
+        const format = Class.messages[code] || code
         try {
             dump = sprintf(format, options.context)
         } catch (error) {
@@ -132,10 +137,16 @@ class Interrupt extends Error {
         }
 
         const assign = { label: options.message, errors: options.errors, contexts, ...options.context }
-        if (options.code) {
-            assign.code = options.code
+        if (Class.messages[code]) {
+            assign.code = code
         }
-        const IGNORE = [ 'message', 'code', 'name' ]
+        if (typeof Class[code] === 'symbol') {
+            Object.defineProperty(this, 'symbol', {
+                value: Class[code],
+                enumerable: false
+            })
+        }
+        const IGNORE = [ 'message', 'code', 'name', 'symbol' ]
         for (const property in assign) {
             if (! ~IGNORE.indexOf(property) || this[property] == null) {
                 Object.defineProperty(this, property, { value: assign[property] })
@@ -148,14 +159,28 @@ class Interrupt extends Error {
 
     //
     static create (name, ...vargs) {
-        // **TODO** Doesn't superclass come first?
-        const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
+        // **TODO** Now I don't know if codes, symbols and messages are
+        // inherited. Would have to see where I would ever create an error
+        // heirarchy.
         const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
+        const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
+        const merged = {}, symbols = {}
+        for (const code in messages) {
+            if (superclass[code]) {
+                throw new Error(`code is already defined in superclass: ${code}`)
+            }
+            if (merged[code]) {
+                throw new Error(`code is defined more than once: ${code}`)
+            }
+            merged[code] = messages[code]
+            symbols[code] = Symbol(code)
+        }
+        const Meta = { codes: new Map }
         assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
         const interrupt = class extends superclass {
             constructor (...vargs) {
                 if (superclass == Interrupt) {
-                    super(PROTECTED, interrupt, name, vargs)
+                    super(PROTECTED, interrupt, name, vargs, Meta)
                 } else {
                     super(...vargs)
                 }
@@ -278,6 +303,10 @@ class Interrupt extends Error {
                     throw new (Function.prototype.bind.apply(interrupt, vargs))
                 }
             }
+        }
+        for (const code in symbols) {
+            interrupt[code] = symbols[code]
+            Meta.codes.set(symbols[code], code)
         }
         Object.defineProperty(interrupt, 'name', { value: name })
         Object.defineProperty(interrupt, 'messages', { value: messages })

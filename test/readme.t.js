@@ -65,7 +65,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(23, async okay => {
+require('proof')(31, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```
@@ -177,13 +177,25 @@ require('proof')(23, async okay => {
     }
     //
 
+    // ## Interrupt Codes
+
+    //
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            NULL_ARGUMENT: 'the JSON string to parse must not be null',
+            INVALID_JSON: 'unable to parse JSON string'
+        })
+    }
+    //
+
+    //
 
     // We'll get started from some examples using `JSON.parse` which throws a
     // `SyntaxError` exception when the JSON cannot be parsed.
 
     // All of the examples in this code are _contrived_, however, and in
-    // practice, I'm never this zealous with my use of Interrupt. I wouldn't
-    // bother to wrap `SyntaxError`.
+    // practice, I'm never quite this zealous with my use of Interrupt. I
+    // probably wouldn't bother to wrap a `SyntaxError`.
 
     // ## Errors by Code
 
@@ -259,70 +271,163 @@ require('proof')(23, async okay => {
     }
     //
 
+    // The `code` property is commonly used in Node.js however. All of the
+    // errors eminating from the standard Node.js modules have a `code` property
+    // and each `code` property has associated documentation. If you use codes
+    // your module can adhere to this practice.
+
     // I prefer codes, though. You can add codes as needed. They are easy to
     // document. Without documentation, just reading the code, you have a single
     // place where you get a catalog of everything that can go wrong with your
     // module.
 
-    // You can also catch errors by type using a switch statement instead of the
-    // `if`/`else` and `instnaceof` ladder.
+    // You can also specify the error code using a symbol.
+
+    // The generated exception class has a property named for every code you
+    // defined in your call to `Interrupt.create()`. The property has the code
+    // name and the value is a `Symbol`. The `Symbol` is unique for the code.
+
+    // When you create an exception it sets a non-enumerable `symbol` property
+    // on the exception instance. This is set in addition to the code.
+
+    // The symbol property is not printed in the context portion of the stack
+    // trace message. It is already represented there by the `code` string.
 
     //
-    console.log('\n--- catching exceptions by type and code ---\n')
+    console.log('\n--- inspecting the code Symbol of an Interrupt ---\n')
     {
         const ParseError = Interrupt.create('ParseError', {
             INVALID_JSON: 'unable to parse JSON string',
-            TOO_MUCH_JSON: 'the JSON string to parse is too long',
             NULL_ARGUMENT: 'the JSON string to parse must not be null'
         })
+
+        okay(typeof ParseError.INVALID_JSON, 'symbol', 'symbol for INVALID_JSON defined')
 
         function parse (string) {
             if (string == null) {
                 throw new ParseError('NULL_ARGUMENT')
             }
-            if (typeof string != 'string') {
-                throw new ParseError('WRONG_TYPE')
-            }
-            if (string.length > 4096) {
-                throw new ParseError('TOO_MUCH_JSON')
-            }
             try {
-                return JSON.parse(string)
+                return JSON.parse(json)
             } catch (error) {
                 throw new ParseError('INVALID_JSON')
             }
         }
 
-        // **TODO** Add symbols.
-        function safeParse (json) {
+        try {
+            parse('!')
+        } catch (error) {
+            okay(error.symbol === ParseError.INVALID_JSON, 'symbol is set')
+        }
+    }
+    //
+
+    // You can also specify the code by Symbol. Instead of passing the string
+    // name of the code you pass in the Symbol for the code.
+
+    //
+    console.log('\n--- throwing an Interrupt by code Symbol ---\n')
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            INVALID_JSON: 'unable to parse JSON string',
+            NULL_ARGUMENT: 'the JSON string to parse must not be null'
+        })
+
+        okay(typeof ParseError.INVALID_JSON, 'symbol', 'symbol for INVALID_JSON defined')
+
+        function parse (string) {
+            if (string == null) {
+                throw new ParseError(ParseError.NULL_ARGUMENT)
+            }
             try {
-                parse(json)
+                return JSON.parse(json)
             } catch (error) {
-                switch (`${error.name}:${error.code}`) {
-                case 'ParseError:INVALID_JSON':
-                case 'ParseError:TOO_MUCH_JSON':
-                    // _User gave us some bad json, unexceptional so return null._
-                    return null
-                }
-                // _Called `parse` incorrectly, programmer error so panic._
-                throw error
+                throw new ParseError(ParseError.INVALID_JSON)
             }
         }
 
         try {
-            safeParse(null)
+            parse('!')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            okay(error.symbol === ParseError.INVALID_JSON, 'symbol is set')
         }
-        okay(safeParse('invalid json'), null, 'user gave us some bad JSON')
-
-        const INVALID_JSON = Symbol('INVALID_JSON')
-        const code = INVALID_JSON
-
-        console.log(INVALID_JSON.toString())
     }
     //
+
+    // Because Symbols are unique we can reuse a single exception class and
+    // distiguish the type unambiously by Symbol.
+
+    //
+    console.log('\n--- catching exceptions by type and code ---\n')
+    {
+        const CSVError = Interrupt.create('ParseError', {
+            NULL_ARGUMENT: 'the CSV string to parse must not be null'
+        })
+
+        const JSONError = Interrupt.create('ParseError', {
+            INVALID_JSON: 'unable to parse JSON string',
+            NULL_ARGUMENT: 'the JSON string to parse must not be null'
+        })
+
+        function csvParse (csv) {
+            if (csv == null) {
+                throw new CSVError('NULL_ARGUMENT')
+            }
+            return csv.split(/\s*,\s*/)
+        }
+
+        function jsonParse (json) {
+            if (json == null) {
+                throw new JSONError('NULL_ARGUMENT')
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new JSONError('INVALID_JSON')
+            }
+        }
+
+        function parse (json) {
+            let object
+            try {
+                object = jsonParse(json)
+                object.csv = csvParse(object.csv)
+                return object
+            } catch (error) {
+                switch (error.symbol) {
+                case JSONError.NULL_ARGUMENT:
+                    return { csv: [] }
+                case CSVError.NULL_ARGUMENT:
+                    object.csv = []
+                    return object
+                default:
+                    throw error
+                }
+            }
+        }
+
+        okay(parse(null), { csv: [] }, 'convert null to empty object')
+        okay(parse('{}'), { csv: [] }, 'convert missing CSV to empty array')
+        okay(parse('{"csv":"a,b"}'), { csv: [ 'a', 'b' ] }, 'missing neither JSON nor CSV')
+
+        try {
+            parse('!')
+        } catch (error) {
+            console.log(error.stack)
+            okay(error.symbol === JSONError.INVALID_JSON, 'invalid JSON error rethrown')
+        }
+    }
+    //
+
+    // In the contrived example above our CSV parser raises exceptions using a
+    // Symbol to specify the code, the JSON parser uses strings to specify the
+    // code. It doesn't matter the `symbol` property is set either way. In our
+    // catch block we use a switch statement to distinguish between a
+    // CSV `NULL_ARGUMENT` code and a JSON `NULL_ARGMENT` code.
+
+    // Without the `symbol` property we'd have to compare both the `code`
+    // property and test the `instanceof` the `error` to see if was a `CSVError`
+    // or a `JSONError`.
 
     // If you provide a code parameter that was not defined when you called
     // `Interrupt.create()` the string value is used as a message.
@@ -352,6 +457,7 @@ require('proof')(23, async okay => {
             console.log(error.stack)
             console.log('')
             okay(/^NULL_ARGUMENT$/m.test(error.message), 'no code found, use first argument as message')
+            okay(error.code == null, 'no code is set')
         }
     }
     //
