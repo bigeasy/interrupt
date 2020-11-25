@@ -65,7 +65,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(22, async okay => {
+require('proof')(23, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```
@@ -111,6 +111,26 @@ require('proof')(22, async okay => {
 
     //
     okay(ParseError.prototype instanceof Interrupt, 'Interrupt class created')
+    //
+
+    // `Interrupt` is the base class of all `Interrupt` exceptions, but it is
+    // not meant to be used directly. You must define a derived class using the
+    // `Interrupt.create()` method. An attempt to create a `new Interrupt()`
+    // will raise an exception. This will be a plain `Error` and not an
+    // `Interrupt` derived exception.
+
+    //
+    console.log('\n--- exception raised when calling `new Interrupt()` directly ---\n')
+    {
+        try {
+            new Interrupt()
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'ERR_ASSERTION', 'do not call Interrupt constructor rerectly')
+        }
+    }
+    //
 
     // The generated `ParseError` class has a `messages` property that will list
     // the messages by error code.

@@ -38,8 +38,24 @@ function stringify (object) {
     }, 4)
 }
 
+const PROTECTED = Symbol('PROTECTED')
+
 class Interrupt extends Error {
-    constructor (Class, name, vargs) {
+    //
+
+    // This constructor is only called by derived class and should not be called
+    // by the user. An argument could be made that we accommodate the user that
+    // hasn't read the documentation because they could be calling this in
+    // production having never tested an exceptional branch of their code, but
+    // they could just as easily have misspelled `Interrupt`. Basically, we're
+    // not going to be as accommodating as all that.
+
+    //
+    constructor (Protected, Class, name, vargs) {
+        assert(PROTECTED === Protected, 'Interrupt constructor is not a public interface')
+        // When called with no arguments we call our super constructor with no
+        // arguments to eventually call `Error` with no argments to create an
+        // empty error.
         if (vargs.length == 0) {
             super()
             MATERIAL.set(this, { message: null, context: {} })
@@ -131,7 +147,7 @@ class Interrupt extends Error {
         const interrupt = class extends superclass {
             constructor (...vargs) {
                 if (superclass == Interrupt) {
-                    super(interrupt, name, vargs)
+                    super(PROTECTED, interrupt, name, vargs)
                 } else {
                     super(...vargs)
                 }
