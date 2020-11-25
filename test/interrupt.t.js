@@ -31,7 +31,7 @@ require('proof')(29, okay => {
             throw new Test.Error('message', new Error('error'))
         } catch (error) {
             console.log(error.stack)
-            okay(error.causes[0].message, 'error', 'has a cause')
+            okay(error.errors[0].message, 'error', 'has a cause')
         }
     }
     {
@@ -39,9 +39,9 @@ require('proof')(29, okay => {
             throw new Test.Error('message', [ new Error('error'), new Error('thrown') ])
         } catch (error) {
             console.log(error.stack)
-            okay(error.causes.map(error => error.message), [
+            okay(error.errors.map(error => error.message), [
                 'error', 'thrown'
-            ], 'has many causes')
+            ], 'has many errors')
         }
     }
     {
@@ -61,7 +61,7 @@ require('proof')(29, okay => {
             throw new Test.Error('message', [ 'unlikely string' ])
         } catch (error) {
             console.log(error.stack)
-            okay(error.causes[0], 'unlikely string', 'string error cause')
+            okay(error.errors[0], 'unlikely string', 'string error cause')
             okay(/unlikely string/.test(error.stack), 'string error serialized ')
         }
     }

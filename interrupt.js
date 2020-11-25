@@ -48,7 +48,7 @@ class Interrupt extends Error {
                     value: this.constructor.name,
                     enumerable: false
                 },
-                causes: { value: [] },
+                errors: { value: [] },
                 contexts: { value: [] }
             })
             return
@@ -57,17 +57,17 @@ class Interrupt extends Error {
         options.message = sprintf(options.format, options.context)
         let dump = options.message
         const contexts = []
-        const causes = []
+        const errors = []
         const keys = Object.keys(options.context).length
-        if (keys != 0 || options.causes.length) {
+        if (keys != 0 || options.errors.length) {
             dump += '\n'
 
             if (keys != 0) {
                 dump += '\n' + stringify(options.context) + '\n'
             }
 
-            for (let i = 0, I = options.causes.length; i < I; i++) {
-                const cause = Array.isArray(options.causes[i]) ? options.causes[i] : [ options.causes[i] ]
+            for (let i = 0, I = options.errors.length; i < I; i++) {
+                const cause = Array.isArray(options.errors[i]) ? options.errors[i] : [ options.errors[i] ]
                 const text = (cause[0] instanceof Error)
                     ? coalesce(cause[0].stack, cause[0].message)
                     : cause[0].toString()
@@ -78,7 +78,7 @@ class Interrupt extends Error {
                     const contextualized = stringify(cause[1]).replace(/^/gm, '    ')
                     dump += '\ncause:\n\n' + contextualized + '\n\n' + indented + '\n'
                 }
-                causes.push(cause[0])
+                errors.push(cause[0])
                 // TODO Note that nullishness makes this useful and `||`
                 // doesn't always do it.
                 contexts.push(coalesce(cause[1]))
@@ -107,7 +107,7 @@ class Interrupt extends Error {
             Error.captureStackTrace(this, options.callee)
         }
 
-        const assign = { label: options.message, causes: options.causes, contexts, ...options.context }
+        const assign = { label: options.message, errors: options.errors, contexts, ...options.context }
         if (options.code) {
             assign.code = options.code
         }
@@ -144,7 +144,7 @@ class Interrupt extends Error {
                     format: null,
                     message: null,
                     code: null,
-                    causes: [],
+                    errors: [],
                     context: null,
                     callee: null
                 }
@@ -152,7 +152,7 @@ class Interrupt extends Error {
                     const merge = vargs.shift()
                     options.format = coalesce(merge.code, options.format)
                     if (merge.errors != null && Array.isArray(merge.errors)) {
-                        options.causes.push.apply(options.causes, merge.errors)
+                        options.errors.push.apply(options.errors, merge.errors)
                     }
                     if (merge.context != null && typeof merge.context == 'object') {
                         options.context = { ...options.context, ...merge.context }
@@ -171,14 +171,14 @@ class Interrupt extends Error {
                 }
                 // Assign a single error or an array of errors to the errors array.
                 if (vargs[0] instanceof Error) {
-                    options.causes.push(vargs.shift())
+                    options.errors.push(vargs.shift())
                 } else if (Array.isArray(vargs[0])) {
                     // **TODO** Going to say that contexts for errors, it's
                     // dubious. If you really want to give context to errors you
                     // should wrap them in an Interrupt, which is more
                     // consistent and therefor easier to document. We'll have to
                     // revisit Destructible to make this happen.
-                    options.causes.push.apply(options.causes, vargs.shift())
+                    options.errors.push.apply(options.errors, vargs.shift())
                 }
                 // Assign the context object.
                 if (typeof vargs[0] == 'object' && vargs[0] != null) {
@@ -282,9 +282,9 @@ class Interrupt extends Error {
                     stringified: Keyify.stringify(key),
                     error: error,
                     context: context,
-                    causes: null
+                    errors: null
                 }
-                node.causes = error.causes.map((cause, index) => {
+                node.errors = error.errors.map((cause, index) => {
                     return treeify(node, cause, { ...(error.contexts[index] || {}) })
                 })
                 return node
@@ -298,13 +298,13 @@ class Interrupt extends Error {
                 stringified: Keyify.stringify(key),
                 error: error,
                 context: context,
-                causes: null
+                errors: null
             }
         }
         const leaves = {}
         function leafify (node) {
-            if (node.causes != null && node.causes.length != 0) {
-                for (const cause of node.causes) {
+            if (node.errors != null && node.errors.length != 0) {
+                for (const cause of node.errors) {
                     leafify(cause)
                 }
             } else {
@@ -319,17 +319,17 @@ class Interrupt extends Error {
             if (left.stringified != right.stringified) {
                 return false
             }
-            if (left.causes == null && right.causes == null) {
+            if (left.errors == null && right.errors == null) {
                 return true
             }
-            if (left.causes.length != right.causes.length) {
+            if (left.errors.length != right.errors.length) {
                 return false
             }
-            const causes = right.causes.slice(0)
-            CAUSES: for (const cause of left.causes) {
-                for (let i = 0; i < causes.length; i++) {
-                    if (compare(cause, causes[i])) {
-                        causes.splice(i, 1)
+            const errors = right.errors.slice(0)
+            CAUSES: for (const cause of left.errors) {
+                for (let i = 0; i < errors.length; i++) {
+                    if (compare(cause, errors[i])) {
+                        errors.splice(i, 1)
                         continue CAUSES
                     }
                 }
@@ -341,8 +341,8 @@ class Interrupt extends Error {
             if (node.duplicated) {
                 return
             }
-            if (node.causes != null && node.causes.length != 0) {
-                for (const cause of node.causes) {
+            if (node.errors != null && node.errors.length != 0) {
+                for (const cause of node.errors) {
                     mark(cause)
                 }
             } else {
@@ -379,7 +379,7 @@ class Interrupt extends Error {
             }
         }
         function format (node) {
-            if (node.causes == null || node.causes.length == 0) {
+            if (node.errors == null || node.errors.length == 0) {
                 const repeated = node.duplicates.size + 1
                 const context = node.context
                 if (repeated != 1) {
@@ -394,11 +394,11 @@ class Interrupt extends Error {
                 }
                 return text
             }
-            const causes = []
-            for (const cause of node.causes) {
+            const errors = []
+            for (const cause of node.errors) {
                 const formatted = format(cause)
                 const indented = formatted.replace(/^/gm, '    ')
-                causes.push(`\ncause:\n\n${indented}\n`)
+                errors.push(`\ncause:\n\n${indented}\n`)
             }
             const repeated = node.duplicates.size + 1
             const material = MATERIAL.get(node.error)
@@ -409,27 +409,27 @@ class Interrupt extends Error {
             const stack = node.error.stack.replace(/[\s\S]*^stack:$/m, 'stack:')
             if (Object.keys(context).length != 0) {
                 const contextualized = stringify(context)
-                return `${node.error.name}: ${material.message}\n\n${contextualized}\n\n${causes.join('')}\n\n${stack}`
+                return `${node.error.name}: ${material.message}\n\n${contextualized}\n\n${errors.join('')}\n\n${stack}`
             }
-            return `${node.error.name}: ${material.message}\n\n${causes.join('')}\n\n${stack}`
+            return `${node.error.name}: ${material.message}\n\n${errors.join('')}\n\n${stack}`
         }
         /*
         function print (indent, extract, node) {
             console.log(`${indent}${util.inspect(extract(node), { depth: null, breakLength: Infinity })}`)
-            if (node.causes != null && node.causes.length != 0) {
-                for (const cause of node.causes) {
+            if (node.errors != null && node.errors.length != 0) {
+                for (const cause of node.errors) {
                     print(`  ${indent}`, extract, cause)
                 }
             }
         }*/
         function trim (node, parent) {
             if (parent != null) {
-                parent.causes = parent.causes.filter(sibling => ! node.duplicates.has(sibling.id))
+                parent.errors = parent.errors.filter(sibling => ! node.duplicates.has(sibling.id))
             }
-            if (node.causes != null && node.causes.length != 0) {
+            if (node.errors != null && node.errors.length != 0) {
                 let i = 0
-                while (node.causes.length != i) {
-                    trim(node.causes[i++], node)
+                while (node.errors.length != i) {
+                    trim(node.errors[i++], node)
                 }
             }
         }

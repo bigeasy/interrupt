@@ -16,7 +16,7 @@ function parse (stack, isRoot) {
             name: $[2],
             stack: null,
             context: null,
-            causes: [],
+            errors: [],
             contexts: []
         }
         stack = stack.replace(/.*?\n+(?=[^\n])/, '')
@@ -31,10 +31,10 @@ function parse (stack, isRoot) {
             var $ = /(\n\{[\S\s]*?\n\})([\S\s]*)/m.exec(dedented)
             if ($) {
                 object.contexts.push(JSON.parse($[1]))
-                object.causes.push(parse($[2], false))
+                object.errors.push(parse($[2], false))
             } else {
                 object.contexts.push(null)
-                object.causes.push(parse(dedented, false))
+                object.errors.push(parse(dedented, false))
             }
         }
         return object

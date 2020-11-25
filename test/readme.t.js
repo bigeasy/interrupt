@@ -151,8 +151,8 @@ require('proof')(22, async okay => {
             okay(error instanceof Error, 'an Interrupt is an Error')
             okay(error.code, 'INVALID_JSON', 'the code is key into the message map')
             okay(error.string, '!#@%', 'contextual property set')
-            okay(error.causes.length, 1, 'we have nested causes')
-            okay(error.causes[0] instanceof SyntaxError, 'the nested cause is a JSON error')
+            okay(error.errors.length, 1, 'we have nested errors')
+            okay(error.errors[0] instanceof SyntaxError, 'the nested cause is a JSON error')
         }
     }
     //
