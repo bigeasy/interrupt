@@ -1,12 +1,30 @@
+// Node.js API.
 const util = require('util')
 const assert = require('assert')
+
+// Return the first non-`null` like parameter.
 const coalesce = require('extant')
-const departure = require('departure')
+
+// Deep differences.
 const Keyify = require('keyify')
+
+// A map of existing `Interrupt` derived exceptions to their construction
+// material for use in creating de-duplications.
 const MATERIAL = new WeakMap
+
+// **TODO** Does this work if there is no stack trace at all?
+
+// Parse the file and line number from a Node.js stack trace.
 const location = require('./location')
+
+// `sprintf` supports named parameters, so we can use our context messages.
 const sprintf = require('sprintf-js').sprintf
 
+
+// **TODO** Will crash on circular references, right? Ensure that we parse
+// safely or remove any circular references in advance of parsing.
+
+// Stringify a context object to JSON treating any errors as a special case.
 function stringify (object) {
     return JSON.stringify(object, function (key, value) {
         if (value instanceof Error) {
@@ -20,67 +38,8 @@ function stringify (object) {
     }, 4)
 }
 
-function _causes (vargs) {
-    if (vargs[0] instanceof Error) {
-        return [ vargs.shift() ]
-    } else if (Array.isArray(vargs[0])) {
-        return vargs.shift()
-    }
-    return []
-}
-
-function _message (messages, varg, merge) {
-    if (Array.isArray(varg)) {
-        const message = messages[varg[0]]
-        if (message != null) {
-            merge.code = varg[0]
-            varg[0] = message
-        }
-        return varg
-    }
-    const message = messages[varg]
-    if (message != null) {
-        merge.code = varg
-        return [ message ]
-    }
-    return [ varg ]
-}
-
-function _vargs (messages, vargs) {
-    const named = {
-        format: vargs.shift(),
-        message: null,
-        code: null,
-        causes: [],
-        context: null,
-        callee: null
-    }
-    if (messages[named.format]) {
-        named.code = named.format
-        named.format = messages[named.code]
-    }
-    if (vargs[0] instanceof Error) {
-        named.causes.push(vargs.shift())
-    } else if (Array.isArray(vargs[0])) {
-        // **TODO** Going to say that contexts for errors, it's dubious. If you
-        // really want to give context to errors you should wrap them in an
-        // Interrupt, which is more consistent and therefor easier to document.
-        // We'll have to revisit Destructible to make this happen.
-        named.causes.push.apply(named.causes, vargs.shift())
-    }
-    if (typeof vargs[0] == 'object' && vargs[0] != null) {
-        named.context = vargs.shift()
-    } else {
-        named.context = {}
-    }
-    if (typeof vargs[vargs.length - 1] == 'function') {
-        named.callee = vargs.pop()
-    }
-    return named
-}
-
 class Interrupt extends Error {
-    constructor (messages, name, vargs) {
+    constructor (Class, name, vargs) {
         if (vargs.length == 0) {
             super()
             MATERIAL.set(this, { message: null, context: {} })
@@ -94,21 +53,21 @@ class Interrupt extends Error {
             })
             return
         }
-        const args = _vargs(messages, vargs)
-        args.message = sprintf(args.format, args.context)
-        let dump = args.message
+        const options = Class.options.apply(null, vargs)
+        options.message = sprintf(options.format, options.context)
+        let dump = options.message
         const contexts = []
         const causes = []
-        const keys = Object.keys(args.context).length
-        if (keys != 0 || args.causes.length) {
+        const keys = Object.keys(options.context).length
+        if (keys != 0 || options.causes.length) {
             dump += '\n'
 
             if (keys != 0) {
-                dump += '\n' + stringify(args.context) + '\n'
+                dump += '\n' + stringify(options.context) + '\n'
             }
 
-            for (let i = 0, I = args.causes.length; i < I; i++) {
-                const cause = Array.isArray(args.causes[i]) ? args.causes[i] : [ args.causes[i] ]
+            for (let i = 0, I = options.causes.length; i < I; i++) {
+                const cause = Array.isArray(options.causes[i]) ? options.causes[i] : [ options.causes[i] ]
                 const text = (cause[0] instanceof Error)
                     ? coalesce(cause[0].stack, cause[0].message)
                     : cause[0].toString()
@@ -131,7 +90,7 @@ class Interrupt extends Error {
         dump += '\nstack:\n'
         super(dump)
 
-        MATERIAL.set(this, { message: args.message, context: args.context })
+        MATERIAL.set(this, { message: options.message, context: options.context })
 
         Object.defineProperty(this, "name", {
             value: this.constructor.name,
@@ -144,13 +103,13 @@ class Interrupt extends Error {
         // because you tried.
 
         //
-        if (args.callee != null) {
-            Error.captureStackTrace(this, args.callee)
+        if (options.callee != null) {
+            Error.captureStackTrace(this, options.callee)
         }
 
-        const assign = { label: args.message, causes: args.causes, contexts, ...args.context }
-        if (args.code) {
-            assign.code = args.code
+        const assign = { label: options.message, causes: options.causes, contexts, ...options.context }
+        if (options.code) {
+            assign.code = options.code
         }
         const IGNORE = [ 'message', 'code', 'name' ]
         for (const property in assign) {
@@ -165,16 +124,74 @@ class Interrupt extends Error {
 
     //
     static create (name, ...vargs) {
+        // **TODO** Doesn't superclass come first?
         const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
         const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
         assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
         const interrupt = class extends superclass {
             constructor (...vargs) {
                 if (superclass == Interrupt) {
-                    super(messages, name, vargs)
+                    super(interrupt, name, vargs)
                 } else {
                     super(...vargs)
                 }
+            }
+
+            // Convert the positional arguments to a options argument.
+            static options (...vargs) {
+                // Create the base object.
+                const options = {
+                    format: null,
+                    message: null,
+                    code: null,
+                    causes: [],
+                    context: null,
+                    callee: null
+                }
+                if (typeof vargs[0] == 'object' && typeof vargs[0] != null) {
+                    const merge = vargs.shift()
+                    options.format = coalesce(merge.code, options.format)
+                    if (merge.errors != null && Array.isArray(merge.errors)) {
+                        options.causes.push.apply(options.causes, merge.errors)
+                    }
+                    if (merge.context != null && typeof merge.context == 'object') {
+                        options.context = { ...options.context, ...merge.context }
+                    }
+                    if (merge.callee != null && typeof merge.callee == 'function') {
+                        options.callee = merge.callee
+                    }
+                } else {
+                    options.format = vargs.shift()
+                }
+                // Use the formatted for a given code if available. **TODO**
+                // this doesn't belong here, we're creating an arguments map.
+                if (messages[options.format]) {
+                    options.code = options.format
+                    options.format = messages[options.code]
+                }
+                // Assign a single error or an array of errors to the errors array.
+                if (vargs[0] instanceof Error) {
+                    options.causes.push(vargs.shift())
+                } else if (Array.isArray(vargs[0])) {
+                    // **TODO** Going to say that contexts for errors, it's
+                    // dubious. If you really want to give context to errors you
+                    // should wrap them in an Interrupt, which is more
+                    // consistent and therefor easier to document. We'll have to
+                    // revisit Destructible to make this happen.
+                    options.causes.push.apply(options.causes, vargs.shift())
+                }
+                // Assign the context object.
+                if (typeof vargs[0] == 'object' && vargs[0] != null) {
+                    options.context = vargs.shift()
+                } else {
+                    options.context = {}
+                }
+                // Assign the stack pruning checkpoint.
+                if (typeof vargs[vargs.length - 1] == 'function') {
+                    options.callee = vargs.pop()
+                }
+                // Return the generated options object.
+                return options
             }
 
             static assert (condition, ...vargs) {

@@ -65,7 +65,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(21, async okay => {
+require('proof')(22, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```
@@ -363,6 +363,62 @@ require('proof')(21, async okay => {
             console.log('')
             okay(/^the JSON string to parse must not be null$/m.test(error.message), 'specify message as first argument instead of code')
         }
+    }
+    //
+
+    // Sometimes a one-liner gets too hard to read. Breaking up the declaration
+    // across multiple lines helps, and while you're at it, you may as well give
+    // a name to what you're trying to do.
+
+    // All of the above parameters can be specified with an `options` object as
+    // the first parameter to the constructor.
+
+    //
+    console.log('\n--- construct an Interrupt with named parameters ---\n')
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            INVALID_JSON: 'unable to parse JSON string'
+        })
+
+        function parse (json) {
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ParseError({
+                    code: 'INVALID_JSON',
+                    errors: [ error ],
+                    context: { json },
+                    callee: parse
+                })
+            }
+        }
+
+        try {
+            parse('!')
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'INVALID_JSON', 'code set')
+        }
+    }
+    //
+
+    // At times you might want to construct exceptions programmatically, merging
+    // context that is common to a scope with specific context for a particular
+    // exception. You can create an options object that is common to a scope.
+
+    // You can then call the exception constructor with the `options` object
+    // followed by any positional parameters. The positional parameters will be
+    // merged into the `options` object before constructing the object.
+
+    // We said that you can't override the `code` property of an exception with
+    // a `code` property in the `context` object, but you can override the
+    // `code` property of the `options` object with a positional `code` property
+    // in the constructor.
+
+    //
+    {
+        // **TODO** Example.
     }
     //
 
