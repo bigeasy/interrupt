@@ -70,8 +70,20 @@ class Interrupt extends Error {
             return
         }
         const options = Class.options.apply(null, vargs)
-        options.message = sprintf(options.format, options.context)
-        let dump = options.message
+        // **TODO** We can extract this and reuse it for "contexts".
+        let dump
+        const format = Class.messages[options.code]
+        if (format == null) {
+            dump = options.code
+        } else {
+            try {
+                dump = sprintf(format, options.context)
+            } catch (error) {
+                // **TODO** Instrument errors somehow? Maybe a second context that
+                // reports Interrupt errors.
+                dump = options.code
+            }
+        }
         const contexts = []
         const errors = []
         const keys = Object.keys(options.context).length
@@ -166,7 +178,7 @@ class Interrupt extends Error {
                 }
                 if (typeof vargs[0] == 'object' && typeof vargs[0] != null) {
                     const merge = vargs.shift()
-                    options.format = coalesce(merge.code, options.format)
+                    options.code = coalesce(merge.code, options.code)
                     if (merge.errors != null && Array.isArray(merge.errors)) {
                         options.errors.push.apply(options.errors, merge.errors)
                     }
@@ -177,13 +189,7 @@ class Interrupt extends Error {
                         options.callee = merge.callee
                     }
                 } else {
-                    options.format = vargs.shift()
-                }
-                // Use the formatted for a given code if available. **TODO**
-                // this doesn't belong here, we're creating an arguments map.
-                if (messages[options.format]) {
-                    options.code = options.format
-                    options.format = messages[options.code]
+                    options.code = vargs.shift()
                 }
                 // Assign a single error or an array of errors to the errors array.
                 if (vargs[0] instanceof Error) {
