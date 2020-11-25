@@ -175,42 +175,87 @@ class Interrupt extends Error {
             merged[code] = messages[code]
             symbols[code] = Symbol(code)
         }
+        function audit (f) {
+            if (Interrupt.audit) {
+                return function (...vargs) {
+                    Interrupt.audit(new Class(Class.options.apply(Class, vargs.slice(1))))
+                    return f.options.apply(f, vargs)
+                }
+            } else {
+                return f
+            }
+        }
+
+        function construct (vargs, errors, ...callees) {
+            if (vargs.length == 1 && typeof vargs[vargs.length - 1] == 'function') {
+                let called = false
+                function $ (...vargs) {
+                    const options = Class.options.apply(Class, vargs)
+                    options.errors.push.apply(options.errors, errors)
+                    if (options.callee == null) {
+                        options.callee = callees[1] || $
+                    }
+                    return new Class(options)
+                }
+                return vargs.pop()($)
+            } else {
+                const options = Class.options.apply(Class, vargs)
+                options.errors.push.apply(options.errors, errors)
+                if (options.callee == null) {
+                    options.callee = callees[0]
+                }
+                return new Class(options)
+            }
+        }
+
         const Meta = { codes: new Map }
         assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
-        const interrupt = class extends superclass {
+        const Class = class extends superclass {
             constructor (...vargs) {
                 if (superclass == Interrupt) {
-                    super(PROTECTED, interrupt, name, vargs, Meta)
+                    super(PROTECTED, Class, name, vargs, Meta)
                 } else {
                     super(...vargs)
                 }
+            }
+
+            static voptions (...vargs) {
+                let options = []
+                while (vargs.length != 0) {
+                    options = Class.options.apply(Class, [ options ].concat(vargs))
+                }
+                return options
             }
 
             // Convert the positional arguments to a options argument.
             static options (...vargs) {
                 // Create the base object.
                 const options = {
-                    format: null,
-                    message: null,
                     code: null,
                     errors: [],
-                    context: null,
+                    context: {},
                     callee: null
                 }
-                if (typeof vargs[0] == 'object' && typeof vargs[0] != null) {
-                    const merge = vargs.shift()
-                    options.code = coalesce(merge.code, options.code)
-                    if (merge.errors != null && Array.isArray(merge.errors)) {
-                        options.errors.push.apply(options.errors, merge.errors)
-                    }
-                    if (merge.context != null && typeof merge.context == 'object') {
-                        options.context = { ...options.context, ...merge.context }
-                    }
-                    if (merge.callee != null && typeof merge.callee == 'function') {
-                        options.callee = merge.callee
-                    }
-                } else {
+                if (typeof vargs[0] == 'object' && vargs[0] != null) {
+                    do {
+                        const merge = vargs.shift()
+                        options.code = coalesce(merge.code, options.code)
+                        if (merge.errors != null && Array.isArray(merge.errors)) {
+                            options.errors.push.apply(options.errors, merge.errors)
+                        }
+                        if (merge.context != null && typeof merge.context == 'object') {
+                            options.context = { ...options.context, ...merge.context }
+                        }
+                        if (merge.callee != null && typeof merge.callee == 'function') {
+                            options.callee = merge.callee
+                        }
+                    } while (typeof vargs[0] == 'object' && vargs[0] != null)
+                }
+                switch (typeof vargs[0]) {
+                case 'string':
+                case 'symbol':
                     options.code = vargs.shift()
+                    break
                 }
                 // Assign a single error or an array of errors to the errors array.
                 if (vargs[0] instanceof Error) {
@@ -225,9 +270,7 @@ class Interrupt extends Error {
                 }
                 // Assign the context object.
                 if (typeof vargs[0] == 'object' && vargs[0] != null) {
-                    options.context = vargs.shift()
-                } else {
-                    options.context = {}
+                    options.context = { ...options.context, ...vargs.shift() }
                 }
                 // Assign the stack pruning checkpoint.
                 if (typeof vargs[vargs.length - 1] == 'function') {
@@ -237,21 +280,17 @@ class Interrupt extends Error {
                 return options
             }
 
-            static assert (condition, ...vargs) {
+            static assert = audit(function (condition, ...vargs) {
                 if (!condition) {
-                    vargs.unshift(null)
-                    vargs.push(interrupt.assert)
-                    throw new (Function.prototype.bind.apply(interrupt, vargs))
+                    throw construct(vargs, [], Class.assert, Class.assert)
                 }
-            }
+            })
 
-            static resolver (context, callee = null) {
-                vargs.unshift('')
-                const resolver = function (f, ...vargs) {
-                    const named = _named(vargs)
-                    named.context = { ...context, ...named.context }
-                    named.callee || (named.callee = callee || resolver)
-                    return interrupt.resolve(f, named)
+            static resolver (...vargs) {
+                const options = Class.options.apply(Class, vargs)
+                function resolver (f, vargs) {
+                    console.log('called', options, vargs)
+                    return Class.resolve.apply(Class, [ f, { callee: resolver }, options ].concat(vargs))
                 }
                 return resolver
             }
@@ -264,7 +303,7 @@ class Interrupt extends Error {
                         if (typeof vargs[vargs.length - 1] != 'function') {
                             vargs.push(constructor)
                         }
-                        return new (Function.prototype.bind.apply(interrupt, vargs))
+                        return new (Function.prototype.bind.apply(Class, vargs))
                     }
                     if (cvargs[0] == null) {
                         callback.apply(null, cvargs)
@@ -274,43 +313,37 @@ class Interrupt extends Error {
                 }
             }
 
-            static async resolve (f, ...vargs) {
+            static resolve = audit(async function (f, ...vargs) {
                 try {
                     if (typeof f == 'function') {
                         f = f()
                     }
                     return await f
                 } catch (error) {
-                    vargs.splice(1, 0, error)
-                    vargs.unshift(null)
-                    if (typeof vargs[vargs.length - 1] != 'function') {
-                        vargs.push(interrupt.resolve)
-                    }
-                    throw new (Function.prototype.bind.apply(interrupt, vargs))
+                    const e = construct(vargs, [], Class.resolve)
+                    console.log('>>>')
+                    console.log(e.stack)
+                    throw e
                 }
-            }
+            })
 
             static invoke (f, ...vargs) {
                 try {
-                    if (typeof f == 'function') {
-                        f = f()
-                    }
-                    return f
+                    return f()
                 } catch (error) {
-                    vargs.splice(1, 0, error)
-                    vargs.unshift(null)
-                    vargs.push(interrupt.attempt)
-                    throw new (Function.prototype.bind.apply(interrupt, vargs))
+                    const options = Class.options.apply(Class, vargs)
+                    const extended = Class.options(options, [ error ], invoke)
+                    throw new Class(options)
                 }
             }
         }
         for (const code in symbols) {
-            interrupt[code] = symbols[code]
+            Class[code] = symbols[code]
             Meta.codes.set(symbols[code], code)
         }
-        Object.defineProperty(interrupt, 'name', { value: name })
-        Object.defineProperty(interrupt, 'messages', { value: messages })
-        return interrupt
+        Object.defineProperty(Class, 'name', { value: name })
+        Object.defineProperty(Class, 'messages', { value: messages })
+        return Class
     }
 
     static dedup (error, keyify = (_, file, line) => [ file, line ]) {

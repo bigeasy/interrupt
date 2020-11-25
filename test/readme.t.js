@@ -65,7 +65,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(31, async okay => {
+require('proof')(37, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```
@@ -647,6 +647,110 @@ require('proof')(31, async okay => {
     }
     //
 
+    // ## Assertions
+
+    // If you're using Interrupt in your code would probably like to raise
+    // assertions that are derived from `Interrupt` instead of using `assert`
+    // and raising errors that are of type `AssertionError`.
+
+    // Interrupt adds a simple boolean assertion function as a static class
+    // member of the generated `Interrupt` derived exception class. You can use
+    // this in lieu of the Node.js `assert` module. The exceptions you raise
+    // will be consistent, the same type, with a code specific to your
+    // application instead of `ERR_ASSERTION` and you can add context to your
+    // assertions.
+
+    //
+    console.log('\n--- Interrupt assertions ---\n')
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            NULL_ARGUMENT: 'the JSON string to parse must not be null',
+            INVALID_TYPE: 'JSON must be a string, received: %(type)s',
+            TOO_MUCH_JSON: 'JSON string must be less than %(MAX_LENGTH)s characters received: %(length)s',
+            INVALID_JSON: 'unable to parse JSON string'
+        })
+
+        const MAX_LENGTH = 1024
+
+        function parse (json) {
+            ParseError.assert(json != null, 'NULL_ARGUMENT')
+            ParseError.assert(typeof json == 'string', 'INVALID_TYPE', { type: typeof json })
+            ParseError.assert(json.length < MAX_LENGTH, 'TOO_MUCH_JSON', { MAX_LENGTH, length: json.length })
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ParseError('INVALID_JSON', error, { json })
+            }
+        }
+
+        try {
+            parse(1)
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.symbol, ParseError.INVALID_TYPE, 'symbol set')
+            okay(error.code, 'INVALID_TYPE', 'code set')
+            okay(error.type, 'number', 'type context set')
+        }
+    }
+    //
+
+    // Thie first argument to `.assert()` is a condition that must be truthy.
+    // After the condition argument the assertion accepts all the of the same
+    // arguments that the exception constructor accepts.
+
+    // If the only argument after the assertion is a function it is interpreted
+    // as a `callee`. It is used as an exception constructor function.
+
+    // Sometimes context information requires some calculation so building the
+    // context argument takes effort, effort that we throw away immediately if
+    // the assertion doesn't fail.
+
+    // This exception constructor function of which we speak can defer that
+    // calculation. It will only be run if the condition fails.
+
+    // We can rewrite our contrived example eliminating our contrived
+    // calculations.
+
+    //
+    console.log('\n--- Interrupt assertions with deferred calculation ---\n')
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            NULL_ARGUMENT: 'the JSON string to parse must not be null',
+            INVALID_TYPE: 'JSON must be a string, received: %(type)s',
+            TOO_MUCH_JSON: 'JSON string must be less than %(MAX_LENGTH)s characters received: %(length)s',
+            INVALID_JSON: 'unable to parse JSON string'
+        })
+
+        const MAX_LENGTH = 1024
+
+        function parse (json) {
+            ParseError.assert(json != null, 'NULL_ARGUMENT')
+            ParseError.assert(typeof json == 'string', $ => $('INVALID_TYPE', { type: typeof json }))
+            ParseError.assert(json.length < MAX_LENGTH, $ => $('TOO_MUCH_JSON', {
+                MAX_LENGTH: MAX_LENGTH,
+                length: json.length,
+                difference: json.length - MAX_LENGTH
+            }))
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ParseError('INVALID_JSON', error, { json })
+            }
+        }
+
+        try {
+            parse(JSON.stringify('x'.repeat(1023)))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.symbol, ParseError.TOO_MUCH_JSON, 'symbol set')
+            okay(error.code, 'TOO_MUCH_JSON', 'code set')
+            okay(error.difference, 1, 'type context set')
+        }
+    }
+    //
+
     // **TODO** Didn't I write about this at length? Is it in the swipe?
 
     // Often times you invoke system functions that produce stubby contextless
@@ -872,7 +976,7 @@ require('proof')(31, async okay => {
             })
 
             async read (filename) {
-                const handle = await Reader.Error.resolve(fs.open(filename, 'r'), 'UNABLE_TO_OPEN_FILE', { filename })
+                const handle = await Reader.Error.resolve(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE', { filename }))
                 const stat = await Reader.Error.resolve(handle.stat(), 'UNABLE_TO_STAT_FILE', { filename })
                 const buffer = Buffer.alloc(stat.size)
                 await Reader.Error.resolve(handle.read(buffer, 0, buffer.length, 0), 'UNABLE_TO_READ_FILE', { filename })
@@ -883,8 +987,49 @@ require('proof')(31, async okay => {
 
         const reader = new Reader
 
+        try {
+            const reader = new Reader
+            await reader.read(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
+        }
+
         const source = await reader.read(__filename)
         okay(/hippopotomus/.test(source), 'found hippopotomus in source')
+    }
+    //
+
+    //
+
+    //
+    /*
+    console.log('\n--- a monolithic try/catch block for four file system calls ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_OPEN_FILE: 'unable to open file %(filename)s',
+                UNABLE_TO_READ_FILE: 'unable to read file %(filename)s',
+                UNABLE_TO_STAT_FILE: 'unable to stat file %(filename)s',
+                UNABLE_TO_CLOSE_FILE: 'unable to close file %(filename)s'
+            })
+
+            async read (filename) {
+                const resolver = Reader.Error.resolver({ filename })
+                const handle = await resolver(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE'))
+                const stat = await resolver(handle.stat(), $ => $('UNABLE_TO_STAT_FILE'))
+                const buffer = Buffer.alloc(stat.size)
+                await resolver(handle.read(buffer, 0, buffer.length, 0), $ => $('UNABLE_TO_READ_FILE'))
+                await resolver(handle.close(), $ => $('UNABLE_TO_CLOSE_FILE'))
+                return buffer
+            }
+        }
+
+        const reader = new Reader
 
         try {
             const reader = new Reader
@@ -894,7 +1039,11 @@ require('proof')(31, async okay => {
             console.log('')
             okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
         }
+
+        const source = await reader.read(__filename)
+        okay(/hippopotomus/.test(source), 'found hippopotomus in source')
     }
+    */
     //
 
     // Unfortunately, the above will only work on Node.js 14 and above and only
