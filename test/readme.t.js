@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(47, async okay => {
+require('proof')(50, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1421,10 +1421,11 @@ require('proof')(47, async okay => {
 
     // These function invocations will always be verbose, but they don't have to
     // be repetitive. If you use some of the same parameters in each call, you
-    // can memoize the function. If the first argument is an options object,
-    // code string, code symbol or format message `reslove()` will return a
-    // function that operates exactly like `resolve()` that will construct an
-    // examp
+    // can curry the function. If the first argument is an options object, code
+    // string, code symbol or format message and not a function or `Promise`
+    // then `reslove()` will return a function that operates exactly like
+    // `resolve()` that will construct an exception with those arguments merged
+    // with the arguments of the specific invocation.
 
     // **TODO** Tour of `options` and `voptions`.
 
@@ -1467,16 +1468,17 @@ require('proof')(47, async okay => {
         const source = await reader.read(__filename)
         okay(/hippopotomus/.test(source), 'found hippopotomus in source')
     }
-    return
     //
 
-    // Unfortunately, the above will only work on Node.js 14 and above and only
-    // with `--async-stack-traces` enabled. In time `async` stack traces will be
-    // the default and until then you have options.
+    // Since Node.js 14 there stack traces are traced across `Promise`
+    // resolutions (the microtask queue) but are still lost when entering the
+    // Node.js event loop (the macrostask queue.) If your application is
+    // targeted for Node.js 14 and above then you do not have to use the
+    // deferred constructor to receive a stack trace that includes the
+    // application file and line.
 
-    // This is however, rather verbose, so Interrupt provides a way to create a
-    // resolver function you can use in a function to encapsulate common
-    // properties.
+    // **TODO** No, talk about Node.js 12 versus 14 with the existing examples,
+    // do not repeat them or refer back to them.
 
     //
     {
@@ -1484,7 +1486,18 @@ require('proof')(47, async okay => {
     }
     //
 
-    // Now we dance.
+    // Error-first callback style programming continues to lose stack traces
+    // even in the latest versions of Node.js. The call stack originates from
+    // the Node.js event loop and usually terminates in the Node.js core
+    // libraries or some dependent module. If you wrap the exception you will
+    // get a stack that will at least include your callback so with wrapping you
+    // can usually figure out the asynchronous call resulted in the error.
+
+    // You can use one of the many long stack trace modules on NPM to get a full
+    // stack trace but these are monkey patched modules that break frequently.
+    // They also generate a stack trace for each asynchronous call in order to
+    // preserve the call stack. This is an expensive operation and these modules
+    // discourage their own use in production. **TODO** Out of order.
 
     //
     await new Promise(resolve => {
@@ -1521,15 +1534,23 @@ require('proof')(47, async okay => {
             resolve()
         })
     })
+    //
 
+    // Wrapping exceptions in this mannor can create a lot of additional
+    // anonymous callbacks that exist only to wrap the callback. These become
+    // difficult to unit test with complete coverage. We can create a helper
+    // function that can perform the wrapping, unit test the wrapper separately,
+    // eliminating these little branches throughout our code.
+
+    //
     await new Promise(resolve => {
         const path = require('path')
         const fs = require('fs')
 
-        function encase (message, callback) {
+        function wrap (callback, message, properties) {
             return function (...vargs) {
                 if (vargs[0] != null) {
-                    callback(new Reader.Error(message, vargs[0]))
+                    callback(new Reader.Error(message, vargs[0], properties))
                 } else {
                     callback.apply(null, vargs)
                 }
@@ -1542,7 +1563,7 @@ require('proof')(47, async okay => {
             })
 
             async read (filename, callback) {
-                fs.readFile(filename, encase('UNABLE_TO_READ_FILE', callback, { filename }))
+                fs.readFile(filename, wrap(callback, 'UNABLE_TO_READ_FILE', { filename }))
             }
         }
 
@@ -1552,22 +1573,32 @@ require('proof')(47, async okay => {
             if (error) {
                 console.log(error.stack)
                 console.log('')
+                okay(error.code, 'UNABLE_TO_READ_FILE', 'code set')
             } else {
                 console.log(/hippopotomus/.test(body.toString()))
             }
             resolve()
         })
     })
+    //
 
+    // But now the originating application file and line number are missing from
+    // our stack trace. Our stack trace will pass through our wrapper function,
+    // not through the function that called the wrap function. That call has
+    // already returned. In order to poke back into the function that called the
+    // wrapper function we use an error constructor callback. It will poke back
+    // inot the function that called the wrapper function, ususally at the file
+    // and line (but not the character position) where the wrapper was called.
+
+    //
     await new Promise(resolve => {
         const path = require('path')
         const fs = require('fs')
 
-        function encase (message, callback) {
+        function encase (callback, message, properties) {
             return function (...vargs) {
                 function constructor (message) {
-                    // **TODO** Document stack adjustment above all this.
-                    return new Reader.Error(message, vargs[0], constructor)
+                    return new Reader.Error({ callee: constructor }, message, vargs[0], properties)
                 }
                 if (vargs[0] != null) {
                     callback(message(constructor))
@@ -1583,7 +1614,7 @@ require('proof')(47, async okay => {
             })
 
             async read (filename, callback) {
-                fs.readFile(filename, encase($ => $('UNABLE_TO_READ_FILE', { filename }), callback))
+                fs.readFile(filename, encase(callback, $ => $('UNABLE_TO_READ_FILE', { filename })))
             }
         }
 
@@ -1597,7 +1628,14 @@ require('proof')(47, async okay => {
             resolve()
         })
     })
+    //
 
+    // This is how we get an useful stack trace without using long stack traces
+    // modules. It is useful because it contains a file and line number from our
+    // application that directly references where the asynchronous call
+    // originated.
+
+    //
     await new Promise(resolve => {
         const path = require('path')
         const fs = require('fs')
@@ -1618,12 +1656,58 @@ require('proof')(47, async okay => {
             if (error) {
                 console.log(error.stack)
                 console.log('')
+                okay(error.code, 'UNABLE_TO_READ_FILE', 'code set')
+                okay(error.errors[0].code, 'ENOENT', 'nested code set')
             } else {
                 console.log(/hippopotomus/.test(body.toString()))
             }
             resolve()
         })
     })
+    //
+
+    // The stack trace is useful but incomplete, it is not a full stack trace.
+    // If we repeat the wrapper process for each asynchronous call, however, it
+    // gets to be more complete, but not contiguous.
+
+    //
+    await new Promise(resolve => {
+        const path = require('path')
+        const fs = require('fs')
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_FILE: 'unable to read file %(filename)s'
+            })
+
+            async read (filename, callback) {
+                fs.readFile(filename, Reader.Error.callback($ => $('UNABLE_TO_READ_FILE', { filename }), callback))
+            }
+
+            async load (filename, callback) {
+                this.read(filename, Reader.Error.callback($ => $('UNABLE_TO_READ_FILE', { filename }), (error, body) => {
+                    if (error) {
+                        callback(error)
+                    } else {
+                        callback(JSON.parse(body.toString()))
+                    }
+                }))
+            }
+        }
+
+        const reader = new Reader
+
+        reader.load(path.join(__dirname, 'missing.txt'), (error, body) => {
+            if (error) {
+                console.log(error.stack)
+                console.log('')
+            } else {
+                console.log(/hippopotomus/.test(body.toString()))
+            }
+            resolve()
+        })
+    })
+    //
 })
 
 // ## Swipe

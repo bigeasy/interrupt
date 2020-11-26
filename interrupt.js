@@ -203,7 +203,8 @@ class Interrupt extends Error {
                 const merged = Class.voptions({ callee: callees[1] || $ }, options, vargs)
                 function $ (...vargs) {
                     called = true
-                    return new Class(Class.voptions(merged, vargs, { errors }))
+                    const options = Class.voptions(merged, vargs, { errors })
+                    return new Class(options)
                 }
                 return f($)
             } else {
@@ -254,7 +255,7 @@ class Interrupt extends Error {
                                 options.format = argument.format
                             }
                             if (Array.isArray(argument.errors)) {
-                                options.errors.push.apply(options.errors, argument)
+                                options.errors.push.apply(options.errors, argument.errors)
                             }
                             if (typeof argument.context == 'object' && argument.context != null) {
                                 options.context = { ...options.context, ...argument.context }
@@ -357,33 +358,26 @@ class Interrupt extends Error {
                 }
             })
 
-            static resolver (...vargs) {
-                const options = Class.voptions({ callee: resolver }, vargs)
-                function resolver (f, vargs) {
-                    const merged = typeof vargs[0] == 'object' && vargs[0] != null
-                        ? Class.voptions(options, vargs.shift())
-                        : options
-                    return Class.resolve.apply(Class, [ f, merged ].concat(vargs))
+            static _callback (callee, options, vargs) {
+                if (typeof vargs[0] == 'function') {
+                    // **TODO** Assert constructor is a function.
+                    const [ constructor, callback ] = vargs
+                    return function (...vargs) {
+                        if (vargs[0] == null) {
+                            callback.apply(null, vargs)
+                        } else {
+                            callback(construct2(options, [ constructor ], [ vargs[0] ]))
+                        }
+                    }
                 }
-                return resolver
+                const merged = Class.voptions(options, vargs)
+                return function wrapper (...vargs) {
+                    return Class._callback(wrapper, merged, vargs)
+                }
             }
 
-            static callback (message, callback) {
-                return function (...cvargs) {
-                    function constructor (...vargs) {
-                        vargs.splice(1, 0, cvargs[0])
-                        vargs.unshift(null)
-                        if (typeof vargs[vargs.length - 1] != 'function') {
-                            vargs.push(constructor)
-                        }
-                        return new (Function.prototype.bind.apply(Class, vargs))
-                    }
-                    if (cvargs[0] == null) {
-                        callback.apply(null, cvargs)
-                    } else {
-                        callback(message(constructor))
-                    }
-                }
+            static callback (...vargs) {
+                return Class._callback(Class.callback, {}, vargs)
             }
 
             // **TODO** Now I can't think of a way to memoize assert. Maybe I
