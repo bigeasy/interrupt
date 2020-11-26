@@ -42,6 +42,16 @@ function stringify (object) {
 
 const PROTECTED = Symbol('PROTECTED')
 
+function createOptions () {
+    return {
+        code: null,
+        format: null,
+        errors: [],
+        context: {},
+        callee: null
+    }
+}
+
 class Interrupt extends Error {
     //
 
@@ -186,25 +196,34 @@ class Interrupt extends Error {
             }
         }
 
-        function construct (vargs, errors, ...callees) {
-            if (vargs.length == 1 && typeof vargs[vargs.length - 1] == 'function') {
+        function construct2 (options, vargs, errors, ...callees) {
+            if (vargs.length === 1 && typeof vargs[0] == 'function') {
                 let called = false
+                const f = vargs.pop()
+                const merged = Class.voptions({ callee: callees[1] || $ }, options, vargs)
                 function $ (...vargs) {
-                    const options = Class.options.apply(Class, vargs)
-                    options.errors.push.apply(options.errors, errors)
-                    if (options.callee == null) {
-                        options.callee = callees[1] || $
-                    }
-                    return new Class(options)
+                    called = true
+                    return new Class(Class.voptions(merged, vargs, { errors }))
                 }
-                return vargs.pop()($)
+                return f($)
             } else {
-                const options = Class.options.apply(Class, vargs)
-                options.errors.push.apply(options.errors, errors)
-                if (options.callee == null) {
-                    options.callee = callees[0]
+                return new Class(Class.voptions({ callee: callees[0] }, options, vargs, { errors }))
+            }
+        }
+
+        function construct (vargs, errors, ...callees) {
+            if (vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function') {
+                // **TODO** Construction errors, like not calling the constructor.
+                let called = false
+                const f = vargs.pop()
+                const options = Class.voptions({ callee: callees[1] || $ }, vargs)
+                function $ (...vargs) {
+                    called = true
+                    return new Class(Class.voptions(options, vargs, { errors }))
                 }
-                return new Class(options)
+                return f($)
+            } else {
+                return new Class(Class.voptions({ callee: callees[0] }, vargs, { errors }))
             }
         }
 
@@ -219,29 +238,45 @@ class Interrupt extends Error {
             }
 
             static voptions (...vargs) {
-                let options = []
+                let options = createOptions()
                 while (vargs.length != 0) {
-                    options = Class.options.apply(Class, [ options ].concat(vargs))
+                    const argument = vargs.shift()
+                    if (typeof argument == 'object' && argument != null) {
+                        if (Array.isArray(argument)) {
+                            options = Class.options.apply(Class, [ options ].concat(argument))
+                        } else {
+                            switch (typeof argument.code) {
+                            case 'string':
+                            case 'symbol':
+                                options.code = argument.code
+                            }
+                            if (typeof argument.format == 'string') {
+                                options.format = argument.format
+                            }
+                            if (Array.isArray(argument.errors)) {
+                                options.errors.push.apply(options.errors, argument)
+                            }
+                            if (typeof argument.context == 'object' && argument.context != null) {
+                                options.context = { ...options.context, ...argument.context }
+                            }
+                            if (typeof argument.callee == 'function') {
+                                options.callee = argument.callee
+                            }
+                        }
+                    }
                 }
                 return options
             }
 
             // Convert the positional arguments to a options argument.
             static options (...vargs) {
-                // Create the base object.
-                const options = {
-                    code: null,
-                    format: null,
-                    errors: [],
-                    context: {},
-                    callee: null
-                }
-
                 // Called with no vargs, return empty options.
-
                 if (vargs.length == 0) {
-                    return options
+                    return createOptions()
                 }
+
+                // Create the base object.
+                let options
 
                 const argument = vargs.shift()
 
@@ -250,18 +285,9 @@ class Interrupt extends Error {
                 // of the vargs.
 
                 if (typeof argument == 'object' && argument != null) {
-                    options.code = coalesce(argument.code, options.code)
-                    options.format = coalesce(argument.format, options.format)
-                    if (argument.errors != null && Array.isArray(argument.errors)) {
-                        options.errors.push.apply(options.errors, argument.errors)
-                    }
-                    if (argument.context != null && typeof argument.context == 'object') {
-                        options.context = { ...options.context, ...argument.context }
-                    }
-                    if (argument.callee != null && typeof argument.callee == 'function') {
-                        options.callee = argument.callee
-                    }
+                    options = Class.voptions(argument)
                 } else {
+                    options = createOptions()
                     switch (typeof argument) {
                     case 'symbol': {
                             const code = Meta.codes.get(argument)
@@ -305,17 +331,17 @@ class Interrupt extends Error {
                             break
                         // Possibly assign the code.
                         case 'symbol': {
-                                const code = Class.code(argument, null)
+                                const code = Meta.codes.get(argument)
                                 if (code != null) {
                                     options.code = code
                                 }
                             }
                             break
                         case 'string':
-                            if (Class.code(argument, null)) {
-                                options.format = format
+                            if (symbols[argument] == null) {
+                                options.format = argument
                             } else {
-                                options.code = code
+                                options.code = argument
                             }
                             break
                         }
@@ -332,10 +358,12 @@ class Interrupt extends Error {
             })
 
             static resolver (...vargs) {
-                const options = Class.options.apply(Class, vargs)
+                const options = Class.voptions({ callee: resolver }, vargs)
                 function resolver (f, vargs) {
-                    console.log('called', options, vargs)
-                    return Class.resolve.apply(Class, [ f, { callee: resolver }, options ].concat(vargs))
+                    const merged = typeof vargs[0] == 'object' && vargs[0] != null
+                        ? Class.voptions(options, vargs.shift())
+                        : options
+                    return Class.resolve.apply(Class, [ f, merged ].concat(vargs))
                 }
                 return resolver
             }
@@ -358,17 +386,50 @@ class Interrupt extends Error {
                 }
             }
 
-            static resolve = audit(async function (f, ...vargs) {
+            // **TODO** Now I can't think of a way to memoize assert. Maybe I
+            // don't want to because assert is supposed to be fast, or that's
+            // the excuse I'll use.
+
+            //
+            static async _resolve (callee, f, options, vargs) {
                 try {
                     if (typeof f == 'function') {
                         f = f()
                     }
                     return await f
                 } catch (error) {
-                    const e = construct(vargs, [], Class.resolve)
-                    console.log('>>>')
-                    console.log(e.stack)
-                    throw e
+                    throw construct2(options, vargs, [ error ], callee)
+                }
+            }
+
+            static _resolver (callee, options, vargs) {
+                if (
+                    typeof vargs[0] == 'function' ||
+                    (
+                        typeof vargs[0] == 'object' &&
+                        vargs[0] != null &&
+                        typeof vargs[0].then == 'function'
+                    )
+                ) {
+                    return this._resolve(callee, vargs.shift(), options, vargs)
+                }
+                return function resolver (...vargs) {
+                    return Class._resolver(resolver, Class.voptions([ options, vargs ]), vargs)
+                }
+            }
+
+            static resolve2 (...vargs) {
+                return Class._resolver(Class.resolve2, {}, vargs)
+            }
+
+            static resolve = audit(async function (...vargs) {
+                try {
+                    if (typeof f == 'function') {
+                        f = f()
+                    }
+                    return await f
+                } catch (error) {
+                    throw construct(vargs, [ error ], Class.resolve)
                 }
             })
 
@@ -376,9 +437,7 @@ class Interrupt extends Error {
                 try {
                     return f()
                 } catch (error) {
-                    const options = Class.options.apply(Class, vargs)
-                    const extended = Class.options(options, [ error ], invoke)
-                    throw new Class(options)
+                    throw construct(vargs, [ error ], Class.invoke, Class.invoke)
                 }
             }
         }

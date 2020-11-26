@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(45, async okay => {
+require('proof')(47, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1394,11 +1394,11 @@ require('proof')(45, async okay => {
             })
 
             async read (filename) {
-                const handle = await Reader.Error.resolve(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE', { filename }))
-                const stat = await Reader.Error.resolve(handle.stat(), 'UNABLE_TO_STAT_FILE', { filename })
+                const handle = await Reader.Error.resolve2(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE', { filename }))
+                const stat = await Reader.Error.resolve2(handle.stat(), 'UNABLE_TO_STAT_FILE', { filename })
                 const buffer = Buffer.alloc(stat.size)
-                await Reader.Error.resolve(handle.read(buffer, 0, buffer.length, 0), 'UNABLE_TO_READ_FILE', { filename })
-                await Reader.Error.resolve(handle.close(), 'UNABLE_TO_CLOSE_FILE', { filename })
+                await Reader.Error.resolve2(handle.read(buffer, 0, buffer.length, 0), 'UNABLE_TO_READ_FILE', { filename })
+                await Reader.Error.resolve2(handle.close(), 'UNABLE_TO_CLOSE_FILE', { filename })
                 return buffer
             }
         }
@@ -1419,10 +1419,16 @@ require('proof')(45, async okay => {
     }
     //
 
-    //
+    // These function invocations will always be verbose, but they don't have to
+    // be repetitive. If you use some of the same parameters in each call, you
+    // can memoize the function. If the first argument is an options object,
+    // code string, code symbol or format message `reslove()` will return a
+    // function that operates exactly like `resolve()` that will construct an
+    // examp
+
+    // **TODO** Tour of `options` and `voptions`.
 
     //
-    /*
     console.log('\n--- a monolithic try/catch block for four file system calls ---\n')
     {
         const path = require('path')
@@ -1437,7 +1443,7 @@ require('proof')(45, async okay => {
             })
 
             async read (filename) {
-                const resolver = Reader.Error.resolver({ filename })
+                const resolver = Reader.Error.resolve2({}, { filename })
                 const handle = await resolver(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE'))
                 const stat = await resolver(handle.stat(), $ => $('UNABLE_TO_STAT_FILE'))
                 const buffer = Buffer.alloc(stat.size)
@@ -1461,7 +1467,7 @@ require('proof')(45, async okay => {
         const source = await reader.read(__filename)
         okay(/hippopotomus/.test(source), 'found hippopotomus in source')
     }
-    */
+    return
     //
 
     // Unfortunately, the above will only work on Node.js 14 and above and only
