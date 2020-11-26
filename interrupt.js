@@ -272,10 +272,6 @@ class Interrupt extends Error {
                 if (typeof vargs[0] == 'object' && vargs[0] != null) {
                     options.context = { ...options.context, ...vargs.shift() }
                 }
-                // Assign the stack pruning checkpoint.
-                if (typeof vargs[vargs.length - 1] == 'function') {
-                    options.callee = vargs.pop()
-                }
                 // Return the generated options object.
                 return options
             }

@@ -4,16 +4,16 @@
 // them in JavaScript and Node.js but it isn't always easy.
 
 // Interrupt is a module I created to address the problems with JavaScript's
-// limited exception mechansim, solving the numerous problems I've encountered
+// limited exception mechanism, solving the numerous problems I've encountered
 // that I'm sure you've encountered as well. It is not an elegant solution, but
 // it is a solution none the less.
 
-// ## Adovcacy
+// ## Advocacy
 
 // Interrupt allows you to get exceptions that have a file name and line number
-// from your program, instead of an exception stubby stack trace that points to
-// the wilderness of the Node.js source, or no stack trace at all. It does this
-// with some struggle, but without the expensive superfluous stack trace
+// from your program, instead of a stubby stack trace that points to the
+// wilderness of the Node.js source, or no stack trace at all. It does this with
+// some syntactical struggle,but without the expensive superfluous stack trace
 // generation of the long stack trace modules.
 
 // Interrupt allows you to nest exceptions so you can provide application
@@ -21,31 +21,32 @@
 
 // Interrupt allows you to cite multiple nested exceptions as the cause of your
 // contextual exception which is necessary if you're doing any sort of parallel
-// asynchronous programming where multiple parallel paths can raise excpetions.
+// asynchronous programming where multiple parallel paths can raise exceptions.
 
-// Interrupt uses and abuses the `Error.stack` property to geneate an elaborate
-// report including the type, message, context properties and stack trace of the
-// error and all of the nested errors with their stack traces.
+// Interrupt uses and abuses the `Error.stack` property provided by Google V8 to
+// generate an elaborate report from `Error.stack` including the `Error` type,
+// message, context properties, stack trace along with the error messages and
+// stack traces of all the nested errors.
 
 // Interrupt's elaborate `Error.stack` is machine readable so you could
-// conceivably process these stack traces programmatically when you've gathered
-// them up in the logs.
+// conceivably process these stack traces programmatically when gather them from
+// production logs.
 
 // Interrupt can report it's elaborate stack trace de-duped with a count of
-// similar exceptions so that is a great many parallel operations raise the same
+// similar exceptions so that when great many parallel operations raise the same
 // exception you don't have wade through the repetitive stack traces to see if
 // there is anything unique about one of them.
 
 // Interrupt endeavours to do all this with a minimum of extra code and code
 // paths so you can format exception messages with `sprintf-js`, set context
-// properties, specify nested expressions and prune the stack trace all with the
-// constructor, posssibly as a one-liner.
+// properties, specify nested expressions the constructor, often as a one-liner.
 
-// ## The Basic Problem
+// ## Running the Readme
 
 // This readme document is a unit test from the Interrupt source code. It uses
 // the [Proof](https://github.com/bigeasy/proof) unit test framework. We'll be
-// using its `okay` method to assert points we make about `Interrupt`.
+// using the `okay` method from Proof to assert the points we make about
+// Interrupt.
 
 // Please run this test yourself.
 //
@@ -54,32 +55,33 @@
 // cd interrupt
 // npm install --no-package-lock --no-save
 // node --async-stack-traces test/readme.t.js
+// ```
 //
 // The only way to see the elaborate stack trace output is to run this test at
 // the command line, so please do so.
-// ```
-// Interrupt itself is targeted for Node.js 12 or greater. Note that we are
-// running with `--async-stack-traces` enabled and to enjoy all the features
-// discussed in this readme you need to be running Node.js 14.
+//
+// Interrupt is targeted for Node.js 12 or greater. Note that we are running
+// with `--async-stack-traces` enabled and to enjoy all the features discussed
+// in this readme you need to be running Node.js 14.
 //
 // Out unit test begins here.
 
 //
-require('proof')(37, async okay => {
+require('proof')(45, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
-    // ```
+    // ```text
     // npm install interrupt
     // ```
     //
     // Then you can begin to use it in your code as follows.
     //
-    // ```
+    // ```javascript
     // const Interrupt = require('interrupt')
     // ```
     //
-    // But here, because we're in our project directory, we include the root
-    // project.
+    // But here, because we're in our project directory, we require Interrupt by
+    // requiring the root of the project.
 
     //
     const Interrupt = require('..')
@@ -98,6 +100,9 @@ require('proof')(37, async okay => {
     //  not provided the superclass will be derived from `Interrupt` directly.
     //  * `messages` &mdash; Optional map of error codes for `util.format()` error
     //  messages.
+    //
+    // **TODO** Only export `codes` and have them map to symbols. Do not bother
+    // exporting the messages, they are format strings in any case.
 
     //
     const ParseError = Interrupt.create('FooError', {
@@ -107,10 +112,16 @@ require('proof')(37, async okay => {
     })
     //
 
-    // We've created created a `ParseError` which is a decendent of `Interrupt`.
+    // We've created created a `ParseError` which is a descendent of `Interrupt`.
 
     //
-    okay(ParseError.prototype instanceof Interrupt, 'Interrupt class created')
+    okay(ParseError.prototype instanceof Interrupt, 'Generated class is an Interrupt')
+    //
+
+    // `Interrupt` is a descendent of `Error`.
+
+    //
+    okay(ParseError.prototype instanceof Error, 'Generated class is an Error')
     //
 
     // `Interrupt` is the base class of all `Interrupt` exceptions, but it is
@@ -118,6 +129,8 @@ require('proof')(37, async okay => {
     // `Interrupt.create()` method. An attempt to create a `new Interrupt()`
     // will raise an exception. This will be a plain `Error` and not an
     // `Interrupt` derived exception.
+
+    // **TODO** Show what happens when you call `new Interrupt()`.
 
     //
     console.log('\n--- exception raised when calling `new Interrupt()` directly ---\n')
@@ -147,11 +160,13 @@ require('proof')(37, async okay => {
     // You're really going to want to run this from the command line to see the
     // stack trace output.
 
+    // **TODO** Maybe we skip this. Or make it simpler.
+
     //
     console.log('\n--- throwing an Interrupt derived Error ---\n')
     {
         // _A parse function that can raise an exception. We catch the JSON
-        // expection and wrap it an exception that provides more context._
+        // exception and wrap it an exception that provides more context._
         function parse (string) {
             try {
                 return JSON.parse(string)
@@ -199,18 +214,234 @@ require('proof')(37, async okay => {
 
     // ## Errors by Code
 
-    // Interrupt encourages you to create a set of error codes for your module.
-    // I do this in lieu of creating an elaborate exception heirarchy preferring
-    // the Node.js method of setting a `code` property on the `Error` instance.
+    // Errors in JavaScript have very little context information. The only
+    // property defined by the spec is `message`. (The `stack` property is a
+    // Google V8 extension.)
 
-    // We need to use a code because Interrupt hijacks the `message`, adding
+    // The `message` is supposed to be human readable and because of this it
+    // doesn't serve well as a programmatic indication of error type. A
+    // developer many innocently reword a message for clarity and break code
+    // that uses that old wording as test in a conditional statement.
+
+    console.log('\n--- message only Errors ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        async function loadJSONConfiguration (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, '')
+            } catch (error) {
+                const e = new Error('file unreadable: ' + filename)
+                e.cause = error
+                throw e
+            }
+            let config
+            try {
+                config = JSON.parse(json)
+            } catch (error) {
+                const e = new Error('unable to parse configuration')
+                e.cause = error
+                throw e
+            }
+            if (config == null || typeof config != 'object' || Array.isArray(object)) {
+                throw new Error('JSON must be an object')
+            }
+            if (config.size == null) {
+                throw new Error('memory is a require configuration parameter')
+            }
+            if (config.size == null) {
+                throw new Error('memory configuration parameter must be a number')
+            }
+            return config
+        }
+
+        let config
+        try {
+            config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            if (/file unreadable/.test(error.message) && error.cause.code == 'ENOENT') {
+                // _If the file doesn't exist, use a default configuration._
+                config = { size: 5 }
+            } else {
+                // _Otherwise report config file errors._
+                throw error
+            }
+        }
+
+        okay(config, { size: 5 }, 'used a default configuration (example)')
+    }
+    //
+
+    // In the contrived example above we had to use a regular expression on the
+    // human readable message to recover from a file I/O error. If someone where
+    // to reword the message to "unable to read file:" that code would break.
+
+    // One way to add programmatic error type information is to create multiple
+    // error types. This is what they taught you to do when you first learned
+    // about exceptions, create an exception taxonomy.
+
+    //
+    console.log('\n--- an Error heirarchy ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        class ConfigError extends Error {}
+        class ConfigIOError extends ConfigError {}
+        class ConfigParseError extends ConfigError {}
+        class ConfigFormatError extends ConfigError {}
+        class ConfigParamError extends ConfigError {}
+        class ConfigMissingParamError extends ConfigParamError {}
+        class ConfigInvalidParamError extends ConfigParamError {}
+
+        async function loadJSONConfiguration (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, '')
+            } catch (error) {
+                const e = new ConfigIOError('file unreadable: ' + filename)
+                e.cause = error
+                throw e
+            }
+            let config
+            try {
+                config = JSON.parse(json)
+            } catch (error) {
+                const e = new ConfigParseError('unable to parse configuration')
+                e.cause = error
+                throw e
+            }
+            if (config == null || typeof config != 'object' || Array.isArray(object)) {
+                throw new ConfigFormatError('JSON must be an object')
+            }
+            if (config.size == null) {
+                throw new ConfigParamMissingError('memory is a require configuration parameter')
+            }
+            if (config.size == null) {
+                throw new ConfigParamTypeError('memory configuration parameter must be a number')
+            }
+            return config
+        }
+
+        let config
+        try {
+            config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            if ((error instanceof ConfigIOError) && error.cause.code == 'ENOENT') {
+                // _If the file doesn't exist, use a default configuration._
+                config = { size: 5 }
+            } else {
+                // _Otherwise report config file errors._
+                throw error
+            }
+        }
+
+        okay(config, { size: 5 }, 'used a default configuration (example)')
+    }
+    //
+
+    // This is not unreasonable. It's a way to go. Now you can document each of
+    // the exception types and users can respond to them using an `if/`else`
+    // ladder and `instanceof`.
+
+    // However, using entire classes for what is essentially a flag is a kind of
+    // heavyweight approach. The user now has to import your exceptions into
+    // their namespace to use them as test conditions.
+
+    // ```javascript
+    // const { ConfigParseError, ConfigIOError, loadJSONConfiguration } = require('./config')
+    // ```
+
+    // Node.js itself doesn't extend the error class heirarchy by much.  In
+    // fact, in our code we further test the cause of the I/O error by checking
+    // a `code` property to see if it is a `ENOENT`, the POSIX code for a
+    // missing file.
+
+    // The default Node.js modules have declared precious few additional
+    // exception types. They all use a `code` property, usually on a base
+    // `Error` object, to indicate type of error.
+
+    // Interrupt prefers to use codes as well.
+
+    //
+    console.log('\n--- errors using Interrupt ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            IO_ERROR: 'unable to read file: %(filename)s',
+            PARSE_ERROR: 'unable to parse configuration: %(filename)s',
+            FORMAT_ERROR: 'invalid configuration format: %(filename)s',
+            PARAM_MISSING_ERROR: 'missing parameter: %(param)s, in file: %(filename)s',
+            PARAM_INVALID_ERROR: 'parameter type invalid: %(param)s, got %(actual)s, expected: %(expected)s, in file: %(filename)s'
+        })
+
+        async function loadJSONConfiguration (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, '')
+            } catch (error) {
+                throw new ConfigError('IO_ERROR', error, { filename })
+            }
+            let config
+            try {
+                config = JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('PARSE_ERROR', error, { filename })
+            }
+            if (config == null || typeof config != 'object' || Array.isArray(object)) {
+                throw new ConfigError('FORMAT_ERROR', { filename })
+            }
+            if (config.size == null) {
+                throw new ConfigError('PARAM_MISSING_ERROR', { filename, param: 'size'  })
+            }
+            if (typeof config.size == 'number') {
+                throw new ConfigError('PARAM_TYPE_ERROR', {
+                    filename, param: 'size', actual: typeof cofnig.size, expected: typeof 0
+                })
+            }
+            return config
+        }
+
+        let config
+        try {
+            config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            if (error.code == 'IO_ERROR'  && error.errors[0].code == 'ENOENT') {
+                // _If the file doesn't exist, use a default configuration._
+                config = { size: 5 }
+            } else {
+                // _Otherwise report config file errors._
+                throw error
+            }
+        }
+
+        okay(config, { size: 5 }, 'used a default configuration (example)')
+    }
+    //
+
+    // Interrupt encourages you to create a set of error codes for your module.
+    // I do this in lieu of creating an exception heirarchy preferring the
+    // Node.js method of setting a `code` property on the `Error` instance.
+
+    // Furthermore, Interrupt discourages the use of the `message` property
+    // programmatically. In fact, Interrupt hijacks the `message`, adding
     // context and nested error stack traces so that they will appear in
     // `error.stack`.
 
-    // That's bad, I know, but codes are nice because they are easier to use in
-    // programming. Using codes to determine error type allows you to change the
-    // wording of a message without breaking any code that tests the message to
-    // determine the error type.
+    // Hijacking sounds bad, I know, but codes are nice because they are easier
+    // to use in programming. Using codes to determine error type allows you to
+    // change the wording of a message without breaking any code that tests the
+    // message to determine the error type.
 
     //
     console.log('\n--- message from error code ---\n')
@@ -492,9 +723,196 @@ require('proof')(37, async okay => {
     }
     //
 
+    // Any string argument that is not in the set of codes for an exception is
+    // used as the message. You can use this to override the default message.
+
+    //
+    /* TODO Override code message.
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function loadConfigs (dirname) {
+            let dir
+            try {
+                dir = await fs.readdir(dirname)
+            } catch (error) {
+                throw new ConfigError('FILE_READ_ERROR', 'unable to read dir')
+            }
+            const files = []
+            for (const file of dir) {
+                let body
+                try {
+                    body = fs.readFile(path.join(dir, file), 'utf8')
+                } catch (error) {
+                    throw new ConfigError('FILE_READ_ERROR')
+                }
+                try {
+                    configs.push(JSON.parse(body))
+                } catch (error) {
+                    throw new ConfigError('FILE_PARSE_ERROR')
+                }
+            }
+        }
+    }
+    */
+    //
+
+    // ## Error Context
+
+    // You can add context information to an Interrupt derived exception by
+    // specifying an object whose properties will set on the constructed
+    // exception.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function read (filename) {
+            try {
+                return await fs.readdir(dirname)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR', { filename })
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename)
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'FILE_READ_ERROR', 'code set')
+            okay(error.filename, filename, 'filename property set')
+        }
+    }
+    //
+
+    // ## Formatted Messages
+
+    // Messages are formatted using `sprintf-fs` which has a named parameter
+    // syntax so we can use our context object as our `sprintf` parameters.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            FILE_READ_ERROR: 'unable to read file: %(filename)s'
+        })
+
+        async function read (filename) {
+            try {
+                return await fs.readdir(dirname)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR', { filename })
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename)
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'FILE_READ_ERROR', 'code set')
+            okay(error.filename, filename, 'filename property set')
+        }
+    }
+    //
+
+    // If a parameter is missing, `sprintf` will fail and the format will be
+    // used as is.
+
+    // To use a parameter in the format you **must** put it in the context
+    // object and it will become a property of the exception. If you really want
+    // to use a parameter but not have it become a property of the exception
+    // prefix add an underbar to both the property in the context object and the
+    // `sprintf` format.
+
+    //
+    /* **TODO** `sprintf` only parameters
+    {
+        const ReaderError = Interrupt.create('ConfigError', {
+            FILE_READ_ERROR: 'unable to read file: %(filename)s'
+        })
+
+        async function read (filename) {
+            try {
+                return await fs.readdir(dirname)
+            } catch (error) {
+                throw new ReadError('READ_ERROR', { filename })
+            }
+        }
+
+        try {
+            await read(path.join(__dirname, 'missing'))
+        } catch (error) {
+            conosle.log(error.stack)
+            console.log('')
+            okay(error.code, 'READ_ERROR', 'code set')
+            okay(error.filename, filename, 'filename property set')
+        }
+    }
+    */
+    //
+
+    // ## Nested Exceptions
+
+    // When you want to throw an exception based on a exception you caught you
+    // can pass that exception's error into the constructor. The `errors`
+    // property of the exception will contain the cause. Any argument that is an
+    // object that is `instance Error` will be added to the `errors`.
+
+    // If you pass in more than one error they will both be added to the errors
+    // array. (**TODO** An example with a primary attempt and a fallback and
+    // they both fail.)
+
+    // Any `Array` argument to the constructor is treated as an array of nested
+    // errors and added to the error array.
+
+    // You can mix adding both arrays and errors directly.
+
+    // Any type can be thrown from JavaScript. If can't be certain that the
+    // error you caught is `instanceof Error`, simply wrap it in an array.
+
+    // **TODO** Example of any type of error.
+
+    // ## Callee
+
+    // Sometime you want the stack trace to exclude the upper most stack frames.
+    // This is useful when creating assertion functions where the top of the
+    // stack trace should be the point where the assertion was called, not the
+    // point where the assertion function created the exception.
+
+    // To specify a callee you pass in an options object as the first argument
+    // to the constructor.
+
+    // **TODO** The code or message format is always required, but somtimes it
+    // is not desired. If you want to specify that you do not want to use a code
+    // nor a message pass in null. This is useful when you are overriding
+    // properties
+
+    // ## Named Arguments
+
     // Sometimes a one-liner gets too hard to read. Breaking up the declaration
     // across multiple lines helps, and while you're at it, you may as well give
     // a name to what you're trying to do.
+
+    // ## Constructor Argument Order
+
+    // We have an ambiguity in the way we call our constructor. We have both an
+    // options object and a properties object. If you want to use an options
+    // object but then override it with custom properties you have to ...
 
     // All of the above parameters can be specified with an `options` object as
     // the first parameter to the constructor.
