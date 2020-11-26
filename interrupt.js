@@ -77,7 +77,7 @@ class Interrupt extends Error {
         const code = typeof options.code == 'symbol'
             ? Meta.codes.get(options.code) || null
             : options.code
-        const format = Class.messages[code] || code
+        const format = options.format || Class.messages[code] || code
         try {
             dump = sprintf(format, options.context)
         } catch (error) {
@@ -208,7 +208,6 @@ class Interrupt extends Error {
             }
         }
 
-        const Meta = { codes: new Map }
         assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
         const Class = class extends superclass {
             constructor (...vargs) {
@@ -232,45 +231,95 @@ class Interrupt extends Error {
                 // Create the base object.
                 const options = {
                     code: null,
+                    format: null,
                     errors: [],
                     context: {},
                     callee: null
                 }
-                if (typeof vargs[0] == 'object' && vargs[0] != null) {
-                    do {
-                        const merge = vargs.shift()
-                        options.code = coalesce(merge.code, options.code)
-                        if (merge.errors != null && Array.isArray(merge.errors)) {
-                            options.errors.push.apply(options.errors, merge.errors)
-                        }
-                        if (merge.context != null && typeof merge.context == 'object') {
-                            options.context = { ...options.context, ...merge.context }
-                        }
-                        if (merge.callee != null && typeof merge.callee == 'function') {
-                            options.callee = merge.callee
-                        }
-                    } while (typeof vargs[0] == 'object' && vargs[0] != null)
+
+                // Called with no vargs, return empty options.
+
+                if (vargs.length == 0) {
+                    return options
                 }
-                switch (typeof vargs[0]) {
-                case 'string':
-                case 'symbol':
-                    options.code = vargs.shift()
-                    break
+
+                const argument = vargs.shift()
+
+                // First argument must be an options object, code string, code
+                // symbol, or message format. If not we do not process any more
+                // of the vargs.
+
+                if (typeof argument == 'object' && argument != null) {
+                    options.code = coalesce(argument.code, options.code)
+                    options.format = coalesce(argument.format, options.format)
+                    if (argument.errors != null && Array.isArray(argument.errors)) {
+                        options.errors.push.apply(options.errors, argument.errors)
+                    }
+                    if (argument.context != null && typeof argument.context == 'object') {
+                        options.context = { ...options.context, ...argument.context }
+                    }
+                    if (argument.callee != null && typeof argument.callee == 'function') {
+                        options.callee = argument.callee
+                    }
+                } else {
+                    switch (typeof argument) {
+                    case 'symbol': {
+                            const code = Meta.codes.get(argument)
+                            if (code != null) {
+                                options.code = code
+                            }
+                        }
+                        break
+                    case 'string': {
+                            if (symbols[argument] == null) {
+                                options.format = argument
+                            } else {
+                                options.code = argument
+                            }
+                        }
+                        break
+                    default:
+                        return options
+                    }
                 }
-                // Assign a single error or an array of errors to the errors array.
-                if (vargs[0] instanceof Error) {
-                    options.errors.push(vargs.shift())
-                } else if (Array.isArray(vargs[0])) {
-                    // **TODO** Going to say that contexts for errors, it's
-                    // dubious. If you really want to give context to errors you
-                    // should wrap them in an Interrupt, which is more
-                    // consistent and therefor easier to document. We'll have to
-                    // revisit Destructible to make this happen.
-                    options.errors.push.apply(options.errors, vargs.shift())
-                }
-                // Assign the context object.
-                if (typeof vargs[0] == 'object' && vargs[0] != null) {
-                    options.context = { ...options.context, ...vargs.shift() }
+                // If the argument cannot be interpreted, discard it.
+                while (vargs.length != 0) {
+                    const argument = vargs.shift()
+                    // Assign a single error or an array of errors to the errors array.
+                    if (argument instanceof Error) {
+                        options.errors.push(argument)
+                    } else if (Array.isArray(argument)) {
+                        // **TODO** Going to say that contexts for errors, it's
+                        // dubious. If you really want to give context to errors you
+                        // should wrap them in an Interrupt, which is more
+                        // consistent and therefor easier to document. We'll have to
+                        // revisit Destructible to make this happen.
+                        options.errors.push.apply(options.errors, argument)
+                    } else {
+                        switch (typeof argument) {
+                        // Assign the context object.
+                        case 'object':
+                            if (argument != null) {
+                                options.context = { ...options.context, ...argument }
+                            }
+                            break
+                        // Possibly assign the code.
+                        case 'symbol': {
+                                const code = Class.code(argument, null)
+                                if (code != null) {
+                                    options.code = code
+                                }
+                            }
+                            break
+                        case 'string':
+                            if (Class.code(argument, null)) {
+                                options.format = format
+                            } else {
+                                options.code = code
+                            }
+                            break
+                        }
+                    }
                 }
                 // Return the generated options object.
                 return options
@@ -333,6 +382,7 @@ class Interrupt extends Error {
                 }
             }
         }
+        const Meta = { codes: new Map }
         for (const code in symbols) {
             Class[code] = symbols[code]
             Meta.codes.set(symbols[code], code)
