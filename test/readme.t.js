@@ -1457,11 +1457,11 @@ require('proof')(55, async okay => {
             })
 
             async read (filename) {
-                const handle = await Reader.Error.resolve2(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE', { filename }))
-                const stat = await Reader.Error.resolve2(handle.stat(), 'UNABLE_TO_STAT_FILE', { filename })
+                const handle = await Reader.Error.resolve(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE', { filename }))
+                const stat = await Reader.Error.resolve(handle.stat(), 'UNABLE_TO_STAT_FILE', { filename })
                 const buffer = Buffer.alloc(stat.size)
-                await Reader.Error.resolve2(handle.read(buffer, 0, buffer.length, 0), 'UNABLE_TO_READ_FILE', { filename })
-                await Reader.Error.resolve2(handle.close(), 'UNABLE_TO_CLOSE_FILE', { filename })
+                await Reader.Error.resolve(handle.read(buffer, 0, buffer.length, 0), 'UNABLE_TO_READ_FILE', { filename })
+                await Reader.Error.resolve(handle.close(), 'UNABLE_TO_CLOSE_FILE', { filename })
                 return buffer
             }
         }
@@ -1507,7 +1507,7 @@ require('proof')(55, async okay => {
             })
 
             async read (filename) {
-                const resolver = Reader.Error.resolve2({}, { filename })
+                const resolver = Reader.Error.resolve({}, { filename })
                 const handle = await resolver(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE'))
                 const stat = await resolver(handle.stat(), $ => $('UNABLE_TO_STAT_FILE'))
                 const buffer = Buffer.alloc(stat.size)

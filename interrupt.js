@@ -196,7 +196,7 @@ class Interrupt extends Error {
             }
         }
 
-        function construct2 (options, vargs, errors, ...callees) {
+        function construct (options, vargs, errors, ...callees) {
             if (vargs.length === 1 && typeof vargs[0] == 'function') {
                 let called = false
                 const f = vargs.pop()
@@ -209,22 +209,6 @@ class Interrupt extends Error {
                 return f($)
             } else {
                 return new Class(Class.voptions({ callee: callees[0] }, options, vargs, { errors }))
-            }
-        }
-
-        function construct (vargs, errors, ...callees) {
-            if (vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function') {
-                // **TODO** Construction errors, like not calling the constructor.
-                let called = false
-                const f = vargs.pop()
-                const options = Class.voptions({ callee: callees[1] || $ }, vargs)
-                function $ (...vargs) {
-                    called = true
-                    return new Class(Class.voptions(options, vargs, { errors }))
-                }
-                return f($)
-            } else {
-                return new Class(Class.voptions({ callee: callees[0] }, vargs, { errors }))
             }
         }
 
@@ -354,7 +338,7 @@ class Interrupt extends Error {
 
             static assert = audit(function (condition, ...vargs) {
                 if (!condition) {
-                    throw construct(vargs, [], Class.assert, Class.assert)
+                    throw construct({}, vargs, [], Class.assert, Class.assert)
                 }
             })
 
@@ -366,7 +350,7 @@ class Interrupt extends Error {
                         if (vargs[0] == null) {
                             callback.apply(null, vargs)
                         } else {
-                            callback(construct2(options, [ constructor ], [ vargs[0] ]))
+                            callback(construct(options, [ constructor ], [ vargs[0] ]))
                         }
                     }
                 }
@@ -392,7 +376,7 @@ class Interrupt extends Error {
                     }
                     return await f
                 } catch (error) {
-                    throw construct2(options, vargs, [ error ], callee)
+                    throw construct(options, vargs, [ error ], callee)
                 }
             }
 
@@ -412,20 +396,9 @@ class Interrupt extends Error {
                 }
             }
 
-            static resolve2 (...vargs) {
-                return Class._resolver(Class.resolve2, {}, vargs)
+            static resolve (...vargs) {
+                return Class._resolver(Class.resolve, {}, vargs)
             }
-
-            static resolve = audit(async function (...vargs) {
-                try {
-                    if (typeof f == 'function') {
-                        f = f()
-                    }
-                    return await f
-                } catch (error) {
-                    throw construct(vargs, [ error ], Class.resolve)
-                }
-            })
 
             static _invoke (callee, options, vargs) {
                 if (typeof vargs[0] == 'function') {
@@ -433,7 +406,7 @@ class Interrupt extends Error {
                     try {
                         return f()
                     } catch (error) {
-                        throw construct2(options, vargs, [ error ], callee, callee)
+                        throw construct(options, vargs, [ error ], callee, callee)
                     }
                 }
                 const merged = Class.voptions(options, vargs)
