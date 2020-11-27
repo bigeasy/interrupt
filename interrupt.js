@@ -91,7 +91,7 @@ class Interrupt extends Error {
             : options.code
         const format = options.format || Class.messages[code] || code
         try {
-            dump = sprintf(format, options.context)
+            dump = sprintf(format, options.properties)
         } catch (error) {
             // **TODO** Instrument errors somehow? Maybe a second context that
             // reports Interrupt errors.
