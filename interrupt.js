@@ -427,12 +427,23 @@ class Interrupt extends Error {
                 }
             })
 
-            static invoke (f, ...vargs) {
-                try {
-                    return f()
-                } catch (error) {
-                    throw construct(vargs, [ error ], Class.invoke, Class.invoke)
+            static _invoke (callee, options, vargs) {
+                if (typeof vargs[0] == 'function') {
+                    const f = vargs.shift()
+                    try {
+                        return f()
+                    } catch (error) {
+                        throw construct2(options, vargs, [ error ], callee, callee)
+                    }
                 }
+                const merged = Class.voptions(options, vargs)
+                return function invoker (...vargs) {
+                    return Class._invoke(invoke, merged, vargs)
+                }
+            }
+
+            static invoke (...vargs) {
+                return Class._invoke(Class.inovke, {}, vargs)
             }
         }
         const Meta = { codes: new Map }

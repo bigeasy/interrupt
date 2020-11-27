@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(50, async okay => {
+require('proof')(55, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1007,7 +1007,7 @@ require('proof')(50, async okay => {
 
     // For example, imagine we have a `Synax` class in our module. We'd like to
     // have `SyntaxError` specific to our module but `SyntaxError` a
-    // `SynaxError` already exists in the global namespace. We can create
+    // `SyntaxError` already exists in the global namespace. We can create
     // instead create a `Syntax.Error`, an error that has a dot qualfiied name
     // and is a static member of our `Syntax` class.
 
@@ -1165,6 +1165,69 @@ require('proof')(50, async okay => {
             okay(error.symbol, ParseError.TOO_MUCH_JSON, 'symbol set')
             okay(error.code, 'TOO_MUCH_JSON', 'code set')
             okay(error.difference, 1, 'type context set')
+        }
+    }
+    //
+
+    // ## Synchronous `try`/`catch` Wrappers
+
+    // There are times when I don't want to go to the trouble of unit testing
+    // catch blocks that merely wrap an exception, but I don't want to forgo the
+    // unit test coverage.
+
+    // When all a catch block does is wrap and rethrow, you can use the static
+    // `invoke()` method specifying a guarded function to run and the parameters
+    // to the error constructor of the wrapper function if the function fails.
+    // The function will be run in `try/catch` block and if the function throws
+    // an exception, the error will be wrapped in an exception constructed with
+    // the given constructor parameters.
+
+    //
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            INVALID_JSON: 'unable to parse JSON string'
+        })
+
+        function parse (json) {
+            return ParseError.invoke(() => JSON.parse(json), 'INVALID_JSON')
+        }
+
+        try {
+            parse('!')
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'INVALID_JSON', 'synchronous try/catch wrapper code set')
+            okay(error.errors[0] instanceof SyntaxError, 'synchronous try/catch wrapper nested error present')
+        }
+    }
+    //
+
+    // You cannot use invoke to call `async` functions or resolve `Promise`s.
+    // For that you use the static `resolve()`. See below.
+
+    // For consistencies sake, you can defer calculation of the constructor
+    // parameters. If you pass a function as the only argument after the guarded
+    // function is a function it is used as an exception constructor.
+
+    //
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            INVALID_JSON: 'unable to parse JSON string'
+        })
+
+        function parse (json) {
+            return ParseError.invoke(() => JSON.parse(json), $ => $('INVALID_JSON', { length: json.length }))
+        }
+
+        try {
+            parse('!')
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'INVALID_JSON', 'synchronous try/catch wrapper code set')
+            okay(error.length, 1, 'synchronous try/catch wrapper property set')
+            okay(error.errors[0] instanceof SyntaxError, 'synchronous try/catch wrapper nested error present')
         }
     }
     //
