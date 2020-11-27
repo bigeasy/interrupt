@@ -233,10 +233,10 @@ class Interrupt extends Error {
             if (vargs.length === 1 && typeof vargs[0] == 'function') {
                 let called = false
                 const f = vargs.pop()
-                const merged = Class.voptions({ callee: callees[1] || $ }, options, vargs)
+                const merged = Class._options([{ callee: callees[1] || $ }], [ options ])
                 function $ (...vargs) {
                     called = true
-                    const options = Class.voptions(merged, vargs, { errors })
+                    const options = Class._options([ merged ], vargs, [{ errors }])
                     return new Class(options)
                 }
                 const error = f($)
@@ -258,7 +258,7 @@ class Interrupt extends Error {
                 }
                 return error
             } else {
-                return new Class(Class.voptions({ callee: callees[0] }, options, vargs, { errors }))
+                return new Class(Class._options([{ callee: callees[0] }], [ options ], vargs, [{ errors }]))
             }
         }
 
@@ -298,6 +298,114 @@ class Interrupt extends Error {
                 }
                 throw new Interrupt.Error('UNKNOWN_CODE', { code: String(resolved) })
             }
+
+            static _options (...vargs) {
+                function merge (options, vargs) {
+                    if (vargs.length == 0) {
+                        return options
+                    }
+                    const argument = vargs.shift()
+                    if (typeof argument == 'object' && argument != null) {
+                        switch (typeof argument.code) {
+                        case 'string':
+                        case 'symbol':
+                            options.code = argument.code
+                        }
+                        if (typeof argument.format == 'string') {
+                            options.format = argument.format
+                        }
+                        if (Array.isArray(argument.errors)) {
+                            options.errors.push.apply(options.errors, argument.errors)
+                        }
+                        if (Array.isArray(argument._errors)) {
+                            options._errors.push.apply(options._errors, argument._errors)
+                        }
+                        if (typeof argument.properties == 'object' && argument.properties != null) {
+                            options.properties = { ...options.properties, ...argument.properties }
+                        }
+                        if (typeof argument.callee == 'function') {
+                            options.callee = argument.callee
+                        }
+                    } else {
+                        switch (typeof argument) {
+                        // Possibly assign the code.
+                        case 'symbol': {
+                                const code = Meta.codes.get(argument)
+                                if (code != null) {
+                                    options.code = code
+                                }
+                            }
+                            break
+                        case 'string':
+                            if (symbols[argument] == null) {
+                                options.format = argument
+                            } else {
+                                options.code = argument
+                            }
+                            break
+                        default:
+                            return options
+                        }
+                    }
+                    // If the argument cannot be interpreted, discard it.
+                    while (vargs.length != 0) {
+                        const argument = vargs.shift()
+                        // Assign a single error or an array of errors to the errors array.
+                        if (argument instanceof Error) {
+                            options.errors.push(argument)
+                        } else if (Array.isArray(argument)) {
+                            // **TODO** Going to say that contexts for errors, it's
+                            // dubious. If you really want to give context to errors you
+                            // should wrap them in an Interrupt, which is more
+                            // consistent and therefor easier to document. We'll have to
+                            // revisit Destructible to make this happen.
+                            options.errors.push.apply(options.errors, argument)
+                        } else {
+                            switch (typeof argument) {
+                            // Assign the context object.
+                            case 'object':
+                                if (argument != null) {
+                                    options.properties = { ...options.prerties, ...argument }
+                                } else {
+                                    options._errors.push({ code: NULL_POSITIONAL_ARGUMENT })
+                                }
+                                break
+                            // Possibly assign the code.
+                            case 'symbol': {
+                                    const code = Meta.codes.get(argument)
+                                    if (code != null) {
+                                        options.code = code
+                                    }
+                                }
+                                break
+                            case 'string':
+                                if (symbols[argument] == null) {
+                                    options.format = argument
+                                } else {
+                                    options.code = argument
+                                }
+                                break
+                            }
+                        }
+                    }
+                    // Return the generated options object.
+                    return options
+                }
+                const options = {
+                    type: OPTIONS,
+                    code: null,
+                    format: null,
+                    errors: [],
+                    _errors: [],
+                    properties: {},
+                    callee: null
+                }
+                while (vargs.length != 0) {
+                    merge(options, vargs.shift())
+                }
+                return options
+            }
+
 
             static voptions (...vargs) {
                 let options = createOptions()
@@ -420,7 +528,7 @@ class Interrupt extends Error {
 
             static _assert (callee, options, vargs) {
                 if (typeof vargs[0] === 'object' && vargs[0].type === OPTIONS) {
-                    const merged = Class.voptions(options, vargs)
+                    const merged = Class._options([ options ], vargs)
                     return function assert (...vargs) {
                         Class._assert(assert, merged, vargs)
                     }
@@ -449,7 +557,7 @@ class Interrupt extends Error {
                         throw construct(options, vargs, [ error ], callee, callee)
                     }
                 }
-                const merged = Class.voptions(options, vargs)
+                const merged = Class._options([ options ], vargs)
                 return function invoker (...vargs) {
                     return Class._invoke(invoker, merged, vargs)
                 }
@@ -474,7 +582,7 @@ class Interrupt extends Error {
                         }
                     }
                 }
-                const merged = Class.voptions(options, vargs)
+                const merged = Class._options([ options ], vargs)
                 return function wrapper (...vargs) {
                     return Class._callback(wrapper, merged, vargs)
                 }
@@ -515,8 +623,9 @@ class Interrupt extends Error {
                 ) {
                     return this._resolve(callee, vargs.shift(), options, vargs)
                 }
+                const merged = Class._options([ options ], vargs)
                 return function resolver (...vargs) {
-                    return Class._resolver(resolver, Class.voptions([ options, vargs ]), vargs)
+                    return Class._resolver(resolver, merged, vargs)
                 }
             }
 

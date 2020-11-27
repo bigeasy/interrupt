@@ -1232,9 +1232,9 @@ require('proof')(74, async okay => {
         } catch (error) {
             console.log(error.stack)
             console.log('')
-            okay(error.symbol, ParseError.TOO_MUCH_JSON, 'symbol set')
-            okay(error.code, 'TOO_MUCH_JSON', 'code set')
-            okay(error.difference, 1, 'type property set')
+            okay(error.symbol, ParseError.TOO_MUCH_JSON, 'deferred assert symbol set')
+            okay(error.code, 'TOO_MUCH_JSON', 'deferred assert code set')
+            okay(error.difference, 1, 'deferred assert property set')
         }
     }
     //
