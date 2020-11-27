@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(55, async okay => {
+require('proof')(67, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1770,6 +1770,145 @@ require('proof')(55, async okay => {
             resolve()
         })
     })
+    //
+
+    // ## Currying
+
+    // * Start with resolve, callback, invoke, then assert.
+
+    //
+    await new Promise(resolve => {
+        const path = require('path')
+        const fs = require('fs')
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_DIRECTORY: 'unable to read directory: %(dirname)s',
+                UNABLE_TO_READ_FILE: 'unable to read file: %(filename)s'
+            })
+
+            async read (dirname, callback) {
+                const wrap = Reader.Error.callback({}, { dirname }), files = []
+                fs.readdir(dirname, wrap($ => $('UNABLE_TO_READ_DIRECTORY'), (error, dir) => {
+                    if (error) {
+                        callback(error)
+                    } else {
+                        function readFile () {
+                            if (dir.length == 0) {
+                                callback(null, files)
+                            } else {
+                                const filename = path.join(dirname, dir.shift())
+                                fs.readFile(filename, 'utf8', wrap($ => $('UNABLE_TO_READ_FILE', { filename }), (error, body) => {
+                                    if (error) {
+                                        callback(error)
+                                    } else {
+                                        files.push({ filename, body })
+                                        readFile()
+                                    }
+                                }))
+                            }
+                        }
+                        readFile()
+                    }
+                }))
+            }
+        }
+
+        const reader = new Reader
+
+        reader.read(path.join(__dirname, 'missing'), (error, body) => {
+            if (error) {
+                console.log(error.stack)
+                console.log('')
+                okay(error.code, 'UNABLE_TO_READ_DIRECTORY', 'curried callback wrapper code set')
+                okay(error.errors[0].code, 'ENOENT', 'curried callback nested error set')
+            } else {
+                console.log(/hippopotomus/.test(body.toString()))
+            }
+            reader.read(path.join(__dirname, 'readme', 'unreadable'), (error, body) => {
+                if (error) {
+                    console.log(error.stack)
+                    console.log('')
+                    okay(error.code, 'UNABLE_TO_READ_FILE', 'curried callback wrapper code set')
+                    okay(error.errors[0].code, 'EISDIR', 'curried callback nested error set')
+                } else {
+                    console.log(/hippopotomus/.test(body.toString()))
+                }
+                resolve()
+            })
+        })
+    })
+    //
+
+    //
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            CONFIG_PARSE_ERROR: 'unable to parse config JSON',
+            CONFIG_PARAM_MISSING_ERROR: 'parameter is missing: %(param)s'
+        })
+
+        function parseConfig (config) {
+            const invoker = ConfigError.invoke({}, { config })
+            const object = invoker(() => JSON.parse(config), 'CONFIG_PARSE_ERROR')
+            return invoker(() => object.settings.volume, 'CONFIG_PARAM_MISSING_ERROR', { param: 'settings.volume' })
+        }
+
+        try {
+            parseConfig('!')
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'CONFIG_PARSE_ERROR', 'curried invoke code set')
+            okay(error.errors[0] instanceof SyntaxError, 'curried invoke nested error set')
+        }
+
+        try {
+            parseConfig('{}')
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'CONFIG_PARAM_MISSING_ERROR', 'curried invoke code set')
+            okay(error.errors[0] instanceof TypeError, 'curried invoke nested error set')
+        }
+
+        okay(parseConfig('{"settings":{"volume":0}}'), 0, 'curried invoke no errors')
+    }
+    //
+
+    //
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            CONFIG_PARAM_MISSING_ERROR: 'parameter is missing: %(param)s'
+        })
+
+        function parseConfig (config) {
+            const object = JSON.parse(config)
+            const assert = ConfigError.assert(Interrupt.CURRY, { config: object })
+            assert(object.settings != null, 'CONFIG_PARAM_MISSING_ERROR', { param: 'settings' })
+            assert(object.settings.volume != null, 'CONFIG_PARAM_MISSING_ERROR', { param: 'settings.volume' })
+            return object
+        }
+
+        try {
+            parseConfig('{}')
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'CONFIG_PARAM_MISSING_ERROR', 'curried assert code set')
+        }
+
+        try {
+            parseConfig('{"settings":{}}')
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'CONFIG_PARAM_MISSING_ERROR', 'curried assert code set')
+        }
+
+        okay(parseConfig('{"settings":{"volume":0}}'), {
+            settings: { volume: 0 }
+        }, 'curried assert no failed assertions')
+    }
     //
 })
 

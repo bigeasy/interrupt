@@ -41,9 +41,11 @@ function stringify (object) {
 }
 
 const PROTECTED = Symbol('PROTECTED')
+const OPTIONS = Symbol('OPTIONS')
 
 function createOptions () {
     return {
+        type: OPTIONS,
         code: null,
         format: null,
         errors: [],
@@ -162,6 +164,14 @@ class Interrupt extends Error {
                 Object.defineProperty(this, property, { value: assign[property] })
             }
         }
+    }
+
+    static get OPTIONS () {
+        return OPTIONS
+    }
+
+    static get CURRY () {
+        return { type: OPTIONS }
     }
 
     // **TODO** Wouldn't it be nice to have some sort of way to specify
@@ -336,11 +346,21 @@ class Interrupt extends Error {
                 return options
             }
 
-            static assert = audit(function (condition, ...vargs) {
-                if (!condition) {
-                    throw construct({}, vargs, [], Class.assert, Class.assert)
+            static _assert (callee, options, vargs) {
+                if (typeof vargs[0] === 'object' && vargs[0].type === OPTIONS) {
+                    const merged = Class.voptions(options, vargs)
+                    return function assert (...vargs) {
+                        Class._assert(assert, merged, vargs)
+                    }
+                } else if (!vargs[0]) {
+                    vargs.shift()
+                    throw construct(options, vargs, [], callee, callee)
                 }
-            })
+            }
+
+            static assert (...vargs) {
+                return Class._assert(Class.assert, {}, vargs)
+            }
 
             static _callback (callee, options, vargs) {
                 if (typeof vargs[0] == 'function') {
@@ -411,7 +431,7 @@ class Interrupt extends Error {
                 }
                 const merged = Class.voptions(options, vargs)
                 return function invoker (...vargs) {
-                    return Class._invoke(invoke, merged, vargs)
+                    return Class._invoke(invoker, merged, vargs)
                 }
             }
 
