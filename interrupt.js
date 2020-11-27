@@ -49,7 +49,7 @@ function createOptions () {
         code: null,
         format: null,
         errors: [],
-        context: {},
+        properties: {},
         callee: null
     }
 }
@@ -99,12 +99,12 @@ class Interrupt extends Error {
         }
         const contexts = []
         const errors = []
-        const keys = Object.keys(options.context).length
+        const keys = Object.keys(options.properties).length
         if (keys != 0 || options.errors.length) {
             dump += '\n'
 
             if (keys != 0) {
-                dump += '\n' + stringify(options.context) + '\n'
+                dump += '\n' + stringify(options.properties) + '\n'
             }
 
             for (let i = 0, I = options.errors.length; i < I; i++) {
@@ -131,7 +131,7 @@ class Interrupt extends Error {
         dump += '\nstack:\n'
         super(dump)
 
-        MATERIAL.set(this, { message: options.message, context: options.context })
+        MATERIAL.set(this, { message: options.message, context: options.properties })
 
         Object.defineProperty(this, "name", {
             value: this.constructor.name,
@@ -148,7 +148,7 @@ class Interrupt extends Error {
             Error.captureStackTrace(this, options.callee)
         }
 
-        const assign = { label: options.message, errors: options.errors, contexts, ...options.context }
+        const assign = { label: options.message, errors: options.errors, contexts, ...options.properties }
         if (Class.messages[code]) {
             assign.code = code
         }
@@ -251,8 +251,8 @@ class Interrupt extends Error {
                             if (Array.isArray(argument.errors)) {
                                 options.errors.push.apply(options.errors, argument.errors)
                             }
-                            if (typeof argument.context == 'object' && argument.context != null) {
-                                options.context = { ...options.context, ...argument.context }
+                            if (typeof argument.properties == 'object' && argument.properties != null) {
+                                options.properties = { ...options.properties, ...argument.properties }
                             }
                             if (typeof argument.callee == 'function') {
                                 options.callee = argument.callee
@@ -321,7 +321,7 @@ class Interrupt extends Error {
                         // Assign the context object.
                         case 'object':
                             if (argument != null) {
-                                options.context = { ...options.context, ...argument }
+                                options.properties = { ...options.prerties, ...argument }
                             }
                             break
                         // Possibly assign the code.

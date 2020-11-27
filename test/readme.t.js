@@ -38,8 +38,8 @@
 // there is anything unique about one of them.
 
 // Interrupt endeavours to do all this with a minimum of extra code and code
-// paths so you can format exception messages with `sprintf-js`, set context
-// properties, specify nested expressions the constructor, often as a one-liner.
+// paths so you can format exception messages with `sprintf-js`, set properties,
+// specify nested expressions the constructor, often as a one-liner.
 
 // ## Running the Readme
 
@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(67, async okay => {
+require('proof')(68, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -185,7 +185,7 @@ require('proof')(67, async okay => {
             okay(error instanceof Interrupt, 'error is an Interrupt')
             okay(error instanceof Error, 'an Interrupt is an Error')
             okay(error.code, 'INVALID_JSON', 'the code is key into the message map')
-            okay(error.string, '!#@%', 'contextual property set')
+            okay(error.string, '!#@%', 'property set')
             okay(error.errors.length, 1, 'we have nested errors')
             okay(error.errors[0] instanceof SyntaxError, 'the nested cause is a JSON error')
         }
@@ -521,7 +521,7 @@ require('proof')(67, async okay => {
     // When you create an exception it sets a non-enumerable `symbol` property
     // on the exception instance. This is set in addition to the code.
 
-    // The symbol property is not printed in the context portion of the stack
+    // The symbol property is not printed in the properties section of the stack
     // trace message. It is already represented there by the `code` string.
 
     //
@@ -759,11 +759,10 @@ require('proof')(67, async okay => {
     */
     //
 
-    // ## Error Context
+    // ## Error Properties
 
-    // You can add context information to an Interrupt derived exception by
-    // specifying an object whose properties will set on the constructed
-    // exception.
+    // You can set properties on an Interrupt derived exception by specifying an
+    // object whose properties will set on the constructed exception.
 
     //
     {
@@ -798,7 +797,7 @@ require('proof')(67, async okay => {
     // ## Formatted Messages
 
     // Messages are formatted using `sprintf-fs` which has a named parameter
-    // syntax so we can use our context object as our `sprintf` parameters.
+    // syntax so we can use our properties object as our `sprintf` parameters.
 
     //
     {
@@ -833,11 +832,11 @@ require('proof')(67, async okay => {
     // If a parameter is missing, `sprintf` will fail and the format will be
     // used as is.
 
-    // To use a parameter in the format you **must** put it in the context
+    // To use a parameter in the format you **must** put it in the properties
     // object and it will become a property of the exception. If you really want
     // to use a parameter but not have it become a property of the exception
-    // prefix add an underbar to both the property in the context object and the
-    // `sprintf` format.
+    // prefix add an underbar to both the property in the properties object and
+    // the `sprintf` format.
 
     //
     /* **TODO** `sprintf` only parameters
@@ -931,7 +930,7 @@ require('proof')(67, async okay => {
                 throw new ParseError({
                     code: 'INVALID_JSON',
                     errors: [ error ],
-                    context: { json },
+                    properties: { json },
                     callee: parse
                 })
             }
@@ -942,7 +941,8 @@ require('proof')(67, async okay => {
         } catch (error) {
             console.log(error.stack)
             console.log('')
-            okay(error.code, 'INVALID_JSON', 'code set')
+            okay(error.code, 'INVALID_JSON', 'named parameters code set')
+            okay(error.json, '!', 'named parameters property set')
         }
     }
     //
@@ -1075,8 +1075,8 @@ require('proof')(67, async okay => {
     // member of the generated `Interrupt` derived exception class. You can use
     // this in lieu of the Node.js `assert` module. The exceptions you raise
     // will be consistent, the same type, with a code specific to your
-    // application instead of `ERR_ASSERTION` and you can add context to your
-    // assertions.
+    // application instead of `ERR_ASSERTION` and you can add properties to your
+    // assertion exceptions.
 
     //
     console.log('\n--- Interrupt assertions ---\n')
@@ -1108,7 +1108,7 @@ require('proof')(67, async okay => {
             console.log('')
             okay(error.symbol, ParseError.INVALID_TYPE, 'symbol set')
             okay(error.code, 'INVALID_TYPE', 'code set')
-            okay(error.type, 'number', 'type context set')
+            okay(error.type, 'number', 'type property set')
         }
     }
     //
@@ -1120,9 +1120,9 @@ require('proof')(67, async okay => {
     // If the only argument after the assertion is a function it is interpreted
     // as a `callee`. It is used as an exception constructor function.
 
-    // Sometimes context information requires some calculation so building the
-    // context argument takes effort, effort that we throw away immediately if
-    // the assertion doesn't fail.
+    // Sometimes propeties require some calculation so building the properties
+    // argument takes effort, effort that we throw away immediately if the
+    // assertion doesn't fail.
 
     // This exception constructor function of which we speak can defer that
     // calculation. It will only be run if the condition fails.
@@ -1164,7 +1164,7 @@ require('proof')(67, async okay => {
             console.log('')
             okay(error.symbol, ParseError.TOO_MUCH_JSON, 'symbol set')
             okay(error.code, 'TOO_MUCH_JSON', 'code set')
-            okay(error.difference, 1, 'type context set')
+            okay(error.difference, 1, 'type property set')
         }
     }
     //
