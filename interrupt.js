@@ -62,6 +62,13 @@ class Interrupt extends Error {
     static DEFERRED_CONSTRUCTOR_INVALID_RETURN = Symbol('DEFERRED_CONSTRUCTOR_INVALID_RETURN')
 
     static DEFERRED_CONSTRUCTOR_NOT_CALLED = Symbol('DEFERRED_CONSTRUCTOR_NOT_CALLED')
+
+    static Error = Interrupt.create('Interrupt.Error', {
+        INVALID_CODE: 'code is already a property of the superclass',
+        UNKNOWN_CODE: 'unknown code',
+        INVALID_CODE_TYPE: 'invalid code type'
+    })
+
     //
 
     // This constructor is only called by derived class and should not be called
@@ -200,16 +207,17 @@ class Interrupt extends Error {
         // heirarchy.
         const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
         const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
-        const merged = {}, symbols = {}
+        const duplicates = new Set, symbols = {}
         for (const code in messages) {
-            if (superclass[code]) {
-                throw new Error(`code is already defined in superclass: ${code}`)
+            const existing = superclass[code]
+            if (existing != null && typeof existing != 'symbol') {
+                throw new Interrupt.Error('INVALID_CODE')
             }
-            if (merged[code]) {
-                throw new Error(`code is defined more than once: ${code}`)
+            if (duplicates.has(code)) {
+                throw new Interrupt.Error('DUPLICATE_CODE')
             }
-            merged[code] = messages[code]
-            symbols[code] = Symbol(code)
+            duplicates.add(code)
+            symbols[code] = superclass[code] || Symbol(code)
         }
 
         function construct (options, vargs, errors, ...callees) {
@@ -262,6 +270,33 @@ class Interrupt extends Error {
                 } else {
                     super(...vargs)
                 }
+            }
+
+            static get codes () {
+                return Object.keys(symbols)
+            }
+
+            static code (code, ...vargs) {
+                let resolved
+                switch (typeof code) {
+                case 'string': {
+                        resolved = Meta.codes.get(code)
+                    }
+                    break
+                case 'symbol': {
+                        resolved = symbols[code]
+                    }
+                    break
+                default:
+                    throw new Interrupt.Error('INVALID_CODE_TYPE')
+                }
+                if (resolved != null) {
+                    return resolved
+                }
+                if (vargs.length != 0) {
+                    return vargs[0]
+                }
+                throw new Interrupt.Error('UNKNOWN_CODE', { code: String(resolved) })
             }
 
             static voptions (...vargs) {

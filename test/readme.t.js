@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(72, async okay => {
+require('proof')(74, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -192,7 +192,9 @@ require('proof')(72, async okay => {
     }
     //
 
-    // In some our examples we're going to pretent to load a config file.
+    // In some our examples we're going to pretent to load a config file. Here
+    // we create a temporary directory with some good configs and some bad
+    // configs.
 
     //
     {
@@ -393,6 +395,9 @@ require('proof')(72, async okay => {
 
     // Interrupt prefers to use codes as well.
 
+    // **TODO** Simplify. No, make it an `Error` only example and set the code
+    // with a helper, which is how I do it when Interrupt is not available.
+
     //
     console.log('\n--- errors using Interrupt ---\n')
     {
@@ -450,6 +455,25 @@ require('proof')(72, async okay => {
         }
 
         okay(config, { size: 5 }, 'used a default configuration (example)')
+    }
+    //
+
+    // You declare your codes when you create your Interrupt derived class. You
+    // can obtain a list of declared codes using the static `codes` property.
+
+    // In the example below we declare a `ConfigError` class with an object that
+    // maps the error codes to an error message.
+
+    //
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            IO_ERROR: 'unable to read config file',
+            PARSE_ERROR: 'unable to parse config file'
+        })
+
+        const codes = ConfigError.codes
+
+        okay(codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'create error codes')
     }
     //
 
@@ -968,6 +992,28 @@ require('proof')(72, async okay => {
             okay(error.code, 'INVALID_JSON', 'named parameters code set')
             okay(error.json, '!', 'named parameters property set')
         }
+    }
+    // ## Error Heirarchies
+
+    // You can still error heirarcies with Interrupt. Error codes that are
+    // redefined in derived classes use the same symbol but you can override the
+    // error message.
+
+    //
+    {
+        const IOError = Interrupt.create('IOError', {
+            ERROR_MISSING: 'file is missing'
+        })
+
+        const DirectoryError = Interrupt.create('DirectoryError', IOError, {
+            ERROR_MISSING: 'directory is missing'
+        })
+
+        okay(IOError.ERROR_MISSING == DirectoryError.ERROR_MISSING, 'symbols are the same')
+
+        /*const FileError = Interrupt.create('FileError', IOError, {
+            code: 'SHOULD NOT WORK'
+        })*/
     }
     //
 
@@ -2111,3 +2157,30 @@ require('proof')(72, async okay => {
 // loop while handling sockets and files. To help out when strack traces are
 // short and stubby, Interrupt lets you add formatted messages and context
 // information, usually with a simple one liner.
+
+// One of the problems with exceptions is that they are not on the what some
+// call the happy path. The happy path is the path through your code where
+// everything is running smoothly, the path that you would hope gets followed
+// most of the time. Because exceptions are not on the happy path they don't get
+// much exercise and moreover, they don't get much testing.
+
+// Unit testing exceptions can be a pain. You have to set up failure conditions
+// that are rare. You might have failure consitions that depend on operating
+// system misconfigurations that a unit test running as a non-root user
+// shouldn't be able to establish.
+
+// Just run test coverage on any code base and see how many of the catch blocks
+// are untested.
+
+// Interrupt tries to address these challenges by auditing the happy path or
+// else by asserting that an error code path is correct for all types of errors
+// when you traverse it one type of error.
+
+// Interrupt tries to be accommodating on error path and exacting on the happy
+// path. It has a lot of assertions on functions that are executed during normal
+// operation and a lot of fallbacks on the functions that are executed during
+// exception handling.
+
+// These facilities are for wrapping and rethrowing excpetions and now you can
+// see why this is important to use. It would be a foolish for Interrupt to try
+// to provide a replacement for the catch block however.
