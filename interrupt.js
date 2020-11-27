@@ -362,6 +362,25 @@ class Interrupt extends Error {
                 return Class._assert(Class.assert, {}, vargs)
             }
 
+            static _invoke (callee, options, vargs) {
+                if (typeof vargs[0] == 'function') {
+                    const f = vargs.shift()
+                    try {
+                        return f()
+                    } catch (error) {
+                        throw construct(options, vargs, [ error ], callee, callee)
+                    }
+                }
+                const merged = Class.voptions(options, vargs)
+                return function invoker (...vargs) {
+                    return Class._invoke(invoker, merged, vargs)
+                }
+            }
+
+            static invoke (...vargs) {
+                return Class._invoke(Class.inovke, {}, vargs)
+            }
+
             static _callback (callee, options, vargs) {
                 if (typeof vargs[0] == 'function') {
                     // **TODO** Assert constructor is a function.
@@ -418,25 +437,6 @@ class Interrupt extends Error {
 
             static resolve (...vargs) {
                 return Class._resolver(Class.resolve, {}, vargs)
-            }
-
-            static _invoke (callee, options, vargs) {
-                if (typeof vargs[0] == 'function') {
-                    const f = vargs.shift()
-                    try {
-                        return f()
-                    } catch (error) {
-                        throw construct(options, vargs, [ error ], callee, callee)
-                    }
-                }
-                const merged = Class.voptions(options, vargs)
-                return function invoker (...vargs) {
-                    return Class._invoke(invoker, merged, vargs)
-                }
-            }
-
-            static invoke (...vargs) {
-                return Class._invoke(Class.inovke, {}, vargs)
             }
         }
         const Meta = { codes: new Map }
