@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(68, async okay => {
+require('proof')(72, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -190,6 +190,30 @@ require('proof')(68, async okay => {
             okay(error.errors[0] instanceof SyntaxError, 'the nested cause is a JSON error')
         }
     }
+    //
+
+    // In some our examples we're going to pretent to load a config file.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const tmp = path.join(__dirname, 'tmp')
+
+        await fs.rmdir(tmp, { recursive: true })
+        await fs.mkdir(path.join(tmp, 'eisdir', 'config.json'), { recursive: true })
+        await fs.mkdir(path.join(tmp, 'enoent'))
+        await fs.mkdir(path.join(tmp, 'good'))
+
+        await fs.writeFile(path.join(tmp, 'good', 'config.json'), JSON.stringify({
+            settings: {
+                volume: 0
+            }
+        }))
+    }
+    //
+
     //
 
     // ## Interrupt Codes
@@ -1825,7 +1849,7 @@ require('proof')(68, async okay => {
             } else {
                 console.log(/hippopotomus/.test(body.toString()))
             }
-            reader.read(path.join(__dirname, 'readme', 'unreadable'), (error, body) => {
+            reader.read(path.join(__dirname, 'tmp', 'eisdir'), (error, body) => {
                 if (error) {
                     console.log(error.stack)
                     console.log('')
@@ -1910,7 +1934,135 @@ require('proof')(68, async okay => {
         }, 'curried assert no failed assertions')
     }
     //
+
+    // ## Auditing Deferred Construction
+
+    // Deferred construction is cute when working with asssertions and necessary
+    // for meaninful stack traces when working with callbacks. However, it
+    // creates a lot of little functions that are only invoked if an exception
+    // is raised. These are essentially our catch blocks.
+
+    // Even without deferred construction we won't know if we've correctly
+    // created the exception without raising it. Perhaps a property using in the
+    // formatted message is missing, we'll end up with a poorly formatted
+    // message and missing context in our crash log. It might mean the
+    // difference between fixing a production bug or merely fixing a bug in a
+    // production bug.
+
+    // To determine if our exceptions are going to be correctly constructed we
+    // can using the deferred construction audit mechanism. Simply assign a
+    // function to the `Interrupt.audit` property. If the `Interrupt.audit`
+    // property is set with a function that function will be called from all the
+    // assistant functions, `assert`, `invoke`, `callback` and `resolve` with
+    // the constructed exception regardless of whether or not the exception was
+    // necessary. The `audit` function can examine the constructed exception to
+    // ensure that it's properties and format are correct.
+
+    // Additionally, an `errors` array is provided. This contains an array of
+    // errors or potential errors encountered while constructing the exception.
+    // These are simple objects, not instances of type `Error` so they do not
+    // contain a stack trace.
+
+    // The `invoke`, `callback` and `resolve` functions wrap an exception.
+    // Exceptions creates soely for the purpose of auditing that are not the
+    // result of a caught exception will use `Interrupt.AUDIT` for the
+    // exception. This is a `Error` generated at startup and its stack trace is
+    // meaningless.
+
+    // You should only use the audit function in your unit testing.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+        const fileSystem = require('fs')
+
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                INVALID_FILE: 'unable to load file: %(filename)',
+                INVALID_ARGUMENT: 'the JSON string to parse must not be null',
+                INVALID_JSON: 'unable to parse JSON'
+            })
+
+            parse (json) {
+                Config.Error.assert(json != null, 'INVALID_ARGUMENT')
+                const object = Config.Error.invoke(() => JSON.parse(json), 'INVALID_JSON')
+                return object
+            }
+
+            async load (filename) {
+                const json = await Config.Error.resolve(fs.readFile(filename, 'utf8'), 'INVALID_FILE', { filename })
+                return this.parse(json)
+            }
+
+            classicLoad (filename, callback) {
+                fileSystem.readFile(filename, 'utf8', Config.Error.callback($ => ('INVALID_FILE', { filename }), (error, json) => {
+                    if (error) {
+                        callback(error)
+                    } else {
+                        try {
+                            callback(null, this.parse(json))
+                        } catch (error) {
+                            callback(error)
+                        }
+                    }
+                }))
+            }
+        }
+
+        const audit = []
+
+        Interrupt.audit = function (error, errors) {
+            if (error instanceof Config.Error) {
+                audit.push({ error, errors })
+            }
+        }
+
+        const filename = path.join(__dirname, 'tmp', 'good', 'config.json')
+
+        const config = new Config
+
+        okay(await config.load(filename), { settings: { volume: 0 } }, 'audit `Promise` resolution')
+
+        await new Promise((resolve, reject) => {
+            config.classicLoad(filename, (error, config) => {
+                if (error) {
+                    reject(error)
+                } else {
+                    okay(config, { settings: { volume: 0 } }, 'audit error-first callback')
+                    resolve()
+                }
+            })
+        })
+
+        okay(audit.length != 0, 'created and reported despite no exceptions raised')
+
+        for (const { error, errors } of audit) {
+            if (errors.length != 0) {
+                console.log(errors)
+            }
+        }
+
+        // _Reset our logging mechamism._
+        audit.length = 0
+
+        // _Turn audit off._
+        Interrupt.audit = null
+
+        config.parse('{}')
+
+        okay(audit.length, 0, 'nothing to report')
+    }
+    //
 })
+
+// ## Using Codes Without Exceptions
+
+// Say something about this because I'm doing it in interrupt.
+
+// ## Reducing the Verbosity of Stack Traces
+
+// **TODO** Dedup goes here.
 
 // ## Swipe
 

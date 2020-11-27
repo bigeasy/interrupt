@@ -11,6 +11,7 @@ const Keyify = require('keyify')
 // A map of existing `Interrupt` derived exceptions to their construction
 // material for use in creating de-duplications.
 const MATERIAL = new WeakMap
+const Instances = new WeakMap
 
 const Classes = new WeakMap
 
@@ -21,7 +22,6 @@ const location = require('./location')
 
 // `sprintf` supports named parameters, so we can use our context messages.
 const sprintf = require('sprintf-js').sprintf
-
 
 // **TODO** Will crash on circular references, right? Ensure that we parse
 // safely or remove any circular references in advance of parsing.
@@ -42,6 +42,7 @@ function stringify (object) {
 
 const PROTECTED = Symbol('PROTECTED')
 const OPTIONS = Symbol('OPTIONS')
+const AUDIT = new Error('example')
 
 function createOptions () {
     return {
@@ -49,12 +50,18 @@ function createOptions () {
         code: null,
         format: null,
         errors: [],
+        _errors: [],
         properties: {},
         callee: null
     }
 }
 
 class Interrupt extends Error {
+    static SPRINTF_ERROR = Symbol('SPRINTF_ERROR')
+
+    static DEFERRED_CONSTRUCTOR_INVALID_RETURN = Symbol('DEFERRED_CONSTRUCTOR_INVALID_RETURN')
+
+    static DEFERRED_CONSTRUCTOR_NOT_CALLED = Symbol('DEFERRED_CONSTRUCTOR_NOT_CALLED')
     //
 
     // This constructor is only called by derived class and should not be called
@@ -67,11 +74,13 @@ class Interrupt extends Error {
     //
     constructor (Protected, Class, name, vargs, Meta) {
         assert(PROTECTED === Protected, 'Interrupt constructor is not a public interface')
+        const instance = { errors: [] }
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
         if (vargs.length == 0) {
             super()
+            Instances.set(this, instance)
             MATERIAL.set(this, { message: null, context: {} })
             Object.defineProperties(this, {
                 name: {
@@ -93,6 +102,12 @@ class Interrupt extends Error {
         try {
             dump = sprintf(format, options.properties)
         } catch (error) {
+            instance.errors.push({
+                code: Interrupt.SPRINTF_ERROR,
+                format: format,
+                properties: options.properties,
+                error: error
+            })
             // **TODO** Instrument errors somehow? Maybe a second context that
             // reports Interrupt errors.
             dump = format
@@ -132,6 +147,7 @@ class Interrupt extends Error {
         super(dump)
 
         MATERIAL.set(this, { message: options.message, context: options.properties })
+        Instances.set(this, instance)
 
         Object.defineProperty(this, "name", {
             value: this.constructor.name,
@@ -195,18 +211,17 @@ class Interrupt extends Error {
             merged[code] = messages[code]
             symbols[code] = Symbol(code)
         }
-        function audit (f) {
-            if (Interrupt.audit) {
-                return function (...vargs) {
-                    Interrupt.audit(new Class(Class.options.apply(Class, vargs.slice(1))))
-                    return f.options.apply(f, vargs)
-                }
-            } else {
-                return f
-            }
-        }
 
         function construct (options, vargs, errors, ...callees) {
+            const error = _construct(options, vargs, errors, callees)
+            if (typeof Interrupt.audit === 'function') {
+                const instance = Instances.get(error)
+                Interrupt.audit(error, instance.errors)
+            }
+            return error
+        }
+
+        function _construct (options, vargs, errors, callees) {
             if (vargs.length === 1 && typeof vargs[0] == 'function') {
                 let called = false
                 const f = vargs.pop()
@@ -216,7 +231,24 @@ class Interrupt extends Error {
                     const options = Class.voptions(merged, vargs, { errors })
                     return new Class(options)
                 }
-                return f($)
+                const error = f($)
+                if (!called) {
+                    const error = new Class
+                    const instance = Instances.get(error)
+                    instance.errors.push({
+                        code: Interrupt.DEFERRED_CONSTRUCTOR_NOT_CALLED
+                    })
+                    return error
+                }
+                if (typeof error != 'object' || error == null || !(error instanceof Class)) {
+                    const error = new Class
+                    const instance = Instances.get(error)
+                    instance.errors.push({
+                        code: Interrupt.DEFERRED_CONSTRUCTOR_INVALID_RETURN
+                    })
+                    return error
+                }
+                return error
             } else {
                 return new Class(Class.voptions({ callee: callees[0] }, options, vargs, { errors }))
             }
@@ -250,6 +282,9 @@ class Interrupt extends Error {
                             }
                             if (Array.isArray(argument.errors)) {
                                 options.errors.push.apply(options.errors, argument.errors)
+                            }
+                            if (Array.isArray(argument._errors)) {
+                                options._errors.push.apply(options._errors, argument._errors)
                             }
                             if (typeof argument.properties == 'object' && argument.properties != null) {
                                 options.properties = { ...options.properties, ...argument.properties }
@@ -322,6 +357,8 @@ class Interrupt extends Error {
                         case 'object':
                             if (argument != null) {
                                 options.properties = { ...options.prerties, ...argument }
+                            } else {
+                                options._errors.push({ code: NULL_POSITIONAL_ARGUMENT })
                             }
                             break
                         // Possibly assign the code.
@@ -355,6 +392,8 @@ class Interrupt extends Error {
                 } else if (!vargs[0]) {
                     vargs.shift()
                     throw construct(options, vargs, [], callee, callee)
+                } else if (typeof Interrupt.audit == 'function') {
+                    construct(options, vargs, [], callee, callee)
                 }
             }
 
@@ -366,7 +405,11 @@ class Interrupt extends Error {
                 if (typeof vargs[0] == 'function') {
                     const f = vargs.shift()
                     try {
-                        return f()
+                        const result = f()
+                        if (typeof Interrupt.audit === 'function') {
+                            construct(options, vargs, [ AUDIT ], callee, callee)
+                        }
+                        return result
                     } catch (error) {
                         throw construct(options, vargs, [ error ], callee, callee)
                     }
@@ -378,7 +421,7 @@ class Interrupt extends Error {
             }
 
             static invoke (...vargs) {
-                return Class._invoke(Class.inovke, {}, vargs)
+                return Class._invoke(Class.invoke, {}, vargs)
             }
 
             static _callback (callee, options, vargs) {
@@ -388,6 +431,9 @@ class Interrupt extends Error {
                     return function (...vargs) {
                         if (vargs[0] == null) {
                             callback.apply(null, vargs)
+                            if (typeof Interrupt.audit == 'function') {
+                                construct(options, [ constructor ], [ AUDIT ])
+                            }
                         } else {
                             callback(construct(options, [ constructor ], [ vargs[0] ]))
                         }
@@ -413,7 +459,11 @@ class Interrupt extends Error {
                     if (typeof f == 'function') {
                         f = f()
                     }
-                    return await f
+                    const result = await f
+                    if (typeof Interrupt.audit == 'function') {
+                        construct(options, vargs, [ AUDIT ], callee)
+                    }
+                    return result
                 } catch (error) {
                     throw construct(options, vargs, [ error ], callee)
                 }
