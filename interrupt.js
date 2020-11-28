@@ -8,12 +8,14 @@ const coalesce = require('extant')
 // Deep differences.
 const Keyify = require('keyify')
 
-// A map of existing `Interrupt` derived exceptions to their construction
-// material for use in creating de-duplications.
-const MATERIAL = new WeakMap
-const Instances = new WeakMap
+// Weak map of instances to construction material used for de-duplication and
+// reporting to report the errors of our errors. Errors in JavaScript are simple
+// objects and utilities that encounter them will do things like print their
+// properties to console so protected status of protected properties is likely
+// to be violated.
 
-const Classes = new WeakMap
+//
+const Instances = new WeakMap
 
 // **TODO** Does this work if there is no stack trace at all?
 
@@ -57,11 +59,10 @@ function createOptions () {
 }
 
 function context (options, prototype, instance, stack = true) {
-    // **TODO** We can extract this and reuse it for "contexts".
     let dump
     const format = options.format || prototype.message || prototype.code
     try {
-        dump = sprintf(format, options.properties)
+        dump = instance.message = sprintf(format, options.properties)
     } catch (error) {
         instance.errors.push({
             code: Interrupt.SPRINTF_ERROR,
@@ -69,9 +70,7 @@ function context (options, prototype, instance, stack = true) {
             properties: options.properties,
             error: error
         })
-        // **TODO** Instrument errors somehow? Maybe a second context that
-        // reports Interrupt errors.
-        dump = format
+        dump = instance.message = format
     }
     const contexts = []
     const context = { ...options.properties, code: options.code }
@@ -118,24 +117,9 @@ class Interrupt extends Error {
     constructor (Protected, Class, Prototype, vargs) {
         // **TODO** Use `Interrupt.Error`.
         assert(PROTECTED === Protected, 'Interrupt constructor is not a public interface')
-        const instance = { errors: [] }
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
-        if (vargs.length == 0) {
-            super()
-            Instances.set(this, instance)
-            MATERIAL.set(this, { message: null, context: {} })
-            Object.defineProperties(this, {
-                name: {
-                    value: this.constructor.name,
-                    enumerable: false
-                },
-                errors: { value: [] },
-                contexts: { value: [] }
-            })
-            return
-        }
         const { options, prototype } = function () {
             const options = Class._options(vargs)
             const code = typeof options.code == 'symbol'
@@ -147,9 +131,28 @@ class Interrupt extends Error {
                 prototype: prototype
             }
         } ()
+        const instance = { errors: [], options }
+        if (
+            options.code == null &&
+            options.format == null &&
+            options.errors.length == 0 &&
+            Object.keys(options.properties).length == 0 &&
+            options.callee == null
+        ) {
+            super()
+            Instances.set(this, instance)
+            Object.defineProperties(this, {
+                name: {
+                    value: this.constructor.name,
+                    enumerable: false
+                },
+                errors: { value: [] },
+                contexts: { value: [] }
+            })
+            return
+        }
         super(context(options, prototype, instance))
 
-        MATERIAL.set(this, { message: options.message, context: options.properties })
         Instances.set(this, instance)
 
         Object.defineProperty(this, "name", {
@@ -815,17 +818,17 @@ class Interrupt extends Error {
                 errors.push(`\ncause:\n\n${indented}\n`)
             }
             const repeated = node.duplicates.size + 1
-            const material = MATERIAL.get(node.error)
-            const context = { ...material.context }
+            const instance = Instances.get(node.error)
+            const properties = { ...instance.options.properties }
             if (repeated != 1) {
-                context.repeated = repeated
+                properties.repeated = repeated
             }
             const stack = node.error.stack.replace(/[\s\S]*^stack:$/m, 'stack:')
-            if (Object.keys(context).length != 0) {
-                const contextualized = stringify(context)
-                return `${node.error.name}: ${material.message}\n\n${contextualized}\n\n${errors.join('')}\n\n${stack}`
+            if (Object.keys(properties).length != 0) {
+                const contextualized = stringify(properties)
+                return `${node.error.name}: ${instance.message}\n\n${properties}\n\n${errors.join('')}\n\n${stack}`
             }
-            return `${node.error.name}: ${material.message}\n\n${errors.join('')}\n\n${stack}`
+            return `${node.error.name}: ${instance.message}\n\n${errors.join('')}\n\n${stack}`
         }
         /*
         function print (indent, extract, node) {
