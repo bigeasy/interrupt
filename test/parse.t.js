@@ -2,6 +2,7 @@ require('proof')(4, (okay) => {
     const fs = require('fs')
     const path = require('path')
     const stack = fs.readFileSync(path.join(__dirname, 'parse.txt'), 'utf8')
+    console.log(stack)
     const parse = require('../parse')
     const parsed = parse(stack)
     okay(parsed.context, { a: 1 }, 'parsed context')

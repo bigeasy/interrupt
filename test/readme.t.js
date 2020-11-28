@@ -588,6 +588,7 @@ require('proof')(79, async okay => {
         try {
             parse('!')
         } catch (error) {
+            console.log(error.stack, '\n')
             okay(error.symbol === ParseError.INVALID_JSON, 'symbol is set')
         }
     }
@@ -620,6 +621,7 @@ require('proof')(79, async okay => {
         try {
             parse('!')
         } catch (error) {
+            console.log(error, '\n')
             okay(error.symbol === ParseError.INVALID_JSON, 'symbol is set')
         }
     }
@@ -684,7 +686,7 @@ require('proof')(79, async okay => {
         try {
             parse('!')
         } catch (error) {
-            console.log(error.stack)
+            console.log(error.stack, '\n')
             okay(error.symbol === JSONError.INVALID_JSON, 'invalid JSON error rethrown')
         }
     }
@@ -725,8 +727,7 @@ require('proof')(79, async okay => {
             parse(null)
         } catch (error) {
             // _Note that the `m` suffix makes this a multi-line matching regex._
-            console.log(error.stack)
-            console.log('')
+            console.log(error.stack, '\n')
             okay(/^NULL_ARGUMENT$/m.test(error.message), 'no code found, use first argument as message')
             okay(error.code == null, 'no code is set')
         }
@@ -756,8 +757,7 @@ require('proof')(79, async okay => {
             parse(null)
         } catch (error) {
             // _Note that the `m` suffix makes this a multi-line matching regex._
-            console.log(error.stack)
-            console.log('')
+            console.log(error.stack, '\n')
             okay(/^the JSON string to parse must not be null$/m.test(error.message), 'specify message as first argument instead of code')
         }
     }
@@ -826,8 +826,7 @@ require('proof')(79, async okay => {
         try {
             await read(filename)
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(error.stack, '\n')
             okay(error.code, 'FILE_READ_ERROR', 'code set')
             okay(error.filename, filename, 'filename property set')
         }
@@ -859,7 +858,6 @@ require('proof')(79, async okay => {
             try {
                 json = await fs.readFile(filename, 'utf8')
             } catch (error) {
-                console.log(error.stack)
                 throw new ConfigError('CONFIG_IO_ERROR', { filename })
             }
             try {
@@ -889,8 +887,7 @@ require('proof')(79, async okay => {
         try {
             await load(filename)
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(error.stack, '\n')
             okay(error.code, 'CONFIG_IO_ERROR', 'default property code set')
             okay(error.fallback, 'default property set')
         }
@@ -898,9 +895,7 @@ require('proof')(79, async okay => {
         try {
             await load(path.join(__dirname, 'tmp', 'bad', 'config.json'))
         } catch (error) {
-            console.log('')
-            console.log(error.stack)
-            console.log('')
+            console.log('\n', error.stack, '\n')
             okay(error.code, 'CONFIG_PARSE_ERROR', 'no default property code set')
             okay(!error.fallback, 'no default property property not set')
         }
@@ -913,6 +908,7 @@ require('proof')(79, async okay => {
     // syntax so we can use our properties object as our `sprintf` parameters.
 
     //
+    console.log('\n--- formatted messages ---\n')
     {
         const path = require('path')
         const fs = require('fs').promises
@@ -934,8 +930,7 @@ require('proof')(79, async okay => {
         try {
             await read(filename)
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(error.stack, '\n')
             okay(error.code, 'FILE_READ_ERROR', 'code set')
             okay(error.filename, filename, 'filename property set')
         }
@@ -998,6 +993,76 @@ require('proof')(79, async okay => {
     // error you caught is `instanceof Error`, simply wrap it in an array.
 
     // **TODO** Example of any type of error.
+
+    //
+
+    // When you create an aggregate exception you may want to provide context
+    // for the errors. You'll have context for the aggregate error itself in the
+    // form of properties, but you won't have context for each individual error
+    // unless you provide a parallel array of context information. That is, you
+    // may want to provide an application code and application specific
+    // properties.
+
+    // You can wrap each exception in an Interrupt derived exception, but
+    // sometimes you don't really need the additional stack trace.
+
+    //
+    console.log('\n--- nested error context wrapper ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            UNABLE_TO_READ_DIRECTORY: 'unable to read directory',
+            UNABLE_TO_READ_FILE: 'unable to read file'
+        })
+
+        async function slurpDirectory (dirname) {
+            let dir
+            try {
+                dir = await fs.readdir(dirname)
+            } catch (error) {
+                throw new ConfigError('UNABLE_TO_READ_DIRECTORY', { dirname })
+            }
+            const promises = [], errors = [], files = []
+            for (const file of dir) {
+                promises.push(async function () {
+                    const filename = path.join(dirname, file)
+                    try {
+                        await files.push(await fs.readFile(filename))
+                    } catch (error) {
+                        errors.push(new ConfigError.Context('UNABLE_TO_READ_FILE', error, { filename }))
+                    }
+                } ())
+            }
+            for (const promise of promises) {
+                await promise
+            }
+            if (errors.length) {
+                throw new ConfigError('UNABLE_TO_READ_DIRECTORY', errors, { dirname })
+            }
+            return files
+        }
+
+        const dirname = path.join(__dirname, 'tmp', 'eisdir')
+
+        try {
+            await slurpDirectory(dirname)
+        } catch (error) {
+            console.log(error.stack, '\n')
+        }
+    }
+    //
+
+    // Why don't you need the additional stack trace? Okay, I'm going to add
+    // this facility because it exists currently, but the new stack trace
+    // adjustment facilities suggest that it is a mistake. Maybe this comes back
+    // out. Can see how you might have a module where all the user really cares
+    // about is the point of entry, not about the calls launched within the
+    // module function.
+
+    // **TODO** In Destructable, see if there is space for a launch marker. A `$
+    // => ()` function that can encase the launch point of the strand.
 
     // ## Callee
 
@@ -2167,6 +2232,37 @@ require('proof')(79, async okay => {
         okay(audit.length, 0, 'nothing to report')
     }
     //
+
+    // ## Dedup
+
+    //
+    {
+        const Test = {
+            Error: Interrupt.create('Test.Error', {
+                one: 'one',
+                two: 'two',
+                root: 'root'
+            })
+        }
+        const hello = new Error('hello')
+        const world = new Error('world')
+        const one = new Test.Error('one', [ hello, hello, hello ], { id: 1, x: 4 })
+        const two = new Test.Error('one', [ world, world ], { id: 1, x: 5 })
+        const three = new Test.Error('one', [ hello, world ], { id: 1, x: 6 })
+        const four = new Test.Error('two', [ hello, world ], { id: 1, x: 7 })
+        const interrupt = new Test.Error('three')
+        const error = new Test.Error('root', [
+            one, one, two, two, three, four, new Test.Error,
+            interrupt, interrupt,
+            new Test.Error('no context', new Error), 1
+        ], { id: 2, x: 8 })
+        console.log(error.stack)
+        console.log(Interrupt.dedup(error))
+        console.log(Interrupt.dedup(error, error => {
+            return [ error.name, error.code || error.message, error.id || null ]
+        }))
+        console.log(Interrupt.dedup(new Error))
+    }
 })
 
 // ## Using Codes Without Exceptions
@@ -2251,3 +2347,14 @@ require('proof')(79, async okay => {
 // These facilities are for wrapping and rethrowing excpetions and now you can
 // see why this is important to use. It would be a foolish for Interrupt to try
 // to provide a replacement for the catch block however.
+
+// Context versus formatted messages: now that you have a context object dumped
+// into your stack trace, you can forgo a lot of message formatting. Just
+// because a facility is available, doesn't mean you're supposed to use it. If
+// you can't open a file your message can be "unable to open file," you can put
+// the file in the context object and it will be right underneath, labeled, and
+// you don't have to worry about the error message becoming too long to read.
+
+// You can reserve message formatting for parameters you know will be reasonable
+// such as "property must be a %(expected)s got %(actual)s", typeof expected,
+// typeof actual.

@@ -56,6 +56,43 @@ function createOptions () {
     }
 }
 
+function context (options, prototype, instance, stack = true) {
+    // **TODO** We can extract this and reuse it for "contexts".
+    let dump
+    const format = options.format || prototype.message || prototype.code
+    try {
+        dump = sprintf(format, options.properties)
+    } catch (error) {
+        instance.errors.push({
+            code: Interrupt.SPRINTF_ERROR,
+            format: format,
+            properties: options.properties,
+            error: error
+        })
+        // **TODO** Instrument errors somehow? Maybe a second context that
+        // reports Interrupt errors.
+        dump = format
+    }
+    const contexts = []
+    const context = { ...options.properties, code: options.code }
+    const keys = Object.keys(context).length
+    dump += '\n\n' + stringify(context)
+    if (options.errors.length) {
+        for (let i = 0, I = options.errors.length; i < I; i++) {
+            const error = options.errors[i]
+            const text = error instanceof Error ? coalesce(error.stack, error.message) : error.toString()
+            const indented = text.replace(/^/gm, '    ')
+            dump += '\n\ncause:\n\n' + indented
+        }
+    }
+
+    if (stack) {
+        dump += '\n\nstack:\n'
+    }
+
+    return dump
+}
+
 class Interrupt extends Error {
     static SPRINTF_ERROR = Symbol('SPRINTF_ERROR')
 
@@ -68,7 +105,6 @@ class Interrupt extends Error {
         UNKNOWN_CODE: 'unknown code',
         INVALID_CODE_TYPE: 'invalid code type'
     })
-
     //
 
     // This constructor is only called by derived class and should not be called
@@ -111,56 +147,7 @@ class Interrupt extends Error {
                 prototype: prototype
             }
         } ()
-        // **TODO** We can extract this and reuse it for "contexts".
-        let dump
-        const format = options.format || prototype.message || prototype.code
-        try {
-            dump = sprintf(format, options.properties)
-        } catch (error) {
-            instance.errors.push({
-                code: Interrupt.SPRINTF_ERROR,
-                format: format,
-                properties: options.properties,
-                error: error
-            })
-            // **TODO** Instrument errors somehow? Maybe a second context that
-            // reports Interrupt errors.
-            dump = format
-        }
-        const contexts = []
-        const errors = []
-        const context = { ...options.properties, code: options.code }
-        const keys = Object.keys(context).length
-        if (keys != 0 || options.errors.length) {
-            dump += '\n'
-
-            if (keys != 0) {
-                dump += '\n' + stringify(context) + '\n'
-            }
-
-            for (let i = 0, I = options.errors.length; i < I; i++) {
-                const cause = Array.isArray(options.errors[i]) ? options.errors[i] : [ options.errors[i] ]
-                const text = (cause[0] instanceof Error)
-                    ? coalesce(cause[0].stack, cause[0].message)
-                    : cause[0].toString()
-                const indented = text.replace(/^/gm, '    ')
-                if (cause.length == 1) {
-                    dump += '\ncause:\n\n' + indented + '\n'
-                } else {
-                    const contextualized = stringify(cause[1]).replace(/^/gm, '    ')
-                    dump += '\ncause:\n\n' + contextualized + '\n\n' + indented + '\n'
-                }
-                errors.push(cause[0])
-                // TODO Note that nullishness makes this useful and `||`
-                // doesn't always do it.
-                contexts.push(coalesce(cause[1]))
-            }
-        } else {
-            dump += '\n'
-        }
-
-        dump += '\nstack:\n'
-        super(dump)
+        super(context(options, prototype, instance))
 
         MATERIAL.set(this, { message: options.message, context: options.properties })
         Instances.set(this, instance)
@@ -180,7 +167,7 @@ class Interrupt extends Error {
             Error.captureStackTrace(this, options.callee)
         }
 
-        const assign = { label: options.message, errors: options.errors, contexts, ...options.properties }
+        const assign = { label: options.message, errors: options.errors, ...options.properties }
         if (Prototype.codes[prototype.code]) {
             assign.code = prototype.code
         }
@@ -261,6 +248,31 @@ class Interrupt extends Error {
 
         assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
         const Class = class extends superclass {
+            static Context = class {
+                constructor (...vargs) {
+                    const { options, prototype } = function () {
+                        const options = Class._options(vargs)
+                        const code = typeof options.code == 'symbol'
+                            ? Prototype.symbols.get(options.code) || null
+                            : options.code
+                        const prototype = Prototype.codes[code] || { message: null, properties: null, code: null }
+                        return {
+                            options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
+                            prototype: prototype
+                        }
+                    } ()
+                    const instance = { errors: [] }
+                    this._dump = `${name}.Context: ${context(options, prototype, instance, false)}`
+                    for (const property in options.properties) {
+                        this[property] = options.properties[property]
+                    }
+                }
+
+                toString () {
+                    return this._dump
+                }
+            }
+
             constructor (...vargs) {
                 if (superclass == Interrupt) {
                     super(PROTECTED, Class, Prototype, vargs)
@@ -671,7 +683,7 @@ class Interrupt extends Error {
     static dedup (error, keyify = (_, file, line) => [ file, line ]) {
         const seen = {}
         let id = 0
-        function treeify (parent, error, context = {}) {
+        function treeify (parent, error) {
             const [ file, line ] = location(error.stack)
             const key = keyify(error, file, line)
             if (error instanceof Interrupt) {
@@ -682,12 +694,12 @@ class Interrupt extends Error {
                     id: id++,
                     key: key,
                     stringified: Keyify.stringify(key),
+                    context: {}, // **TODO** Legacy, dubious.
                     error: error,
-                    context: context,
                     errors: null
                 }
                 node.errors = error.errors.map((cause, index) => {
-                    return treeify(node, cause, { ...(error.contexts[index] || {}) })
+                    return treeify(node, cause)
                 })
                 return node
             }
