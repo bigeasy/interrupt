@@ -129,12 +129,13 @@ class Interrupt extends Error {
         }
         const contexts = []
         const errors = []
-        const keys = Object.keys(options.properties).length
+        const context = { ...options.properties, code: options.code }
+        const keys = Object.keys(context).length
         if (keys != 0 || options.errors.length) {
             dump += '\n'
 
             if (keys != 0) {
-                dump += '\n' + stringify(options.properties) + '\n'
+                dump += '\n' + stringify(context) + '\n'
             }
 
             for (let i = 0, I = options.errors.length; i < I; i++) {
