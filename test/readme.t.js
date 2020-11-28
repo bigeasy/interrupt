@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(74, async okay => {
+require('proof')(79, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -145,17 +145,6 @@ require('proof')(74, async okay => {
     }
     //
 
-    // The generated `ParseError` class has a `messages` property that will list
-    // the messages by error code.
-
-    //
-    console.log('\n--- generated error codes and message formats ---\n')
-    for (const code in ParseError.messages) {
-        console.log('%s => %s', code, ParseError.messages[code])
-    }
-    console.log('')
-    //
-
     // We'll jump right in and show you the basic features with a quick example.
     // You're really going to want to run this from the command line to see the
     // stack trace output.
@@ -207,12 +196,15 @@ require('proof')(74, async okay => {
         await fs.mkdir(path.join(tmp, 'eisdir', 'config.json'), { recursive: true })
         await fs.mkdir(path.join(tmp, 'enoent'))
         await fs.mkdir(path.join(tmp, 'good'))
+        await fs.mkdir(path.join(tmp, 'bad'))
 
         await fs.writeFile(path.join(tmp, 'good', 'config.json'), JSON.stringify({
             settings: {
                 volume: 0
             }
         }))
+
+        await fs.writeFile(path.join(tmp, 'bad', 'config.json'), '!')
     }
     //
 
@@ -842,6 +834,79 @@ require('proof')(74, async okay => {
     }
     //
 
+    // You can assign default properties by code. Instead of defining a code
+    // with a format message, you can use an object. The properties of that
+    // object will be set on the exception when it is created with the code. The
+    // `message` property of the object will be used as the exception message.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            CONFIG_IO_ERROR: {
+                fallback: true,
+                message: 'unable to read file'
+            },
+            CONFIG_PARSE_ERROR: {
+                message: 'unable to parse JSON'
+            }
+        })
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                console.log(error.stack)
+                throw new ConfigError('CONFIG_IO_ERROR', { filename })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('CONFIG_PARSE_ERROR', { filename })
+            }
+        }
+
+        async function loadOrFallback (filename) {
+            try {
+                return await load(filename)
+            } catch (error) {
+                console.log(error)
+                if (error.fallback) {
+                    return {}
+                }
+                throw error
+            }
+        }
+
+        const filename = path.join(__dirname, 'tmp', 'missing')
+
+        okay(await loadOrFallback(filename), {}, 'caught using a default property')
+
+        console.log('\n--- catch an error with a default property ---\n')
+        try {
+            await load(filename)
+        } catch (error) {
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'CONFIG_IO_ERROR', 'default property code set')
+            okay(error.fallback, 'default property set')
+        }
+
+        try {
+            await load(path.join(__dirname, 'tmp', 'bad', 'config.json'))
+        } catch (error) {
+            console.log('')
+            console.log(error.stack)
+            console.log('')
+            okay(error.code, 'CONFIG_PARSE_ERROR', 'no default property code set')
+            okay(!error.fallback, 'no default property property not set')
+        }
+    }
+    //
+
     // ## Formatted Messages
 
     // Messages are formatted using `sprintf-fs` which has a named parameter
@@ -993,6 +1058,8 @@ require('proof')(74, async okay => {
             okay(error.json, '!', 'named parameters property set')
         }
     }
+    //
+
     // ## Error Heirarchies
 
     // You can still error heirarcies with Interrupt. Error codes that are

@@ -79,7 +79,8 @@ class Interrupt extends Error {
     // not going to be as accommodating as all that.
 
     //
-    constructor (Protected, Class, name, vargs, Meta) {
+    constructor (Protected, Class, Prototype, vargs) {
+        // **TODO** Use `Interrupt.Error`.
         assert(PROTECTED === Protected, 'Interrupt constructor is not a public interface')
         const instance = { errors: [] }
         // When called with no arguments we call our super constructor with no
@@ -99,13 +100,20 @@ class Interrupt extends Error {
             })
             return
         }
-        const options = Class.options.apply(null, vargs)
+        const { options, prototype } = function () {
+            const options = Class._options(vargs)
+            const code = typeof options.code == 'symbol'
+                ? Prototype.symbols.get(options.code) || null
+                : options.code
+            const prototype = Prototype.codes[code] || { message: null, properties: null, code: null }
+            return {
+                options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
+                prototype: prototype
+            }
+        } ()
         // **TODO** We can extract this and reuse it for "contexts".
         let dump
-        const code = typeof options.code == 'symbol'
-            ? Meta.codes.get(options.code) || null
-            : options.code
-        const format = options.format || Class.messages[code] || code
+        const format = options.format || prototype.message || prototype.code
         try {
             dump = sprintf(format, options.properties)
         } catch (error) {
@@ -172,12 +180,12 @@ class Interrupt extends Error {
         }
 
         const assign = { label: options.message, errors: options.errors, contexts, ...options.properties }
-        if (Class.messages[code]) {
-            assign.code = code
+        if (Prototype.codes[prototype.code]) {
+            assign.code = prototype.code
         }
-        if (typeof Class[code] === 'symbol') {
+        if (Prototype.codes[prototype.code] != null) {
             Object.defineProperty(this, 'symbol', {
-                value: Class[code],
+                value: Prototype.codes[prototype.code].symbol,
                 enumerable: false
             })
         }
@@ -206,19 +214,7 @@ class Interrupt extends Error {
         // inherited. Would have to see where I would ever create an error
         // heirarchy.
         const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
-        const messages = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
-        const duplicates = new Set, symbols = {}
-        for (const code in messages) {
-            const existing = superclass[code]
-            if (existing != null && typeof existing != 'symbol') {
-                throw new Interrupt.Error('INVALID_CODE')
-            }
-            if (duplicates.has(code)) {
-                throw new Interrupt.Error('DUPLICATE_CODE')
-            }
-            duplicates.add(code)
-            symbols[code] = superclass[code] || Symbol(code)
-        }
+        const codes = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
 
         function construct (options, vargs, errors, ...callees) {
             const error = _construct(options, vargs, errors, callees)
@@ -266,25 +262,25 @@ class Interrupt extends Error {
         const Class = class extends superclass {
             constructor (...vargs) {
                 if (superclass == Interrupt) {
-                    super(PROTECTED, Class, name, vargs, Meta)
+                    super(PROTECTED, Class, Prototype, vargs)
                 } else {
                     super(...vargs)
                 }
             }
 
             static get codes () {
-                return Object.keys(symbols)
+                return Object.keys(Prototype.codes)
             }
 
             static code (code, ...vargs) {
                 let resolved
                 switch (typeof code) {
                 case 'string': {
-                        resolved = Meta.codes.get(code)
+                        resolved = Prototype.symbols.get(code)
                     }
                     break
                 case 'symbol': {
-                        resolved = symbols[code]
+                        resolved = Prototype.codes[code] && Prototype.codes[code].symbol
                     }
                     break
                 default:
@@ -330,14 +326,14 @@ class Interrupt extends Error {
                         switch (typeof argument) {
                         // Possibly assign the code.
                         case 'symbol': {
-                                const code = Meta.codes.get(argument)
+                                const code = Prototype.symbols.get(argument)
                                 if (code != null) {
                                     options.code = code
                                 }
                             }
                             break
                         case 'string':
-                            if (symbols[argument] == null) {
+                            if (Prototype.codes[argument] == null) {
                                 options.format = argument
                             } else {
                                 options.code = argument
@@ -372,14 +368,14 @@ class Interrupt extends Error {
                                 break
                             // Possibly assign the code.
                             case 'symbol': {
-                                    const code = Meta.codes.get(argument)
+                                    const code = Prototype.symbols.get(argument)
                                     if (code != null) {
                                         options.code = code
                                     }
                                 }
                                 break
                             case 'string':
-                                if (symbols[argument] == null) {
+                                if (Prototype.codes[argument] == null) {
                                     options.format = argument
                                 } else {
                                     options.code = argument
@@ -415,26 +411,6 @@ class Interrupt extends Error {
                         if (Array.isArray(argument)) {
                             options = Class.options.apply(Class, [ options ].concat(argument))
                         } else {
-                            switch (typeof argument.code) {
-                            case 'string':
-                            case 'symbol':
-                                options.code = argument.code
-                            }
-                            if (typeof argument.format == 'string') {
-                                options.format = argument.format
-                            }
-                            if (Array.isArray(argument.errors)) {
-                                options.errors.push.apply(options.errors, argument.errors)
-                            }
-                            if (Array.isArray(argument._errors)) {
-                                options._errors.push.apply(options._errors, argument._errors)
-                            }
-                            if (typeof argument.properties == 'object' && argument.properties != null) {
-                                options.properties = { ...options.properties, ...argument.properties }
-                            }
-                            if (typeof argument.callee == 'function') {
-                                options.callee = argument.callee
-                            }
                         }
                     }
                 }
@@ -463,14 +439,14 @@ class Interrupt extends Error {
                     options = createOptions()
                     switch (typeof argument) {
                     case 'symbol': {
-                            const code = Meta.codes.get(argument)
+                            const code = Prototype.symbols.get(argument)
                             if (code != null) {
                                 options.code = code
                             }
                         }
                         break
                     case 'string': {
-                            if (symbols[argument] == null) {
+                            if (Prototype.codes[argument] == null) {
                                 options.format = argument
                             } else {
                                 options.code = argument
@@ -506,14 +482,14 @@ class Interrupt extends Error {
                             break
                         // Possibly assign the code.
                         case 'symbol': {
-                                const code = Meta.codes.get(argument)
+                                const code = Prototype.symbols.get(argument)
                                 if (code != null) {
                                     options.code = code
                                 }
                             }
                             break
                         case 'string':
-                            if (symbols[argument] == null) {
+                            if (Prototype.codes[argument] == null) {
                                 options.format = argument
                             } else {
                                 options.code = argument
@@ -633,13 +609,61 @@ class Interrupt extends Error {
                 return Class._resolver(Class.resolve, {}, vargs)
             }
         }
-        const Meta = { codes: new Map }
-        for (const code in symbols) {
-            Class[code] = symbols[code]
-            Meta.codes.set(symbols[code], code)
+
+        // We have an prototypical state of an exception that we do not want to
+        // store in the class and we definately do not want to expose it
+        // publically.
+        const Prototype = {
+            name: name,
+            symbols: new Map,
+            codes: {}
         }
+
+        // Detect duplicate declarations.
+        const duplicates = new Set
+
+        for (const code in codes) {
+            // Duplicate declaration detection.
+            if (duplicates.has(code)) {
+                throw new Interrupt.Error('DUPLICATE_CODE', { code })
+            }
+            duplicates.add(code)
+
+            // Use an existing code symbol from the super class if one exists,
+            // otherwise create a new symbol.
+            const existing = superclass[code]
+            if (existing != null && typeof existing != 'symbol') {
+                throw new Interrupt.Error('INVALID_CODE')
+            }
+            const symbol = superclass[code] || Symbol(code)
+
+            // Create a property to hold the symbol in the class.
+            Object.defineProperty(Class, code, { get: function () { return symbol } })
+
+            // Our internal tracking of symbols.
+            Prototype.symbols.set(symbol, code)
+
+            // Convert the defintion to a code prototype.
+            switch (typeof codes[code]) {
+            case 'string':
+                Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol }
+                break
+            case 'object':
+                if (codes[code] == null) {
+                    Prototype.codes[code] = { code, message: null, properties: {}, symbol }
+                } else {
+                    // This will ensure that the properties can be serialized as
+                    // JSON.
+                    const properties = JSON.parse(JSON.stringify(codes[code]))
+                    Prototype.codes[code] = { code, message: coalesce(properties.message), properties, symbol }
+                    delete Prototype.codes[code].properties.message
+                }
+                break
+            }
+        }
+
         Object.defineProperty(Class, 'name', { value: name })
-        Object.defineProperty(Class, 'messages', { value: messages })
+
         return Class
     }
 
