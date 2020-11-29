@@ -24,6 +24,12 @@ const location = require('./location')
 // fill in the `sprintf` place-holders.
 const sprintf = require('sprintf-js').sprintf
 
+// Determine we need to poylfill AggregateError.
+const Aggregate = require('./aggregate')
+
+// Create super class determination.
+const aggregate = new Aggregate(globalThis)
+
 // **TODO** Will crash on circular references, right? Ensure that we parse
 // safely or remove any circular references in advance of parsing.
 
@@ -99,7 +105,7 @@ function get (object, path) {
     return iterator
 }
 
-class Interrupt extends Error {
+class Interrupt extends aggregate.superClass {
     static SPRINTF_ERROR = Symbol('SPRINTF_ERROR')
 
     static DEFERRED_CONSTRUCTOR_INVALID_RETURN = Symbol('DEFERRED_CONSTRUCTOR_INVALID_RETURN')
@@ -256,24 +262,25 @@ class Interrupt extends Error {
             Object.keys(options.properties).length == 0 &&
             options.callee == null
         ) {
-            super()
+            super(...aggregate.vargs(options.errors))
             Instances.set(this, instance)
             Object.defineProperties(this, {
                 name: {
-                    value: this.constructor.name,
+                    value: Prototype.name,
                     enumerable: false
-                },
-                errors: { value: [] },
-                contexts: { value: [] }
+                }
             })
+            aggregate.errors(this, options.errors)
             return
         }
-        super(context(options, prototype, instance))
+        super(...aggregate.vargs(options.errors, context(options, prototype, instance)))
+
+        aggregate.errors(this, options.errors)
 
         Instances.set(this, instance)
 
-        Object.defineProperty(this, "name", {
-            value: this.constructor.name,
+        Object.defineProperty(this, 'name', {
+            value: Prototype.name,
             enumerable: false
         })
 
@@ -287,7 +294,7 @@ class Interrupt extends Error {
             Error.captureStackTrace(this, options.callee)
         }
 
-        const assign = { label: options.message, errors: options.errors, ...options.properties }
+        const assign = { label: options.message, ...options.properties }
         if (Prototype.codes[prototype.code]) {
             assign.code = prototype.code
         }

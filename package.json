@@ -20,6 +20,7 @@
     },
     "dependencies":
     {
+                            "es-aggregate-error":           "1.0.5",
                             "extant":                       "^1.0.15",
                             "keyify":                       "2.0.5",
                             "sprintf-js":                   "1.1.2"
