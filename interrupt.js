@@ -1,6 +1,5 @@
 // Node.js API.
 const util = require('util')
-const assert = require('assert')
 
 // Return the first non-`null` like parameter.
 const coalesce = require('extant')
@@ -103,11 +102,15 @@ function get (object, path) {
 
 //
 class Interrupt extends Error {
+    // **TODO** Maybe a set of common symbols mapped to the existing Node.js
+    // error types?
+
     // The `Interrupt.Error` class is itself an interrupt defined error.
     static Error = Interrupt.create('Interrupt.Error', {
         INVALID_CODE: 'code is already a property of the superclass',
         UNKNOWN_CODE: 'unknown code',
         INVALID_CODE_TYPE: 'invalid code type',
+        INVALID_ACCESS: 'constructor is not a public interface',
         SPRINTF_ERROR: null,
         DEFERRED_CONSTRUCTOR_INVALID_RETURN: null,
         DEFERRED_CONSTRUCTOR_NOT_CALLED: null
@@ -233,8 +236,11 @@ class Interrupt extends Error {
 
     //
     constructor (Protected, Class, Prototype, vargs) {
-        // **TODO** Use `Interrupt.Error`.
-        assert(PROTECTED === Protected, 'Interrupt constructor is not a public interface')
+        // We can't use `Interrupt.Error.assert` because auditing will make us
+        // blow the stack.
+        if (PROTECTED !== Protected) {
+            throw new Interrupt.Error('INVALID_ACCESS')
+        }
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
@@ -367,7 +373,9 @@ class Interrupt extends Error {
             }
         }
 
-        assert(superclass == Interrupt || superclass.prototype instanceof Interrupt)
+        if (Interrupt.Error != null) {
+            Interrupt.Error.assert(superclass == Interrupt || superclass.prototype instanceof Interrupt, 'INVALID_SUPER_CLASS', superclass.name)
+        }
         const Class = class extends superclass {
             static Context = class {
                 constructor (...vargs) {

@@ -140,7 +140,7 @@ require('proof')(89, async okay => {
         } catch (error) {
             console.log(error.stack)
             console.log('')
-            okay(error.code, 'ERR_ASSERTION', 'do not call Interrupt constructor rerectly')
+            okay(error.code, 'INVALID_ACCESS', 'do not call Interrupt constructor rerectly')
         }
     }
     //
