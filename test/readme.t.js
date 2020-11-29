@@ -2544,3 +2544,8 @@ require('proof')(89, async okay => {
 // You can reserve message formatting for parameters you know will be reasonable
 // such as "property must be a %(expected)s got %(actual)s", typeof expected,
 // typeof actual.
+
+// Arriving in Node.js 15, but the current shim doesn't work correctly for
+// reasons I don't care to investigate. This was a nice to have and it doesn't
+// really matter if an `Interrupt` is an `AggregateError`. I'd have to be
+// convinced from someone who adopted Interrupt, not as an advocacy effort.
