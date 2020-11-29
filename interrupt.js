@@ -64,7 +64,7 @@ function context (options, prototype, instance, stack = true) {
         dump = instance.message = sprintf(format, options.properties)
     } catch (error) {
         instance.errors.push({
-            code: Interrupt.SPRINTF_ERROR,
+            code: Interrupt.Error.SPRINTF_ERROR,
             format: format,
             properties: options.properties,
             error: error
@@ -100,16 +100,13 @@ function get (object, path) {
 }
 
 class Interrupt extends Error {
-    static SPRINTF_ERROR = Symbol('SPRINTF_ERROR')
-
-    static DEFERRED_CONSTRUCTOR_INVALID_RETURN = Symbol('DEFERRED_CONSTRUCTOR_INVALID_RETURN')
-
-    static DEFERRED_CONSTRUCTOR_NOT_CALLED = Symbol('DEFERRED_CONSTRUCTOR_NOT_CALLED')
-
     static Error = Interrupt.create('Interrupt.Error', {
         INVALID_CODE: 'code is already a property of the superclass',
         UNKNOWN_CODE: 'unknown code',
-        INVALID_CODE_TYPE: 'invalid code type'
+        INVALID_CODE_TYPE: 'invalid code type',
+        SPRINTF_ERROR: null,
+        DEFERRED_CONSTRUCTOR_INVALID_RETURN: null,
+        DEFERRED_CONSTRUCTOR_NOT_CALLED: null
     })
 
     // We implement custom JSON serialization that supports circular references
@@ -348,7 +345,7 @@ class Interrupt extends Error {
                     const error = new Class
                     const instance = Instances.get(error)
                     instance.errors.push({
-                        code: Interrupt.DEFERRED_CONSTRUCTOR_NOT_CALLED
+                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
                     })
                     return error
                 }
@@ -356,7 +353,7 @@ class Interrupt extends Error {
                     const error = new Class
                     const instance = Instances.get(error)
                     instance.errors.push({
-                        code: Interrupt.DEFERRED_CONSTRUCTOR_INVALID_RETURN
+                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_INVALID_RETURN
                     })
                     return error
                 }
