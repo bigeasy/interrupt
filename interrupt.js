@@ -15,8 +15,6 @@ const Keyify = require('keyify')
 // to be violated.
 const Instances = new WeakMap
 
-// **TODO** Does this work if there is no stack trace at all?
-
 // Parse the file and line number from a Node.js stack trace.
 const location = require('./location')
 
@@ -74,7 +72,7 @@ function context (options, prototype, instance, stack = true) {
     const contexts = []
     const context = { ...options.properties, code: options.code }
     const keys = Object.keys(context).length
-    dump += '\n\n' + stringify(context)
+    dump += '\n\n' + Interrupt.JSON.stringify(context)
     if (options.errors.length) {
         for (let i = 0, I = options.errors.length; i < I; i++) {
             const error = options.errors[i]
@@ -91,6 +89,8 @@ function context (options, prototype, instance, stack = true) {
     return dump
 }
 
+// Get an object from a tree of objects `object` using the given array of
+// indexes in the given `path`.
 function get (object, path) {
     let iterator = object
     for (const part of path) {
@@ -99,7 +99,11 @@ function get (object, path) {
     return iterator
 }
 
+// The Interrupt class extends `Error` using class ES6 extension.
+
+//
 class Interrupt extends Error {
+    // The `Interrupt.Error` class is itself an interrupt defined error.
     static Error = Interrupt.create('Interrupt.Error', {
         INVALID_CODE: 'code is already a property of the superclass',
         UNKNOWN_CODE: 'unknown code',
@@ -782,11 +786,12 @@ class Interrupt extends Error {
                 if (codes[code] == null) {
                     Prototype.codes[code] = { code, message: null, properties: {}, symbol }
                 } else {
-                    // This will ensure that the properties can be serialized as
-                    // JSON.
-                    const properties = JSON.parse(JSON.stringify(codes[code]))
-                    Prototype.codes[code] = { code, message: coalesce(properties.message), properties, symbol }
-                    delete Prototype.codes[code].properties.message
+                    Prototype.codes[code] = {
+                        code: code,
+                        message: coalesce(codes[code].message),
+                        properties: codes[code],
+                        symbol: symbol
+                    }
                 }
                 break
             }
@@ -828,7 +833,7 @@ class Interrupt extends Error {
                 duplicates: new Set,
                 stringified: Keyify.stringify(key),
                 error: error,
-                context: context,
+                context: {},
                 errors: null
             }
         }
@@ -920,7 +925,7 @@ class Interrupt extends Error {
                     ? coalesce(node.error.stack, node.error.message)
                     : node.error.toString()
                 if (Object.keys(context).length != 0) {
-                    const contextualized = stringify(context)
+                    const contextualized = Interrupt.JSON.stringify(context)
                     return `${contextualized}\n\n${text}`
                 }
                 return text
