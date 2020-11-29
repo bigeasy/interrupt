@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(79, async okay => {
+require('proof')(89, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -901,6 +901,192 @@ require('proof')(79, async okay => {
         }
     }
     //
+
+    // Error properties are written to the stack trace as JSON.
+
+    // If given JSON that `JSON.stringify()` cannot stringify, rather than
+    // failing silently, or worse, throwing an exception, Interrupt tries to
+    // accommodate the invalid JSON. It always trys to print out as much as it
+    // can. The error path contains errors, some are due to bad inputs. Unit
+    // testing can't anticipate what sort of bad data might be the cause of an
+    // error.
+
+    // This specialized `JSON` serialization is exposed by
+    // `Interrupt.JSON.stringify()`. There is an associated
+    // `Interrupt.JSON.parse()` to go with it.
+
+    // Ordinary JSON serializes and parses like ordinary JSON.
+
+    //
+    console.log('\n--- serializing ordinary JSON ---\n')
+    {
+        const object = {
+            missing: null,
+            number: 1,
+            string: 'string',
+            array: [ 1, 2, 3 ],
+            object: { key: 'value' }
+        }
+
+        const stringified = Interrupt.JSON.stringify(object)
+
+        console.log(stringified, '\n')
+
+        const parsed = Interrupt.JSON.parse(stringified)
+
+
+        okay(parsed, object, 'serialize and parse ordinary JSON')
+    }
+    //
+
+    // Circular references are supported and they can be parsed, but they make
+    // the JSON output harder to read. There will be reference placeholders in
+    // the output.
+
+    //
+    console.log('\n--- serializing JSON with circular references ---\n')
+    {
+        const object = { c: 1 }
+
+        const stringified = Interrupt.JSON.stringify({ a: object, b: object })
+
+        console.log(stringified, '\n')
+
+        const parsed = Interrupt.JSON.parse(stringified)
+
+        okay(parsed.a === parsed.b, 'serialize and parse JSON with circular references')
+    }
+    //
+
+    // Undefined will be serialized and parsed. `JSON.stringify()` drops values
+    // that are `undefined`, but seeing that a value is `undefined` might
+    // quickly clarify the cause of an error. he standards
+
+    //
+    console.log('\n--- serializing JSON with undefined members ---\n')
+    {
+        const object = { missing: undefined }
+
+        const stringified = Interrupt.JSON.stringify(object)
+
+        console.log(stringified, '\n')
+
+        const parsed = Interrupt.JSON.parse(stringified, '\n')
+
+        okay(parsed, object, 'serialize and parse JSON with undefined members')
+    }
+    //
+
+    // Circular references and undefined are parsed because we replace them with
+    // a special array that starts with a string that acts as a type specifier.
+    // If your JSON has an array that just happens to start with one of those
+    // type specifiers, it is escaped with an `_array` type specifier so it can
+    // be serialized and parsed.
+
+    //
+    console.log('\n--- escaping type specifiers in JSON ---\n')
+    {
+        const object = { array: [ '_reference', [ 'a', 'b' ] ] }
+
+        const stringified = Interrupt.JSON.stringify(object)
+
+        console.log(stringified)
+
+        const parsed = Interrupt.JSON.parse(stringified, '\n')
+
+        okay(parsed, object, 'serialize and parse JSON parsing type specifiers')
+    }
+    //
+
+    // Errors are serialized specially. Ordinarily very little gets output. This
+    // is because JSON treats error an object and neither `message`, nor `stack`
+    // are enumerable. If there are no additional properties you simply see an
+    // empty array.
+
+    // Interrupt's JSON will serialize the `message` and `stack`.
+
+    //
+    console.log('\n--- default JSON serialization of Error ---\n')
+    {
+        console.log(JSON.stringify(new Error('thrown')), '\n')
+
+        const error = new Error('thrown')
+        error.code = 'ENOENT'
+        console.log(JSON.stringify(error), '\n')
+    }
+    //
+
+    // Interrupt's JSON will serialize the `message`, `stack` and any additional
+    // properties set on the `Error` object. It cannot, however, parse the JSON
+    // and construct the object as an `Error` type. It will be a plain `Object`.
+
+    //
+    console.log('\n--- Interrupt JSON serialization of Error ---\n')
+    {
+        console.log(Interrupt.JSON.stringify(new Error('thrown')), '\n')
+
+        const error = new Error('thrown')
+        error.code = 'ENOENT'
+        const stringified = Interrupt.JSON.stringify(error)
+
+        console.log(stringified, '\n')
+
+        const parsed = Interrupt.JSON.parse(stringified)
+        okay(parsed.message, 'thrown', 'parsed JSON serialized error message')
+        okay(parsed.code, 'ENOENT', 'parsed JSON serialized error property')
+        okay(!(parsed instanceof Error), 'does not recreate Error type')
+    }
+    //
+
+    // Functions are converted to their `toString()` value so you can see their
+    // source if it is available. They will not be parsed back into functions.
+
+    //
+    console.log('\n--- Interrupt JSON serialaization of a function ---\n')
+    {
+        const stringified = Interrupt.JSON.stringify({ f: number => number + 1 })
+
+        console.log(stringified, '\n')
+
+        const parsed = Interrupt.JSON.parse(stringified)
+
+        okay(parsed.f, 'number => number + 1', 'serialize function to string in JSON')
+    }
+    //
+
+    // The `Interrupt.JSON` functions do not support custom `replacer` or
+    // `reviver` functions and you cannot adjust the indent, it is always four
+    // spaces.
+
+    // Otherwise, Interrupt JSON behaves the way ordinary `JSON` behaves.
+    // Objects lose their type information, `toJSON` is called if it is defined
+    // so objects like `Buffer` convert to a JSON representation, JSON itself
+    // converts of `Date` to strings. You won't always get back from JSON the
+    // same types you put in, but you know that.
+
+    //
+    console.log('\n--- serializing JSON with `toJSON()` defined and `Date` members ---\n')
+    {
+        const stringified = Interrupt.JSON.stringify({
+            date: new Date(0),
+            buffer: Buffer.from('a')
+        })
+
+        console.log(stringified, '\n')
+
+        const parsed = Interrupt.JSON.parse(stringified, '\n')
+
+        okay(new Date(parsed.date), new Date(0), 'able to reconstruct date using String constructor')
+        okay(parsed.buffer, {
+            type: "Buffer",
+            data: [ 97 ]
+        }, '`Buffer` JSON member converted to JSON using `Buffer.toJSON()`')
+    }
+    //
+
+    // For the most part, you won't be able to parse the JSON and get back the
+    // original objects if they are not plain `objects`. That isn't really
+    // important for reporting purposes however, just don't be surprised is all.
 
     // ## Formatted Messages
 

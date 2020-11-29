@@ -13,8 +13,6 @@ const Keyify = require('keyify')
 // objects and utilities that encounter them will do things like print their
 // properties to console so protected status of protected properties is likely
 // to be violated.
-
-//
 const Instances = new WeakMap
 
 // **TODO** Does this work if there is no stack trace at all?
@@ -22,7 +20,8 @@ const Instances = new WeakMap
 // Parse the file and line number from a Node.js stack trace.
 const location = require('./location')
 
-// `sprintf` supports named parameters, so we can use our context messages.
+// `sprintf` supports named parameters so we can use our parameters object to
+// fill in the `sprintf` place-holders.
 const sprintf = require('sprintf-js').sprintf
 
 // **TODO** Will crash on circular references, right? Ensure that we parse
@@ -92,6 +91,14 @@ function context (options, prototype, instance, stack = true) {
     return dump
 }
 
+function get (object, path) {
+    let iterator = object
+    for (const part of path) {
+        iterator = iterator[part]
+    }
+    return iterator
+}
+
 class Interrupt extends Error {
     static SPRINTF_ERROR = Symbol('SPRINTF_ERROR')
 
@@ -104,6 +111,116 @@ class Interrupt extends Error {
         UNKNOWN_CODE: 'unknown code',
         INVALID_CODE_TYPE: 'invalid code type'
     })
+
+    // We implement custom JSON serialization that supports circular references
+    // becasue we don't want to raise an exception on bad JSON because JSON
+    // serialization is used for printing out the properties on the error path.
+    // We don't want to raise an exception on bad JSON and we don't want to
+    // neglect to say as much as we can about the properties we've been given.
+    static JSON = {
+        stringify (object) {
+            const seen = new Map
+            // **TODO** Okay, we can't copy the object, we have to visit it and replace
+            // it when we serialize for the sake of dates, but there may be something
+            // else to worry about
+            const replacements = new Map
+            function visit (path, value) {
+                switch (typeof value) {
+                case 'object': {
+                        if (value != null) {
+                            const reference = seen.get(value)
+                            if (reference != null) {
+                                replacements.set(value, '_reference')
+                            } else {
+                                seen.set(value, path)
+                                if (Array.isArray(value)) {
+                                    const array = []
+                                    if (
+                                        typeof value[0] == 'string' &&
+                                        /^_reference|_array|_undefined$/.test(value[0])
+                                    ) {
+                                        replacements.set(value, [ '_array' ].concat(value))
+                                    }
+                                } else if (value instanceof Error) {
+                                    const error = { message: value.message, stack: value.stack }
+                                    for (const key in value) {
+                                        error[key] = value[key]
+                                    }
+                                    replacements.set(value, error)
+                                } else {
+                                    for (const property in value) {
+                                        visit(path.concat(property), value[property])
+                                    }
+                                }
+                            }
+                        }
+                    }
+                default:
+                    return value
+                }
+            }
+            const referenced = visit([], object)
+            return JSON.stringify(referenced, function (index, value) {
+                if (typeof value === 'undefined') {
+                    return [ '_undefined' ]
+                }
+                if (typeof value === 'function') {
+                    return value.toString()
+                }
+                if (typeof value == 'object' && value != null) {
+                    const replacement = replacements.get(value)
+                    if (replacement != null) {
+                        if (replacement === '_reference') {
+                            const path = seen.get(value)
+                            const origin = {
+                                object: get(object, path.slice(0, path.length - 1)),
+                                index: path[path.length - 1]
+                            }
+                            if (origin.object === this && origin.index === index) {
+                                return value
+                            }
+                            return [ '_reference', path ]
+                        }
+                        return replacement
+                    }
+                }
+                return value
+            }, 4)
+        },
+        parse (json) {
+            const references = []
+            const parsed = [ JSON.parse(json) ]
+            function visit (object, index, value) {
+                if (typeof value == 'object' && value != null) {
+                    if (Array.isArray(value)) {
+                        switch (value[0]) {
+                        case '_reference':
+                            references.push({ object, index, path: value[1] })
+                            break
+                        case '_undefined':
+                            object[index] = void 0
+                            break
+                        case '_array':
+                            value.shift()
+                        default:
+                            for (let i = 0, I = value.length; i < I; i++) {
+                                visit(value, i, value[i])
+                            }
+                        }
+                    } else {
+                        for (const property in value) {
+                            visit(value, property, value[property])
+                        }
+                    }
+                }
+            }
+            visit(parsed, 0, parsed[0])
+            for (const { object, index, path } of references) {
+                object[index] = get(parsed[0], path)
+            }
+            return parsed[0]
+        }
+    }
     //
 
     // This constructor is only called by derived class and should not be called
