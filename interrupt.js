@@ -234,10 +234,7 @@ class Interrupt extends Error {
         // empty error.
         const { options, prototype } = function () {
             const options = Class._options(vargs)
-            const code = typeof options.code == 'symbol'
-                ? Prototype.symbols.get(options.code) || null
-                : options.code
-            const prototype = Prototype.codes[code] || { message: null, properties: null, code: null }
+            const prototype = Prototype.codes[options.code] || { message: null, properties: null, code: null }
             return {
                 options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
                 prototype: prototype
@@ -320,57 +317,12 @@ class Interrupt extends Error {
             Interrupt.Error.assert(SuperClass == Interrupt || SuperClass.prototype instanceof Interrupt, 'INVALID_SUPER_CLASS', SuperClass.name)
         }
 
-        function construct (options, vargs, errors, ...callees) {
-            const error = _construct(options, vargs, errors, callees)
-            if (typeof Interrupt.audit === 'function') {
-                const instance = Instances.get(error)
-                Interrupt.audit(error, instance.errors)
-            }
-            return error
-        }
-
-        function _construct (options, vargs, errors, callees) {
-            if (vargs.length === 1 && typeof vargs[0] == 'function') {
-                let called = false
-                const f = vargs.pop()
-                const merged = Class._options([{ callee: callees[1] || $ }], [ options ])
-                function $ (...vargs) {
-                    called = true
-                    const options = Class._options([ merged ], vargs, [{ errors }])
-                    return new Class(options)
-                }
-                const error = f($)
-                if (!called) {
-                    const error = new Class
-                    const instance = Instances.get(error)
-                    instance.errors.push({
-                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
-                    })
-                    return error
-                }
-                if (typeof error != 'object' || error == null || !(error instanceof Class)) {
-                    const error = new Class
-                    const instance = Instances.get(error)
-                    instance.errors.push({
-                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_INVALID_RETURN
-                    })
-                    return error
-                }
-                return error
-            } else {
-                return new Class(Class._options([{ callee: callees[0] }], [ options ], vargs, [{ errors }]))
-            }
-        }
-
         const Class = class extends SuperClass {
             static Context = class {
                 constructor (...vargs) {
                     const { options, prototype } = function () {
                         const options = Class._options(vargs)
-                        const code = typeof options.code == 'symbol'
-                            ? Prototype.symbols.get(options.code) || null
-                            : options.code
-                        const prototype = Prototype.codes[code] || { message: null, properties: null, code: null }
+                        const prototype = Prototype.codes[options.code] || { message: null, properties: null, code: null }
                         return {
                             options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
                             prototype: prototype
@@ -536,17 +488,59 @@ class Interrupt extends Error {
             }
 
             static invoke (...vargs) {
-                return invoke(Class.invoke, {}, vargs)
+                return _invoke(Class.invoke, {}, vargs)
             }
 
             static callback (...vargs) {
-                return callback(Class.callback, {}, vargs)
+                return _callback(Class.callback, {}, vargs)
             }
 
             //
 
             static resolve (...vargs) {
                 return _resolver(Class.resolve, {}, vargs)
+            }
+        }
+
+        function construct (options, vargs, errors, ...callees) {
+            const error = _construct(options, vargs, errors, callees)
+            if (typeof Interrupt.audit === 'function') {
+                const instance = Instances.get(error)
+                Interrupt.audit(error, instance.errors)
+            }
+            return error
+        }
+
+        function _construct (options, vargs, errors, callees) {
+            if (vargs.length === 1 && typeof vargs[0] == 'function') {
+                let called = false
+                const f = vargs.pop()
+                const merged = Class._options([{ callee: callees[1] || $ }], [ options ])
+                function $ (...vargs) {
+                    called = true
+                    const options = Class._options([ merged ], vargs, [{ errors }])
+                    return new Class(options)
+                }
+                const error = f($)
+                if (!called) {
+                    const error = new Class
+                    const instance = Instances.get(error)
+                    instance.errors.push({
+                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
+                    })
+                    return error
+                }
+                if (typeof error != 'object' || error == null || !(error instanceof Class)) {
+                    const error = new Class
+                    const instance = Instances.get(error)
+                    instance.errors.push({
+                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_INVALID_RETURN
+                    })
+                    return error
+                }
+                return error
+            } else {
+                return new Class(Class._options([{ callee: callees[0] }], [ options ], vargs, [{ errors }]))
             }
         }
 
@@ -564,7 +558,7 @@ class Interrupt extends Error {
             }
         }
 
-        function invoke (callee, options, vargs) {
+        function _invoke (callee, options, vargs) {
             if (typeof vargs[0] == 'function') {
                 const f = vargs.shift()
                 try {
@@ -579,11 +573,11 @@ class Interrupt extends Error {
             }
             const merged = Class._options([ options ], vargs)
             return function invoker (...vargs) {
-                return invoke(invoker, merged, vargs)
+                return _invoke(invoker, merged, vargs)
             }
         }
 
-        function callback (callee, options, vargs) {
+        function _callback (callee, options, vargs) {
             if (typeof vargs[0] == 'function') {
                 // **TODO** Assert constructor is a function.
                 const [ constructor, callback ] = vargs
@@ -600,7 +594,7 @@ class Interrupt extends Error {
             }
             const merged = Class._options([ options ], vargs)
             return function wrapper (...vargs) {
-                return callback(wrapper, merged, vargs)
+                return _callback(wrapper, merged, vargs)
             }
         }
 
@@ -694,9 +688,16 @@ class Interrupt extends Error {
         return Class
     }
 
+    // Get just the message for the given Interrupt error.
+    //
+    // If the error is not an Interrupt error return the `message` property of
+    // the error or `null` if the property is not defined.
     static message (error) {
-        // **TODO** Need a seprate `format` and `message` property.
-        return Instances.get(error).message
+        const instance = Instances.get(error)
+        if (instance != null) {
+            return instance.message
+        }
+        return coalesce(error.message)
     }
 
     static dedup (error, keyify = (_, file, line) => [ file, line ]) {

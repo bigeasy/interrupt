@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(90, async okay => {
+require('proof')(95, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
