@@ -51,9 +51,12 @@ function context (options, prototype, instance, stack = true) {
         message = instance.message = format
     }
     const contexts = []
-    const context = { ...options.properties, code: options.code }
-    const keys = Object.keys(context).length
-    message += '\n\n' + Interrupt.JSON.stringify(context)
+    const context = options.code != null
+        ? { code: options.code, ...options.properties }
+        : { ...options.properties }
+    if (Object.keys(context).length != 0) {
+        message += '\n\n' + Interrupt.JSON.stringify(context)
+    }
     if (options.errors.length) {
         for (let i = 0, I = options.errors.length; i < I; i++) {
             const error = options.errors[i]

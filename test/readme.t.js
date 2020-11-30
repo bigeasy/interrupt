@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(95, async okay => {
+require('proof')(96, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -770,7 +770,7 @@ require('proof')(95, async okay => {
             // _Note that the `m` suffix makes this a multi-line matching regex._
             console.log(error.stack, '\n')
             okay(Interrupt.message(error), 'NULL_ARGUMENT', 'no code found, use first argument as message')
-            okay(error.code == null, 'no code is set')
+            okay(!('code' in error), 'no code is set')
         }
     }
     //
@@ -800,6 +800,7 @@ require('proof')(95, async okay => {
             // _Note that the `m` suffix makes this a multi-line matching regex._
             console.log(error.stack, '\n')
             okay(Interrupt.message(error), 'the JSON string to parse must not be null', 'specify message as first argument instead of code')
+            okay(!('code' in error), 'no code is set')
         }
     }
     //
