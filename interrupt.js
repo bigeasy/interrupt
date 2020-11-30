@@ -21,44 +21,26 @@ const location = require('./location')
 // fill in the `sprintf` place-holders.
 const sprintf = require('sprintf-js').sprintf
 
-// **TODO** Will crash on circular references, right? Ensure that we parse
-// safely or remove any circular references in advance of parsing.
-
-// Stringify a context object to JSON treating any errors as a special case.
-function stringify (object) {
-    return JSON.stringify(object, function (key, value) {
-        if (value instanceof Error) {
-            var object = { message: value.message, stack: value.stack }
-            for (var key in value) {
-                object[key] = value[key]
-            }
-            return object
-        }
-        return value
-    }, 4)
-}
-
+// Used to assert that the constructor is only ever called from a generated
+// derived Interrupt class.
 const PROTECTED = Symbol('PROTECTED')
+
+// The value of the `type` property for the options object to the constructor.
+// Use for disambiguation when currying `assert`.
 const OPTIONS = Symbol('OPTIONS')
+
+// This is a place-holder object for the nested exception when we generate
+// exceptions to audit assertions and guarded functions.
 const AUDIT = new Error('example')
 
-function createOptions () {
-    return {
-        type: OPTIONS,
-        code: null,
-        format: null,
-        errors: [],
-        _errors: [],
-        properties: {},
-        callee: null
-    }
-}
-
+// Generate the message for the Goole V8 exception. The message is specially
+// formatted to appear integrated with the stack trace from `error.stack` which
+// includes the message in the stack trace.
 function context (options, prototype, instance, stack = true) {
-    let dump
+    let message
     const format = options.format || prototype.message || prototype.code
     try {
-        dump = instance.message = sprintf(format, options.properties)
+        message = instance.message = sprintf(format, options.properties)
     } catch (error) {
         instance.errors.push({
             code: Interrupt.Error.SPRINTF_ERROR,
@@ -66,30 +48,31 @@ function context (options, prototype, instance, stack = true) {
             properties: options.properties,
             error: error
         })
-        dump = instance.message = format
+        message = instance.message = format
     }
     const contexts = []
     const context = { ...options.properties, code: options.code }
     const keys = Object.keys(context).length
-    dump += '\n\n' + Interrupt.JSON.stringify(context)
+    message += '\n\n' + Interrupt.JSON.stringify(context)
     if (options.errors.length) {
         for (let i = 0, I = options.errors.length; i < I; i++) {
             const error = options.errors[i]
             const text = error instanceof Error ? coalesce(error.stack, error.message) : error.toString()
             const indented = text.replace(/^/gm, '    ')
-            dump += '\n\ncause:\n\n' + indented
+            message += '\n\ncause:\n\n' + indented
         }
     }
 
     if (stack) {
-        dump += '\n\nstack:\n'
+        message += '\n\nstack:\n'
     }
 
-    return dump
+    return message
 }
 
 // Get an object from a tree of objects `object` using the given array of
-// indexes in the given `path`.
+// indexes in the given `path`. Used by our specialized JSON to generate and
+// resolve references.
 function get (object, path) {
     let iterator = object
     for (const part of path) {
@@ -117,16 +100,17 @@ class Interrupt extends Error {
     })
 
     // We implement custom JSON serialization that supports circular references
-    // becasue we don't want to raise an exception on bad JSON because JSON
+    // because we don't want to raise an exception on bad JSON because JSON
     // serialization is used for printing out the properties on the error path.
     // We don't want to raise an exception on bad JSON and we don't want to
     // neglect to say as much as we can about the properties we've been given.
     static JSON = {
+        // Stringify visits each object in the object to look for duplicate
+        // objects and mark them for reference construction in the replacer. It
+        // does not create a copy of the object because we want
+        // `JSON.stringify()` is to resolve the `.toJSON()` conversions.
         stringify (object) {
             const seen = new Map
-            // **TODO** Okay, we can't copy the object, we have to visit it and replace
-            // it when we serialize for the sake of dates, but there may be something
-            // else to worry about
             const replacements = new Map
             function visit (path, value) {
                 switch (typeof value) {
@@ -191,6 +175,10 @@ class Interrupt extends Error {
                 return value
             }, 4)
         },
+        // Parse converts our escaped `Array` and `undefined` place holders and
+        // builds an array of references in the reviver. It resolve the
+        // references after parsing so that any referenced arrays are already
+        // converted.
         parse (json) {
             const references = []
             const parsed = [ JSON.parse(json) ]
@@ -325,11 +313,12 @@ class Interrupt extends Error {
 
     //
     static create (name, ...vargs) {
-        // **TODO** Now I don't know if codes, symbols and messages are
-        // inherited. Would have to see where I would ever create an error
-        // heirarchy.
-        const superclass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
+        const SuperClass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
         const codes = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
+
+        if (Interrupt.Error != null) {
+            Interrupt.Error.assert(SuperClass == Interrupt || SuperClass.prototype instanceof Interrupt, 'INVALID_SUPER_CLASS', SuperClass.name)
+        }
 
         function construct (options, vargs, errors, ...callees) {
             const error = _construct(options, vargs, errors, callees)
@@ -373,10 +362,7 @@ class Interrupt extends Error {
             }
         }
 
-        if (Interrupt.Error != null) {
-            Interrupt.Error.assert(superclass == Interrupt || superclass.prototype instanceof Interrupt, 'INVALID_SUPER_CLASS', superclass.name)
-        }
-        const Class = class extends superclass {
+        const Class = class extends SuperClass {
             static Context = class {
                 constructor (...vargs) {
                     const { options, prototype } = function () {
@@ -403,7 +389,7 @@ class Interrupt extends Error {
             }
 
             constructor (...vargs) {
-                if (superclass == Interrupt) {
+                if (SuperClass == Interrupt) {
                     super(PROTECTED, Class, Prototype, vargs)
                 } else {
                     super(...vargs)
@@ -545,216 +531,114 @@ class Interrupt extends Error {
             }
 
 
-            static voptions (...vargs) {
-                let options = createOptions()
-                while (vargs.length != 0) {
-                    const argument = vargs.shift()
-                    if (typeof argument == 'object' && argument != null) {
-                        if (Array.isArray(argument)) {
-                            options = Class.options.apply(Class, [ options ].concat(argument))
-                        } else {
-                        }
-                    }
-                }
-                return options
-            }
-
-            // Convert the positional arguments to a options argument.
-            static options (...vargs) {
-                // Called with no vargs, return empty options.
-                if (vargs.length == 0) {
-                    return createOptions()
-                }
-
-                // Create the base object.
-                let options
-
-                const argument = vargs.shift()
-
-                // First argument must be an options object, code string, code
-                // symbol, or message format. If not we do not process any more
-                // of the vargs.
-
-                if (typeof argument == 'object' && argument != null) {
-                    options = Class.voptions(argument)
-                } else {
-                    options = createOptions()
-                    switch (typeof argument) {
-                    case 'symbol': {
-                            const code = Prototype.symbols.get(argument)
-                            if (code != null) {
-                                options.code = code
-                            }
-                        }
-                        break
-                    case 'string': {
-                            if (Prototype.codes[argument] == null) {
-                                options.format = argument
-                            } else {
-                                options.code = argument
-                            }
-                        }
-                        break
-                    default:
-                        return options
-                    }
-                }
-                // If the argument cannot be interpreted, discard it.
-                while (vargs.length != 0) {
-                    const argument = vargs.shift()
-                    // Assign a single error or an array of errors to the errors array.
-                    if (argument instanceof Error) {
-                        options.errors.push(argument)
-                    } else if (Array.isArray(argument)) {
-                        // **TODO** Going to say that contexts for errors, it's
-                        // dubious. If you really want to give context to errors you
-                        // should wrap them in an Interrupt, which is more
-                        // consistent and therefor easier to document. We'll have to
-                        // revisit Destructible to make this happen.
-                        options.errors.push.apply(options.errors, argument)
-                    } else {
-                        switch (typeof argument) {
-                        // Assign the context object.
-                        case 'object':
-                            if (argument != null) {
-                                options.properties = { ...options.prerties, ...argument }
-                            } else {
-                                options._errors.push({ code: NULL_POSITIONAL_ARGUMENT })
-                            }
-                            break
-                        // Possibly assign the code.
-                        case 'symbol': {
-                                const code = Prototype.symbols.get(argument)
-                                if (code != null) {
-                                    options.code = code
-                                }
-                            }
-                            break
-                        case 'string':
-                            if (Prototype.codes[argument] == null) {
-                                options.format = argument
-                            } else {
-                                options.code = argument
-                            }
-                            break
-                        }
-                    }
-                }
-                // Return the generated options object.
-                return options
-            }
-
-            static _assert (callee, options, vargs) {
-                if (typeof vargs[0] === 'object' && vargs[0].type === OPTIONS) {
-                    const merged = Class._options([ options ], vargs)
-                    return function assert (...vargs) {
-                        Class._assert(assert, merged, vargs)
-                    }
-                } else if (!vargs[0]) {
-                    vargs.shift()
-                    throw construct(options, vargs, [], callee, callee)
-                } else if (typeof Interrupt.audit == 'function') {
-                    construct(options, vargs, [], callee, callee)
-                }
-            }
-
             static assert (...vargs) {
-                return Class._assert(Class.assert, {}, vargs)
-            }
-
-            static _invoke (callee, options, vargs) {
-                if (typeof vargs[0] == 'function') {
-                    const f = vargs.shift()
-                    try {
-                        const result = f()
-                        if (typeof Interrupt.audit === 'function') {
-                            construct(options, vargs, [ AUDIT ], callee, callee)
-                        }
-                        return result
-                    } catch (error) {
-                        throw construct(options, vargs, [ error ], callee, callee)
-                    }
-                }
-                const merged = Class._options([ options ], vargs)
-                return function invoker (...vargs) {
-                    return Class._invoke(invoker, merged, vargs)
-                }
+                return _assert(Class.assert, {}, vargs)
             }
 
             static invoke (...vargs) {
-                return Class._invoke(Class.invoke, {}, vargs)
-            }
-
-            static _callback (callee, options, vargs) {
-                if (typeof vargs[0] == 'function') {
-                    // **TODO** Assert constructor is a function.
-                    const [ constructor, callback ] = vargs
-                    return function (...vargs) {
-                        if (vargs[0] == null) {
-                            callback.apply(null, vargs)
-                            if (typeof Interrupt.audit == 'function') {
-                                construct(options, [ constructor ], [ AUDIT ])
-                            }
-                        } else {
-                            callback(construct(options, [ constructor ], [ vargs[0] ]))
-                        }
-                    }
-                }
-                const merged = Class._options([ options ], vargs)
-                return function wrapper (...vargs) {
-                    return Class._callback(wrapper, merged, vargs)
-                }
+                return invoke(Class.invoke, {}, vargs)
             }
 
             static callback (...vargs) {
-                return Class._callback(Class.callback, {}, vargs)
+                return callback(Class.callback, {}, vargs)
             }
 
-            // **TODO** Now I can't think of a way to memoize assert. Maybe I
-            // don't want to because assert is supposed to be fast, or that's
-            // the excuse I'll use.
-
             //
-            static async _resolve (callee, f, options, vargs) {
+
+            static resolve (...vargs) {
+                return _resolver(Class.resolve, {}, vargs)
+            }
+        }
+
+        function _assert (callee, options, vargs) {
+            if (typeof vargs[0] === 'object' && vargs[0].type === OPTIONS) {
+                const merged = Class._options([ options ], vargs)
+                return function assert (...vargs) {
+                    _assert(assert, merged, vargs)
+                }
+            } else if (!vargs[0]) {
+                vargs.shift()
+                throw construct(options, vargs, [], callee, callee)
+            } else if (typeof Interrupt.audit == 'function') {
+                construct(options, vargs, [], callee, callee)
+            }
+        }
+
+        function invoke (callee, options, vargs) {
+            if (typeof vargs[0] == 'function') {
+                const f = vargs.shift()
                 try {
-                    if (typeof f == 'function') {
-                        f = f()
-                    }
-                    const result = await f
-                    if (typeof Interrupt.audit == 'function') {
-                        construct(options, vargs, [ AUDIT ], callee)
+                    const result = f()
+                    if (typeof Interrupt.audit === 'function') {
+                        construct(options, vargs, [ AUDIT ], callee, callee)
                     }
                     return result
                 } catch (error) {
-                    throw construct(options, vargs, [ error ], callee)
+                    throw construct(options, vargs, [ error ], callee, callee)
                 }
             }
+            const merged = Class._options([ options ], vargs)
+            return function invoker (...vargs) {
+                return invoke(invoker, merged, vargs)
+            }
+        }
 
-            static _resolver (callee, options, vargs) {
-                if (
-                    typeof vargs[0] == 'function' ||
-                    (
-                        typeof vargs[0] == 'object' &&
-                        vargs[0] != null &&
-                        typeof vargs[0].then == 'function'
-                    )
-                ) {
-                    return this._resolve(callee, vargs.shift(), options, vargs)
-                }
-                const merged = Class._options([ options ], vargs)
-                return function resolver (...vargs) {
-                    return Class._resolver(resolver, merged, vargs)
+        function callback (callee, options, vargs) {
+            if (typeof vargs[0] == 'function') {
+                // **TODO** Assert constructor is a function.
+                const [ constructor, callback ] = vargs
+                return function (...vargs) {
+                    if (vargs[0] == null) {
+                        callback.apply(null, vargs)
+                        if (typeof Interrupt.audit == 'function') {
+                            construct(options, [ constructor ], [ AUDIT ])
+                        }
+                    } else {
+                        callback(construct(options, [ constructor ], [ vargs[0] ]))
+                    }
                 }
             }
+            const merged = Class._options([ options ], vargs)
+            return function wrapper (...vargs) {
+                return callback(wrapper, merged, vargs)
+            }
+        }
 
-            static resolve (...vargs) {
-                return Class._resolver(Class.resolve, {}, vargs)
+        async function resolve (callee, f, options, vargs) {
+            try {
+                if (typeof f == 'function') {
+                    f = f()
+                }
+                const result = await f
+                if (typeof Interrupt.audit == 'function') {
+                    construct(options, vargs, [ AUDIT ], callee)
+                }
+                return result
+            } catch (error) {
+                throw construct(options, vargs, [ error ], callee)
+            }
+        }
+
+        function _resolver (callee, options, vargs) {
+            if (
+                typeof vargs[0] == 'function' ||
+                (
+                    typeof vargs[0] == 'object' &&
+                    vargs[0] != null &&
+                    typeof vargs[0].then == 'function'
+                )
+            ) {
+                return resolve(callee, vargs.shift(), options, vargs)
+            }
+            const merged = Class._options([ options ], vargs)
+            return function resolver (...vargs) {
+                return _resolver(resolver, merged, vargs)
             }
         }
 
         // We have an prototypical state of an exception that we do not want to
-        // store in the class and we definately do not want to expose it
-        // publically.
+        // store in the class and we definitely do not want to expose it
+        // publicly.
         const Prototype = {
             name: name,
             symbols: new Map,
@@ -773,11 +657,11 @@ class Interrupt extends Error {
 
             // Use an existing code symbol from the super class if one exists,
             // otherwise create a new symbol.
-            const existing = superclass[code]
+            const existing = SuperClass[code]
             if (existing != null && typeof existing != 'symbol') {
                 throw new Interrupt.Error('INVALID_CODE')
             }
-            const symbol = superclass[code] || Symbol(code)
+            const symbol = SuperClass[code] || Symbol(code)
 
             // Create a property to hold the symbol in the class.
             Object.defineProperty(Class, code, { get: function () { return symbol } })
@@ -952,7 +836,7 @@ class Interrupt extends Error {
             }
             const stack = node.error.stack.replace(/[\s\S]*^stack:$/m, 'stack:')
             if (Object.keys(properties).length != 0) {
-                const contextualized = stringify(properties)
+                const contextualized = Interrupt.JSON.stringify(properties)
                 return `${node.error.name}: ${instance.message}\n\n${properties}\n\n${errors.join('')}\n\n${stack}`
             }
             return `${node.error.name}: ${instance.message}\n\n${errors.join('')}\n\n${stack}`
