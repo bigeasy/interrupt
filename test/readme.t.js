@@ -4,7 +4,7 @@
 // them in JavaScript and Node.js but it isn't always easy.
 
 // Interrupt is a module I created to address the problems with JavaScript's
-// limited exception mechanism, solving the numerous problems I've encountered
+// limited exception mechanism, solving the numerous challenges I've encountered
 // that I'm sure you've encountered as well. It is not an elegant solution, but
 // it is a solution none the less.
 
@@ -13,7 +13,7 @@
 // Interrupt allows you to get exceptions that have a file name and line number
 // from your program, instead of a stubby stack trace that points to the
 // wilderness of the Node.js source, or no stack trace at all. It does this with
-// some syntactical struggle,but without the expensive superfluous stack trace
+// some syntactical struggle, but without the expensive superfluous stack trace
 // generation of the long stack trace modules.
 
 // Interrupt allows you to nest exceptions so you can provide application
@@ -25,8 +25,8 @@
 
 // Interrupt uses and abuses the `Error.stack` property provided by Google V8 to
 // generate an elaborate report from `Error.stack` including the `Error` type,
-// message, context properties, stack trace along with the error messages and
-// stack traces of all the nested errors.
+// message, context properties, and stack trace along with the error messages
+// and stack traces of all the nested errors.
 
 // Interrupt's elaborate `Error.stack` is machine readable so you could
 // conceivably process these stack traces programmatically when gather them from
@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(89, async okay => {
+require('proof')(90, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -364,69 +364,70 @@ require('proof')(89, async okay => {
     }
     //
 
-    // This is not unreasonable. It's a way to go. Now you can document each of
-    // the exception types and users can respond to them using an `if/`else`
-    // ladder and `instanceof`.
+    // Other languages have the ability to catch an exception by type. This
+    // ability to catch by type is where the idea for an exception class for
+    // each type of error comes from. JavaScript does not have this ability so
+    // once the exception is caught it must be filtered through an `if`/`else`
+    // ladder to determine the type of exception.
 
-    // However, using entire classes for what is essentially a flag is a kind of
+    // Using entire classes for what is essentially a flag is a kind of
     // heavyweight approach. The user now has to import your exceptions into
-    // their namespace to use them as test conditions.
+    // their namespace to use them as test conditions. Our `require` statements
+    // start to look like this.
 
     // ```javascript
     // const { ConfigParseError, ConfigIOError, loadJSONConfiguration } = require('./config')
     // ```
+
+    // If JavaScript had a catch by type ability it would be different, but
+    // without it it feels like we're moving the internals of a dependency into
+    // our module to check a flag.
 
     // Node.js itself doesn't extend the error class heirarchy by much.  In
     // fact, in our code we further test the cause of the I/O error by checking
     // a `code` property to see if it is a `ENOENT`, the POSIX code for a
     // missing file.
 
-    // The default Node.js modules have declared precious few additional
-    // exception types. They all use a `code` property, usually on a base
-    // `Error` object, to indicate type of error.
-
-    // Interrupt prefers to use codes as well.
-
-    // **TODO** Simplify. No, make it an `Error` only example and set the code
-    // with a helper, which is how I do it when Interrupt is not available.
+    // The Node.js libraries use a base `Error` class (with the exception of the
+    // `assert` module) and simply set a `code` on the error object. All of the
+    // errors eminating from the standard Node.js modules have a `code` property
+    // and each `code` property has associated documentation. If you use codes
+    // your module can adhere to this practice.
 
     //
-    console.log('\n--- errors using Interrupt ---\n')
+    console.log('\n--- errors using codes ---\n')
     {
         const path = require('path')
         const fs = require('fs').promises
 
-        const ConfigError = Interrupt.create('ConfigError', {
-            IO_ERROR: 'unable to read file: %(filename)s',
-            PARSE_ERROR: 'unable to parse configuration: %(filename)s',
-            FORMAT_ERROR: 'invalid configuration format: %(filename)s',
-            PARAM_MISSING_ERROR: 'missing parameter: %(param)s, in file: %(filename)s',
-            PARAM_INVALID_ERROR: 'parameter type invalid: %(param)s, got %(actual)s, expected: %(expected)s, in file: %(filename)s'
-        })
+        function setCode (error, code) {
+            error.code = code
+            return error
+        }
 
         async function loadJSONConfiguration (filename) {
             let json
             try {
                 json = await fs.readFile(filename, '')
             } catch (error) {
-                throw new ConfigError('IO_ERROR', error, { filename })
+                const e = setCode(new Error('file unreadable: ' + filename), 'IO_ERROR')
+                e.cause = error
+                throw e
             }
             let config
             try {
                 config = JSON.parse(json)
             } catch (error) {
-                throw new ConfigError('PARSE_ERROR', error, { filename })
+                throw setCode(new Error('unable to parse configuration'), 'PARSE_ERROR')
             }
             if (config == null || typeof config != 'object' || Array.isArray(object)) {
-                throw new ConfigError('FORMAT_ERROR', { filename })
+                throw setCode(new Error('JSON must be an object'), 'FORMAT_ERROR')
             }
             if (config.size == null) {
-                throw new ConfigError('PARAM_MISSING_ERROR', { filename, param: 'size'  })
+                throw setCode(new Error('required parameter missing: memory'), 'CONFIG_PARAM_MISSING')
             }
             if (typeof config.size == 'number') {
-                throw new ConfigError('PARAM_TYPE_ERROR', {
-                    filename, param: 'size', actual: typeof cofnig.size, expected: typeof 0
-                })
+                throw setCode(new Error('required parameter wrong type: memory'), 'CONFIG_PARAM_INVALID_TYPE')
             }
             return config
         }
@@ -437,7 +438,7 @@ require('proof')(89, async okay => {
         } catch (error) {
             console.log(error.stack)
             console.log('')
-            if (error.code == 'IO_ERROR'  && error.errors[0].code == 'ENOENT') {
+            if (error.code == 'IO_ERROR'  && error.cause.code == 'ENOENT') {
                 // _If the file doesn't exist, use a default configuration._
                 config = { size: 5 }
             } else {
@@ -450,11 +451,18 @@ require('proof')(89, async okay => {
     }
     //
 
+    // Interrupt prefers to use codes as well. Interrupt encourages you to
+    // create a set of error codes for your module.
+
+    // You can still create an Error object heirarchy using Interrupt, but once
+    // you have a set of codes you start to see how they're easier to work with.
+
     // You declare your codes when you create your Interrupt derived class. You
     // can obtain a list of declared codes using the static `codes` property.
 
-    // In the example below we declare a `ConfigError` class with an object that
-    // maps the error codes to an error message.
+    // In the example below we declare a `ConfigError` class with an object
+    // that maps the error codes to an error message. We can get a list of the
+    // codes defined using the `codes` property of the generated class.
 
     //
     {
@@ -469,19 +477,15 @@ require('proof')(89, async okay => {
     }
     //
 
-    // Interrupt encourages you to create a set of error codes for your module.
-    // I do this in lieu of creating an exception heirarchy preferring the
-    // Node.js method of setting a `code` property on the `Error` instance.
-
     // Furthermore, Interrupt discourages the use of the `message` property
     // programmatically. In fact, Interrupt hijacks the `message`, adding
     // context and nested error stack traces so that they will appear in
     // `error.stack`.
 
-    // Hijacking sounds bad, I know, but codes are nice because they are easier
-    // to use in programming. Using codes to determine error type allows you to
-    // change the wording of a message without breaking any code that tests the
-    // message to determine the error type.
+    // Hijacking sounds bad, I know, but jamming all the report information into
+    // the `message` means it will appear in `stack`. Becuase it always appears
+    // in `stack` any facility that dumps `stack` will get the entire report
+    // without any special knowledge of Interrupt.
 
     //
     console.log('\n--- message from error code ---\n')
@@ -512,8 +516,53 @@ require('proof')(89, async okay => {
     }
     //
 
-    // You can still test against the message using a regular expression. The
-    // message will appear alone on the first line of the `message` property.
+    // If you want to get the plain message for display purposes you can use the
+    // static `Interrupt.message` method.
+
+    //
+    console.log('\n--- obtain just the message from an Interrupt error ---\n')
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            INVALID_JSON: 'unable to parse JSON string',
+            NULL_ARGUMENT: 'the JSON string to parse must not be null'
+        })
+
+        function parse (string) {
+            if (string == null) {
+                throw new ParseError('NULL_ARGUMENT')
+            }
+            try {
+                return JSON.parse(string)
+            } catch (error) {
+                throw new ParseError('INVALID_JSON')
+            }
+        }
+
+        try {
+            parse(null)
+        } catch (error) {
+            console.log(Interrupt.message(error))
+            console.log('')
+            okay(Interrupt.message(error), 'the JSON string to parse must not be null', 'get error message')
+        }
+    }
+    //
+
+    // But, error messages are really for debugging, aren't they. If we really
+    // wanted a facility to display messages to the user, certianly we'd want
+    // one that supports internationalization. We'd want string tables and we'd
+    // want to solicit translations from open source contributors. We wouldn't
+    // want all that complexity built into the error path of our application at
+    // every level of the call stack.
+
+    // Okay, that's a bit much, but I always dump `error.stack` and rarely dump
+    // `error.message`, and we have a way to get just message if that's all you
+    // need.
+
+    // You can still test against the `message` property using a regular
+    // expression. A single line message will appear alone on the first line of
+    // the `message` property. You can match the entirety of the first line with
+    // a multi-line regular expression.
 
     //
     {
@@ -542,17 +591,7 @@ require('proof')(89, async okay => {
     }
     //
 
-    // The `code` property is commonly used in Node.js however. All of the
-    // errors eminating from the standard Node.js modules have a `code` property
-    // and each `code` property has associated documentation. If you use codes
-    // your module can adhere to this practice.
-
-    // I prefer codes, though. You can add codes as needed. They are easy to
-    // document. Without documentation, just reading the code, you have a single
-    // place where you get a catalog of everything that can go wrong with your
-    // module.
-
-    // You can also specify the error code using a symbol.
+    // You can also specify the error code using a `Symbol`.
 
     // The generated exception class has a property named for every code you
     // defined in your call to `Interrupt.create()`. The property has the code
@@ -562,7 +601,7 @@ require('proof')(89, async okay => {
     // on the exception instance. This is set in addition to the code.
 
     // The symbol property is not printed in the properties section of the stack
-    // trace message. It is already represented there by the `code` string.
+    // trace message. It is already represented by the `code` string.
 
     //
     console.log('\n--- inspecting the code Symbol of an Interrupt ---\n')
@@ -628,7 +667,9 @@ require('proof')(89, async okay => {
     //
 
     // Because Symbols are unique we can reuse a single exception class and
-    // distiguish the type unambiously by Symbol.
+    // distiguish the type unambiously by Symbol. You can start to see how
+    // symbols and a `switch` statement can make for a clean catch block that
+    // starts to look like the catch error by type facilty in other languages.
 
     //
     console.log('\n--- catching exceptions by type and code ---\n')

@@ -694,6 +694,11 @@ class Interrupt extends Error {
         return Class
     }
 
+    static message (error) {
+        // **TODO** Need a seprate `format` and `message` property.
+        return Instances.get(error).message
+    }
+
     static dedup (error, keyify = (_, file, line) => [ file, line ]) {
         const seen = {}
         let id = 0
