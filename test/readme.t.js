@@ -769,7 +769,7 @@ require('proof')(90, async okay => {
         } catch (error) {
             // _Note that the `m` suffix makes this a multi-line matching regex._
             console.log(error.stack, '\n')
-            okay(/^NULL_ARGUMENT$/m.test(error.message), 'no code found, use first argument as message')
+            okay(Interrupt.message(error), 'NULL_ARGUMENT', 'no code found, use first argument as message')
             okay(error.code == null, 'no code is set')
         }
     }
@@ -799,17 +799,19 @@ require('proof')(90, async okay => {
         } catch (error) {
             // _Note that the `m` suffix makes this a multi-line matching regex._
             console.log(error.stack, '\n')
-            okay(/^the JSON string to parse must not be null$/m.test(error.message), 'specify message as first argument instead of code')
+            okay(Interrupt.message(error), 'the JSON string to parse must not be null', 'specify message as first argument instead of code')
         }
     }
     //
 
-    // Any string argument that is not in the set of codes for an exception is
-    // used as the message. You can use this to override the default message.
+    // You can pass in a code followed by message to override the default
+    // message for the code.
 
     //
-    /* TODO Override code message.
     {
+        const path = require('path')
+        const fs = require('fs').promises
+
         const ConfigError = Interrupt.create('ConfigError', {
             FILE_READ_ERROR: 'unable to read file'
         })
@@ -836,14 +838,71 @@ require('proof')(90, async okay => {
                 }
             }
         }
+
+        try {
+            const dirname = path.join(__dirname, 'tmp', 'eisdir')
+            await loadConfigs(dirname)
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(error.code, 'FILE_READ_ERROR', 'code set')
+            okay(Interrupt.message(error), 'unable to read file', 'use default message for code')
+        }
+
+        try {
+            const dirname = path.join(__dirname, 'tmp', 'missing')
+            await loadConfigs(dirname)
+        } catch (error) {
+            console.log('\n', error.stack, '\n')
+            okay(error.code, 'FILE_READ_ERROR', 'code set')
+            okay(Interrupt.message(error), 'unable to read dir', 'override default message for code')
+        }
     }
-    */
+    //
+
+    // **TODO** Additional codes.
+
+    //
+    {
+    }
     //
 
     // ## Error Properties
 
-    // You can set properties on an Interrupt derived exception by specifying an
-    // object whose properties will set on the constructed exception.
+    // Ordinarly, setting properties on an error means constructing the error,
+    // then assigning the properties individually before throwing the error.
+
+    // Here we set a `filename` property on an `Error` before throwing.
+
+    //
+    console.log('\n--- setting properties on an `Error` ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        async function read (filename) {
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                const e = new Error('unable to read file')
+                e.filename = filename
+                throw e
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename)
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(error.filename, filename, 'filename property set')
+        }
+    }
+    //
+
+    // With Interrupt you can set properties by specifying an object whose
+    // properties will set on the exception in the construtor. This means you
+    // can throw exceptions with additional properties in a one-liner.
 
     //
     {
@@ -874,10 +933,13 @@ require('proof')(90, async okay => {
     }
     //
 
-    // You can assign default properties by code. Instead of defining a code
-    // with a format message, you can use an object. The properties of that
-    // object will be set on the exception when it is created with the code. The
-    // `message` property of the object will be used as the exception message.
+    // In addition to setting properties at construction, you can assign default
+    // properties by code.
+
+    // When defining a code using `Interrupt.create()`, a format message for the
+    // value of code map, you use an object. The properties of that object will
+    // be set on the exception when it is created with the code. The `message`
+    // property of the object will be used as the exception message.
 
     //
     {
@@ -945,16 +1007,27 @@ require('proof')(90, async okay => {
 
     // Error properties are written to the stack trace as JSON.
 
+    // We use JSON instead of `util.inspect()` because we want the ability to
+    // gather our stack trace messages from our production logs and parse them
+    // for programatic analysis.
+
+    // There are object trees that JSON cannot serialize, however. We've made
+    // some accommodations so that JSON will do its best to serialize as much as
+    // it can. It's unreasonable to insisit that only value JSON objects are
+    // allowed as error properties. A function could be trying to say, "I
+    // expected an integer but instead you gave me this." If the bad argument
+    // the function is trying to report contains circular references we don't
+    // want `JSON.stringify()` to chime in with its own exception.
+
     // If given JSON that `JSON.stringify()` cannot stringify, rather than
     // failing silently, or worse, throwing an exception, Interrupt tries to
-    // accommodate the invalid JSON. It always trys to print out as much as it
-    // can. The error path contains errors, some are due to bad inputs. Unit
-    // testing can't anticipate what sort of bad data might be the cause of an
-    // error.
+    // accommodate the invalid JSON.
 
     // This specialized `JSON` serialization is exposed by
     // `Interrupt.JSON.stringify()`. There is an associated
     // `Interrupt.JSON.parse()` to go with it.
+
+    // We always serialize JSON with a four space indent.
 
     // Ordinary JSON serializes and parses like ordinary JSON.
 
@@ -1001,7 +1074,7 @@ require('proof')(90, async okay => {
 
     // Undefined will be serialized and parsed. `JSON.stringify()` drops values
     // that are `undefined`, but seeing that a value is `undefined` might
-    // quickly clarify the cause of an error. he standards
+    // explain clarify the cause of an error.
 
     //
     console.log('\n--- serializing JSON with undefined members ---\n')
@@ -1018,11 +1091,15 @@ require('proof')(90, async okay => {
     }
     //
 
-    // Circular references and undefined are parsed because we replace them with
-    // a special array that starts with a string that acts as a type specifier.
-    // If your JSON has an array that just happens to start with one of those
-    // type specifiers, it is escaped with an `_array` type specifier so it can
-    // be serialized and parsed.
+    // If your JSON has an array that just happens to start with a
+    // `'_referenced'`, `'_undefined'`, or `'_array'` string, it is escaped with
+    // an `_array` type specifier so it can be serialized and parsed.
+
+    // We're able to parse circular references and undefined we replace them a
+    // place-holder. The place-holder is an array that starts with a string
+    // indicating the type, `'_referenced'`, or `'_undefined'` and has any
+    // additinal information in the rest of the array. On parsing we detect
+    // these special arrays by looking at the first element.
 
     //
     console.log('\n--- escaping type specifiers in JSON ---\n')
@@ -1039,10 +1116,9 @@ require('proof')(90, async okay => {
     }
     //
 
-    // Errors are serialized specially. Ordinarily very little gets output. This
-    // is because JSON treats error an object and neither `message`, nor `stack`
-    // are enumerable. If there are no additional properties you simply see an
-    // empty array.
+    // Errors are serialized specially. JSON treats error an object and neither
+    // `message`, nor `stack` are enumerable. If there are no additional
+    // properties you simply see an empty array.
 
     // Interrupt's JSON will serialize the `message` and `stack`.
 
@@ -1094,6 +1170,8 @@ require('proof')(90, async okay => {
         okay(parsed.f, 'number => number + 1', 'serialize function to string in JSON')
     }
     //
+
+    // **TODO** Left off documentation here.
 
     // The `Interrupt.JSON` functions do not support custom `replacer` or
     // `reviver` functions and you cannot adjust the indent, it is always four
