@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(96, async okay => {
+require('proof')(112, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -119,6 +119,8 @@ require('proof')(96, async okay => {
     //
 
     // `Interrupt` is a descendent of `Error`.
+
+    // **TODO** We need to get rid of this.
 
     //
     okay(ParseError.prototype instanceof Error, 'Generated class is an Error')
@@ -466,14 +468,23 @@ require('proof')(96, async okay => {
 
     //
     {
+        // _`Interrupt` is an `Error`._
+        okay(Interrupt.prototype instanceof Error, 'generated error is an `Error`')
+
+        // _Generate an `Interrupt` derived error class._
         const ConfigError = Interrupt.create('ConfigError', {
             IO_ERROR: 'unable to read config file',
             PARSE_ERROR: 'unable to parse config file'
         })
 
         const codes = ConfigError.codes
-
         okay(codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'create error codes')
+
+        // _Generated `Error` class is an `Error`._
+        okay(ConfigError.prototype instanceof Error, 'generated error is an `Error`')
+
+        // _Generated `Error` class is an `Interrupt`._
+        okay(ConfigError.prototype instanceof Error, 'generated error is an `Error`')
     }
     //
 
@@ -934,77 +945,6 @@ require('proof')(96, async okay => {
     }
     //
 
-    // In addition to setting properties at construction, you can assign default
-    // properties by code.
-
-    // When defining a code using `Interrupt.create()`, a format message for the
-    // value of code map, you use an object. The properties of that object will
-    // be set on the exception when it is created with the code. The `message`
-    // property of the object will be used as the exception message.
-
-    //
-    {
-        const path = require('path')
-        const fs = require('fs').promises
-
-        const ConfigError = Interrupt.create('ConfigError', {
-            CONFIG_IO_ERROR: {
-                fallback: true,
-                message: 'unable to read file'
-            },
-            CONFIG_PARSE_ERROR: {
-                message: 'unable to parse JSON'
-            }
-        })
-
-        async function load (filename) {
-            let json
-            try {
-                json = await fs.readFile(filename, 'utf8')
-            } catch (error) {
-                throw new ConfigError('CONFIG_IO_ERROR', { filename })
-            }
-            try {
-                return JSON.parse(json)
-            } catch (error) {
-                throw new ConfigError('CONFIG_PARSE_ERROR', { filename })
-            }
-        }
-
-        async function loadOrFallback (filename) {
-            try {
-                return await load(filename)
-            } catch (error) {
-                console.log(error)
-                if (error.fallback) {
-                    return {}
-                }
-                throw error
-            }
-        }
-
-        const filename = path.join(__dirname, 'tmp', 'missing')
-
-        okay(await loadOrFallback(filename), {}, 'caught using a default property')
-
-        console.log('\n--- catch an error with a default property ---\n')
-        try {
-            await load(filename)
-        } catch (error) {
-            console.log(error.stack, '\n')
-            okay(error.code, 'CONFIG_IO_ERROR', 'default property code set')
-            okay(error.fallback, 'default property set')
-        }
-
-        try {
-            await load(path.join(__dirname, 'tmp', 'bad', 'config.json'))
-        } catch (error) {
-            console.log('\n', error.stack, '\n')
-            okay(error.code, 'CONFIG_PARSE_ERROR', 'no default property code set')
-            okay(!error.fallback, 'no default property property not set')
-        }
-    }
-    //
 
     // Error properties are written to the stack trace as JSON.
 
@@ -1207,6 +1147,524 @@ require('proof')(96, async okay => {
     // For the most part, you won't be able to parse the JSON and get back the
     // original objects if they are not plain `objects`. That isn't really
     // important for reporting purposes however, just don't be surprised is all.
+
+    // In addition to setting properties at construction, you can assign default
+    // properties by code.
+
+    // When defining a code using `Interrupt.create()`, a format message for the
+    // value of code map, you use an object. The properties of that object will
+    // be set on the exception when it is created with the code. The `message`
+    // property of the object will be used as the exception message.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            CONFIG_IO_ERROR: {
+                fallback: true,
+                message: 'unable to read file'
+            },
+            CONFIG_PARSE_ERROR: {
+                message: 'unable to parse JSON'
+            }
+        })
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                throw new ConfigError('CONFIG_IO_ERROR', { filename })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('CONFIG_PARSE_ERROR', { filename })
+            }
+        }
+
+        async function loadOrFallback (filename) {
+            try {
+                return await load(filename)
+            } catch (error) {
+                console.log(error)
+                if (error.fallback) {
+                    return {}
+                }
+                throw error
+            }
+        }
+
+        const filename = path.join(__dirname, 'tmp', 'missing')
+
+        okay(await loadOrFallback(filename), {}, 'caught using a default property')
+
+        console.log('\n--- catch an error with a default property ---\n')
+        try {
+            await load(filename)
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(error.code, 'CONFIG_IO_ERROR', 'default property code set')
+            okay(error.fallback, 'default property set')
+        }
+
+        try {
+            await load(path.join(__dirname, 'tmp', 'bad', 'config.json'))
+        } catch (error) {
+            console.log('\n', error.stack, '\n')
+            okay(error.code, 'CONFIG_PARSE_ERROR', 'no default property code set')
+            okay(!error.fallback, 'no default property property not set')
+        }
+    }
+    //
+
+    // Once you've started to use codes you may find that one code per error is
+    // not enough. You may want to have additional codes to classify errors.
+
+    // You can define additional codes with no message or properties by
+    // specifying them as strings in the call to `Interrupt.create()`.
+
+    //
+    console.log('\n--- define additional message-less error codes string by string ---\n')
+    {
+        const fs = require('fs').promises
+        const path = require('path')
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            'READ_FILE_ERROR': 'unable to read file',
+            'PARSE_ERROR': 'unable to parse JSON'
+        }, 'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG')
+
+        okay(typeof ConfigError.SUBSYSTEM_CONFIG, 'symbol', 'additional code created')
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                throw new ConfigError('CONFIG_IO_ERROR', { filename, subsystem: ConfigError.SUBSYSTEM_IO })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('CONFIG_PARSE_ERROR', { filename, subsystem: ConfigError.SUBSYSTEM_CONFIG  })
+            }
+        }
+
+        try {
+            await load(path.join(__dirname, 'tmp', 'missing.json'))
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(error.subsystem, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
+        }
+    }
+    //
+
+    // These additional codes can also be specified as an array.
+
+    // Once you've started to use codes you may find that one code per error is
+    // not enough. You may want to have additional codes to classify errors.
+
+    // You can define additional codes with no message or properties by
+    // specifying them as strings in the call to `Interrupt.create()`.
+
+    //
+    console.log('\n--- define additional message-less error codes string by string ---\n')
+    {
+        const fs = require('fs').promises
+        const path = require('path')
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            'READ_FILE_ERROR': 'unable to read file',
+            'PARSE_ERROR': 'unable to parse JSON'
+        }, 'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG')
+
+        okay(typeof ConfigError.SUBSYSTEM_CONFIG, 'symbol', 'additional code created')
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                throw new ConfigError('CONFIG_IO_ERROR', { filename, subsystem: ConfigError.SUBSYSTEM_IO })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('CONFIG_PARSE_ERROR', { filename, subsystem: ConfigError.SUBSYSTEM_CONFIG  })
+            }
+        }
+
+        try {
+            await load(path.join(__dirname, 'tmp', 'missing.json'))
+        } catch (error) {
+            console.log('\n', error.stack, '\n')
+            okay(error.subsystem, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
+        }
+    }
+    //
+
+    // You can also define additional codes as an array of strings. Instead of
+    // passing in a straight up array, though, I like to split a string so that
+    // maintaining the list is easier.
+
+    //
+    console.log('\n--- define additional message-less error codes string by string ---\n')
+    {
+        const fs = require('fs').promises
+        const path = require('path')
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            'READ_FILE_ERROR': 'unable to read file',
+            'PARSE_ERROR': 'unable to parse JSON'
+        }, `
+            SUBSYSTEM_IO
+            SUBSYSTEM_CONFIG
+        `.trim().split(/\s\s*/g))
+
+        okay(typeof ConfigError.SUBSYSTEM_CONFIG, 'symbol', 'additional code created')
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                throw new ConfigError('READ_FILE_ERROR', { filename, subsystem: ConfigError.SUBSYSTEM_IO })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('PARSE_ERROR', { filename, subsystem: ConfigError.SUBSYSTEM_CONFIG  })
+            }
+        }
+
+        try {
+            await load(path.join(__dirname, 'tmp', 'missing.json'))
+        } catch (error) {
+            console.log('\n', error.stack, '\n')
+            okay(error.subsystem, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
+        }
+    }
+    //
+
+    // Lastly you can define codes using a function. The function must return
+    // either a code object map, a code array, a code string or anther code
+    // function. The function will receive as its only argument of map of code
+    // name strings to the code symbols for the codes defined by any previous
+    // code declarations in the parameter list.
+
+    // With this we are able to define a default property with a code symbol
+    // value using codes we've defined in the constructor.
+
+    //
+    console.log('\n--- define additional message-less error codes string by string ---\n')
+    {
+        const fs = require('fs').promises
+        const path = require('path')
+
+        const ConfigError = Interrupt.create('ConfigError', [
+            'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG'
+        ], function (codes) {
+            return {
+                'READ_FILE_ERROR': {
+                    message: 'unable to read file',
+                    subsystem: codes['SUBSYSTEM_IO'].symbol
+                },
+                'PARSE_ERROR': {
+                    message: 'unable to parse JSON',
+                    subsystem: codes['SUBSYSTEM_CONFIG'].symbol
+                }
+            }
+        })
+
+        okay(typeof ConfigError.SUBSYSTEM_CONFIG, 'symbol', 'additional code created')
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                throw new ConfigError('READ_FILE_ERROR', { filename })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('PARSE_ERROR', { filename })
+            }
+        }
+
+        try {
+            await load(path.join(__dirname, 'tmp', 'missing.json'))
+        } catch (error) {
+            console.log(`\n${error.stack}\n`)
+            okay(error.subsystem, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
+        }
+    }
+    //
+
+    // An interesting property of the codes map given to a code function is that
+    // the `code` property is enumerable and the `symbol` property is not. This
+    // means that if you use this property as the value of a default property,
+    // the code will be serialized in the stack trace, but the symbol will not.
+
+    //
+    {
+        const fs = require('fs').promises
+        const path = require('path')
+
+        const ConfigError = Interrupt.create('ConfigError', [
+            'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG'
+        ], function (codes) {
+            return {
+                'READ_FILE_ERROR': {
+                    message: 'unable to read file',
+                    subsystem: codes['SUBSYSTEM_IO']
+                },
+                'PARSE_ERROR': {
+                    message: 'unable to parse JSON',
+                    subsystem: codes['SUBSYSTEM_CONFIG']
+                }
+            }
+        })
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                throw new ConfigError('READ_FILE_ERROR', { filename })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('PARSE_ERROR', { filename })
+            }
+        }
+        const error = new ConfigError('READ_FILE_ERROR')
+
+        try {
+            await load(path.join(__dirname, 'tmp', 'missing.json'))
+        } catch (error) {
+            console.log(`\n${error.stack}\n`)
+            okay(error.subsystem.symbol, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
+            okay(JSON.stringify(error.subsystem), '{"code":"SUBSYSTEM_IO"}', 'only code is serialized')
+        }
+    }
+    //
+
+    // This esoteric behavior is there for you to abuse in your own programs.
+    // The end user will have the simple static symbol contents to test, might
+    // notice that the symbol goes missing if they JSON serialize the value
+    // themselves, but such is the mystery of exception handling with its many
+    // non-enumerable properties.
+
+    // If you've made it this far, you may have noticed that we tend to use
+    // `switch` statements with codes in our catch blocks. This is nice because
+    // it starts to look like the sort of catch by type facility you see in
+    // other languages. However, it is not type safe the way that it is in other
+    // languages.
+
+    // The code below will fall back to a default configuration if it has any
+    // trouble reading from the filesystem, but if it gets a back configuration
+    // it will rethrow the error.
+
+    // It has a sutble bug that is on the error path.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            DIRECTORY_READ_ERROR: 'unable to read directory',
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function loadConfigs (dirname) {
+            let dir
+            try {
+                dir = await fs.readdir(dirname)
+            } catch (error) {
+                throw new ConfigError('DIRECTORY_READ_ERROR', 'unable to read dir', { dirname })
+            }
+            const configs = []
+            for (const file of dir) {
+                const filename = path.join(dirname, file)
+                let body
+                try {
+                    body = await fs.readFile(filename, 'utf8')
+                } catch (error) {
+                    throw new ConfigError('FILE_READ_ERROR', { filename })
+                }
+                try {
+                    console.log(body)
+                    configs.push(JSON.parse(body))
+                } catch (error) {
+                    throw new ConfigError('FILE_PARSE_ERROR')
+                }
+            }
+            return configs
+        }
+
+        async function loadConfigsFallback (dirname) {
+            try {
+                return await loadConfigs(dirname)
+            } catch (error) {
+                switch (error.symbol) {
+                 // _Someone can't spell._
+                case ConfigError.DIRECTROY_READ_ERROR:
+                case ConfigError.FILE_READ_ERROR:
+                    return [{ settings: { volume: 0 } }]
+                default:
+                    throw error
+                }
+            }
+        }
+
+        // _We expect a missing directory to result in a default but..._
+        try {
+            await loadConfigsFallback(path.join(__dirname, 'tmp', 'missing'))
+        } catch (error) {
+            // _... the error was rethrown._
+            console.log(`${error.stack}\n`)
+            okay(error.code, 'DIRECTORY_READ_ERROR', 'we didn\'t want this to be thrown')
+        }
+    }
+    //
+
+    // The same code object with a string `code` property an a non-enumerable
+    // `symbol` property is returned from the static `codes()` function in the
+    // generated `Interrupt` class.
+
+    // If we use this object in our switch statements, we only need to unit test
+    // one case out of a set of cases to know that all the cases in the switch
+    // statement are defined.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            DIRECTORY_READ_ERROR: 'unable to read directory',
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function loadConfigs (dirname) {
+            let dir
+            try {
+                dir = await fs.readdir(dirname)
+            } catch (error) {
+                throw new ConfigError('DIRECTORY_READ_ERROR', 'unable to read dir', { dirname })
+            }
+            const configs = []
+            for (const file of dir) {
+                const filename = path.join(dirname, file)
+                let body
+                try {
+                    body = await fs.readFile(filename, 'utf8')
+                } catch (error) {
+                    throw new ConfigError('FILE_READ_ERROR', { filename })
+                }
+                try {
+                    console.log(body)
+                    configs.push(JSON.parse(body))
+                } catch (error) {
+                    throw new ConfigError('FILE_PARSE_ERROR')
+                }
+            }
+            return configs
+        }
+
+        async function loadConfigsFallback (dirname) {
+            try {
+                return await loadConfigs(dirname)
+            } catch (error) {
+                switch (error.symbol) {
+                 // _Someone can't spell._
+                case ConfigError.code('DIRECTROY_READ_ERROR').symbol:
+                case ConfigError.code('FILE_READ_ERROR').symbol:
+                    return [{ settings: { volume: 0 } }]
+                default:
+                    throw error
+                }
+            }
+        }
+
+        // _We expect a missing directory to result in a default but..._
+        try {
+            await loadConfigsFallback(path.join(__dirname, 'tmp', 'missing'))
+        } catch (error) {
+            // _... we got a meaningful JavaScript `TypeError` instead._
+            console.log(`${error.stack}\n`)
+            okay(error instanceof TypeError, 'useful error diagnosing problems with switch statement')
+        }
+    }
+    //
+
+    // It's more verbose but it allows us to use large sets of codes in switch
+    // statements without having to write a unit test for every conceivable
+    // error to ensure that the error codes are correct. It also allows us to
+    // rename an error code and catch any overlooked renames.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            DIRECTORY_READ_ERROR: 'unable to read directory',
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function loadConfigs (dirname) {
+            let dir
+            try {
+                dir = await fs.readdir(dirname)
+            } catch (error) {
+                throw new ConfigError('DIRECTORY_READ_ERROR', 'unable to read dir', { dirname })
+            }
+            const configs = []
+            for (const file of dir) {
+                const filename = path.join(dirname, file)
+                let body
+                try {
+                    body = await fs.readFile(filename, 'utf8')
+                } catch (error) {
+                    throw new ConfigError('FILE_READ_ERROR', { filename })
+                }
+                try {
+                    console.log(body)
+                    configs.push(JSON.parse(body))
+                } catch (error) {
+                    throw new ConfigError('FILE_PARSE_ERROR')
+                }
+            }
+            return configs
+        }
+
+        async function loadConfigsFallback (dirname) {
+            try {
+                return await loadConfigs(dirname)
+            } catch (error) {
+                switch (error.symbol) {
+                 // _Someone can't spell._
+                case ConfigError.code('DIRECTORY_READ_ERROR').symbol:
+                case ConfigError.code('FILE_READ_ERROR').symbol:
+                    return [{ settings: { volume: 0 } }]
+                default:
+                    throw error
+                }
+            }
+        }
+
+        okay(await loadConfigsFallback(path.join(__dirname, 'tmp', 'missing')), [{
+            settings: { volume: 0 }
+        }], 'finally working correctly')
+    }
+    //
 
     // ## Formatted Messages
 
@@ -2669,3 +3127,11 @@ require('proof')(96, async okay => {
 // reasons I don't care to investigate. This was a nice to have and it doesn't
 // really matter if an `Interrupt` is an `AggregateError`. I'd have to be
 // convinced from someone who adopted Interrupt, not as an advocacy effort.
+
+// Because construction is deferred, we defer construction to after the
+// resolution of callback. Because the deferred construction takes place in an
+// anymomous function provided by the user, the call stack of the invocation the
+// deferred constructer passes through the application code, right at the line
+// where the originating function was invoked. The resulting exception for the
+// callback will originate at the same file and line where the originating
+// function was called.

@@ -155,7 +155,7 @@ class Interrupt extends Error {
                 if (typeof value === 'undefined') {
                     return [ '_undefined' ]
                 }
-                if (typeof value === 'function') {
+                if (typeof value === 'function' || typeof value === 'symbol') {
                     return value.toString()
                 }
                 if (typeof value == 'object' && value != null) {
@@ -275,7 +275,8 @@ class Interrupt extends Error {
         // FYI It is faster to use `Error.captureStackTrace` again than
         // it is to try to strip the stack frames created by `Error`
         // using a regular expression or string manipulation. You know
-        // because you tried.
+        // because you tried. Years later: Thanks for reminding me, I keep
+        // coming back to experiment with it.
 
         //
         if (options.callee != null) {
@@ -295,7 +296,8 @@ class Interrupt extends Error {
         const IGNORE = [ 'message', 'code', 'name', 'symbol' ]
         for (const property in assign) {
             if (! ~IGNORE.indexOf(property) || this[property] == null) {
-                Object.defineProperty(this, property, { value: assign[property] })
+                //this[property] = assign[property]
+                Object.defineProperty(this, property, { value: assign[property], enumerable: true })
             }
         }
     }
@@ -314,7 +316,6 @@ class Interrupt extends Error {
     //
     static create (name, ...vargs) {
         const SuperClass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
-        const codes = vargs.length > 0 && typeof vargs[0] == 'object' ? vargs.shift() : {}
 
         if (Interrupt.Error != null) {
             Interrupt.Error.assert(SuperClass == Interrupt || SuperClass.prototype instanceof Interrupt, 'INVALID_SUPER_CLASS', SuperClass.name)
@@ -355,27 +356,8 @@ class Interrupt extends Error {
                 return Object.keys(Prototype.codes)
             }
 
-            static code (code, ...vargs) {
-                let resolved
-                switch (typeof code) {
-                case 'string': {
-                        resolved = Prototype.symbols.get(code)
-                    }
-                    break
-                case 'symbol': {
-                        resolved = Prototype.codes[code] && Prototype.codes[code].symbol
-                    }
-                    break
-                default:
-                    throw new Interrupt.Error('INVALID_CODE_TYPE')
-                }
-                if (resolved != null) {
-                    return resolved
-                }
-                if (vargs.length != 0) {
-                    return vargs[0]
-                }
-                throw new Interrupt.Error('UNKNOWN_CODE', { code: String(resolved) })
+            static code (code) {
+                return Codes[code]
             }
 
             static _options (...vargs) {
@@ -642,47 +624,85 @@ class Interrupt extends Error {
             codes: {}
         }
 
+        const Codes = {}
+
         // Detect duplicate declarations.
         const duplicates = new Set
 
-        for (const code in codes) {
-            // Duplicate declaration detection.
-            if (duplicates.has(code)) {
-                throw new Interrupt.Error('DUPLICATE_CODE', { code })
-            }
-            duplicates.add(code)
-
-            // Use an existing code symbol from the super class if one exists,
-            // otherwise create a new symbol.
-            const existing = SuperClass[code]
-            if (existing != null && typeof existing != 'symbol') {
-                throw new Interrupt.Error('INVALID_CODE')
-            }
-            const symbol = SuperClass[code] || Symbol(code)
-
-            // Create a property to hold the symbol in the class.
-            Object.defineProperty(Class, code, { get: function () { return symbol } })
-
-            // Our internal tracking of symbols.
-            Prototype.symbols.set(symbol, code)
-
-            // Convert the defintion to a code prototype.
-            switch (typeof codes[code]) {
-            case 'string':
-                Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol }
-                break
-            case 'object':
-                if (codes[code] == null) {
-                    Prototype.codes[code] = { code, message: null, properties: {}, symbol }
-                } else {
-                    Prototype.codes[code] = {
-                        code: code,
-                        message: coalesce(codes[code].message),
-                        properties: codes[code],
-                        symbol: symbol
+        function convert (arg) {
+            switch (typeof arg) {
+            case 'string': {
+                    const codes = {}
+                    codes[arg] = null
+                    return codes
+                }
+            case 'object': {
+                    if (arg == null) {
+                        throw new Interrupt.Error('INVALID_ARGUMENT')
+                    }
+                    if (Array.isArray(arg)) {
+                        return arg.reduce((codes, value) => {
+                            if (typeof value != 'string') {
+                                throw new Interrupt.Error('INVALID_ARGUMENT')
+                            }
+                            codes[value] = null
+                            return codes
+                        }, {})
+                    } else {
+                        return arg
                     }
                 }
-                break
+            case 'function':
+                return convert(arg(Codes))
+            default:
+                throw new Interrupt.Error('INVALID_ARGUMENT')
+            }
+        }
+
+        for (const arg of vargs) {
+            const codes = convert(arg)
+            for (const code in codes) {
+                // Duplicate declaration detection.
+                if (duplicates.has(code)) {
+                    throw new Interrupt.Error('DUPLICATE_CODE', { code })
+                }
+                duplicates.add(code)
+
+                // Use an existing code symbol from the super class if one exists,
+                // otherwise create a new symbol.
+                const existing = SuperClass[code]
+                if (existing != null && typeof existing != 'symbol') {
+                    throw new Interrupt.Error('INVALID_CODE')
+                }
+                const symbol = SuperClass[code] || Symbol(code)
+
+                // Create a property to hold the symbol in the class.
+                Object.defineProperty(Class, code, { get: function () { return symbol } })
+
+                // Our internal tracking of symbols.
+                Prototype.symbols.set(symbol, code)
+
+                Codes[code] = { code: code }
+                Object.defineProperty(Codes[code], 'symbol', { value: symbol, enumerable: false })
+
+                // Convert the defintion to a code prototype.
+                switch (typeof codes[code]) {
+                case 'string':
+                    Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol }
+                    break
+                case 'object':
+                    if (codes[code] == null) {
+                        Prototype.codes[code] = { code, message: null, properties: {}, symbol }
+                    } else {
+                        Prototype.codes[code] = {
+                            code: code,
+                            message: coalesce(codes[code].message),
+                            properties: codes[code],
+                            symbol: symbol
+                        }
+                    }
+                    break
+                }
             }
         }
 
