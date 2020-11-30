@@ -57,6 +57,11 @@ function context (options, prototype, instance, stack = true) {
     if (Object.keys(context).length != 0) {
         message += '\n\n' + Interrupt.JSON.stringify(context)
     }
+    // **TODO** Without context messages we have more space. We could, if the
+    // type is not an Error, serialize the cause as JSON. Parsing would be a
+    // matter of detecting if it is an error, if not it is going to be JSON.
+    // JSON will not look like an error, perhaps just plain `null` would be
+    // confusing, but I doubt it.
     if (options.errors.length) {
         for (let i = 0, I = options.errors.length; i < I; i++) {
             const error = options.errors[i]
