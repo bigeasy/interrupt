@@ -38,7 +38,6 @@ const AUDIT = new Error('example')
 // includes the message in the stack trace.
 function context (options, prototype, instance, stack = true) {
     let message
-    console.log('>>>', options.format, prototype.message, prototype.code)
     const format = options.format || prototype.message || prototype.code
     try {
         message = instance.message = sprintf(format, options.properties)
@@ -66,7 +65,7 @@ function context (options, prototype, instance, stack = true) {
     if (options.errors.length) {
         for (let i = 0, I = options.errors.length; i < I; i++) {
             const error = options.errors[i]
-            const text = error instanceof Error ? coalesce(error.stack, error.message) : error.toString()
+            const text = error instanceof Error ? Interrupt.stringify(error) : error.toString()
             const indented = text.replace(/^/gm, '    ')
             message += '\n\ncause:\n\n' + indented
         }
@@ -90,6 +89,30 @@ function get (object, path) {
     return iterator
 }
 
+class Collector {
+    constructor () {
+        this._lines = []
+    }
+
+    push (line) {
+        this._lines.push(line)
+    }
+
+    end () {
+        if (this._lines[this._lines.length - 1] === '') {
+            this._lines.pop()
+        }
+        return this._lines.join('\n')
+    }
+}
+
+// An assert internal to Interrupt that will not get audited.
+function assert (condition, ...vargs) {
+    if (! condition) {
+        throw new Interrupt.Error(Interrupt._options([{ callee: assert }], vargs))
+    }
+}
+
 // The Interrupt class extends `Error` using class ES6 extension.
 
 //
@@ -104,10 +127,198 @@ class Interrupt extends Error {
         UNKNOWN_CODE: 'unknown code',
         INVALID_CODE_TYPE: 'invalid code type',
         INVALID_ACCESS: 'constructor is not a public interface',
+        PARSE_ERROR: null,
         SPRINTF_ERROR: null,
         DEFERRED_CONSTRUCTOR_INVALID_RETURN: null,
         DEFERRED_CONSTRUCTOR_NOT_CALLED: null
     })
+
+    static explode (error) {
+        const preamble = error.message == ''
+            ? `${error.name}`
+            : `${error.name}: ${error.message}`
+        if (error.stack.indexOf(preamble) != 0) {
+            throw new Interrupt.Error('PARSE_ERROR', 'cannot find start of stack')
+        }
+        const stack = error.stack[preamble.length] == '\n'
+            ? error.stack.substring(preamble.length + 1)
+            : error.stack.substring(preamble.length)
+        return {
+            name: error.name,
+            message: error.message,
+            properties: { ...error },
+            stack: stack
+        }
+    }
+
+    static stringify (error) {
+        if (error instanceof Interrupt) {
+            return error.stack
+        }
+        const exploded = Interrupt.explode(error)
+        if (exploded.message == '' && Object.keys(exploded.properties).length == 0) {
+            return error.stack
+        }
+        const message = error.message.split('\n')
+        for (let i = 1, I = message.length; i < I; i++) {
+            message[i] = `    ${message[i]}`
+        }
+        const title = exploded.message == ''
+            ? `${exploded.name}`
+            : `${exploded.name}: ${message.join('\n')}`
+        const header = Object.keys(exploded.properties).length == 0
+            ? title
+            : `${title}\n\n${Interrupt.JSON.stringify(exploded.properties)}`
+        if (exploded.stack.length == 0) {
+            return header
+        }
+        return `${header}\n\nstack:\n\n${exploded.stack}`
+    }
+
+    static Parser = class Parser {
+        constructor (scan = false) {
+            this._scannable = scan
+            this._scanning = scan
+            this._mode = scan ? 'scan' : 'exception'
+            this._collector = null
+            this._depth = 0
+            this._position = { line: 1 }
+        }
+
+        static _DEDENT = {
+            'message': 1,
+            'properties': 0,
+            'stack': 0
+        }
+
+        static _START = {
+            'properties': '{',
+            'stack': 'stack:',
+            'errors': 'cause:'
+        }
+
+        static _TRANSITION = {
+            'message': [ 'properties', 'errors', 'stack' ],
+            'properties': [ 'errors', 'stack' ],
+            'errors': [ 'errors', 'stack' ],
+            'stack': []
+        }
+
+        static _INCLUDE = {
+            'message': false,
+            'properties': true,
+            'errors': false,
+            'stack': 'false'
+        }
+
+        _complete () {
+            switch (this._mode) {
+            case 'message': {
+                    this._node.message = this._collector.end()
+                    this._collector.length = 0
+                }
+                break
+            case 'properties': {
+                    this._node.properties = Interrupt.JSON.parse(this._collector.end())
+                }
+                break
+            case 'stack': {
+                    this._node.stack = unstacker.parse(this._collector.end())
+                }
+                break
+            case 'errors': {
+                    this._node.errors.push(this._collector.end())
+                }
+                break
+            }
+        }
+
+        _transition (source) {
+            MODES: for (const mode of Interrupt.Parser._TRANSITION[this._mode]) {
+                if (source.trimRight() === Interrupt.Parser._START[mode]) {
+                    this._complete()
+                    switch (this._mode = mode) {
+                    case 'errors': {
+                            this._collector = new Interrupt.Parser
+                            this._collector._mode = 'cause'
+                        }
+                        break
+                    default: {
+                            this._collector = new Collector
+                        }
+                        break
+                    }
+                    return Interrupt.Parser._INCLUDE[this._mode]
+                }
+            }
+            return true
+        }
+
+        push(line) {
+            switch (this._mode) {
+            case 'exception': {
+                    this._position = { line: 1, text: line }
+                    const dedented = dedent(line, this._depth, this._position)
+                    const $ = RE.exceptionStart.exec(line)
+                    assert($ != null, 'PARSE_ERROR', this._position)
+                    const [ , space, className, separator, message ] = $
+                    console.log(`Space <${space}> ${line}`)
+                    this._depth = space.length
+                    this._collector = new Collector
+                    this._node = {
+                        className: className,
+                        message: null,
+                        properties: {},
+                        errors: [],
+                        _errors: [],
+                        stack: []
+                    }
+                    if (separator != null) {
+                        this._collector.push(message)
+                    }
+                    this._mode = 'message'
+                }
+                break
+            case 'cause': {
+                    if (/\S+/.test(line)) {
+                        const $ = RE.exceptionStart.exec(line)
+                        if ($ != null) {
+                            const [ , space, className, separator, message ] = $
+                            this._depth = space.length
+                            this._collector = new Collector
+                            this._node = {
+                                className: className,
+                                message: null,
+                                properties: {},
+                                errors: [],
+                                _errors: [],
+                                stack: []
+                            }
+                            if (separator != null) {
+                                this._collector.push(message)
+                            }
+                            this._mode = 'message'
+                        }
+                    }
+                }
+                break
+            default: {
+                    this._position.line++
+                    this._position.text = line
+                    const dedented = dedent(line, this._depth, this._position)
+                    if (this._transition(dedented, 'properties', 'cause', 'stack')) {
+                        this._collector.push(dedent(dedented, this._mode == 'message' ? 1 : 0, this._position))
+                    }
+                }
+                break
+            }
+        }
+
+        end () {
+            this._complete()
+            return this._node
+        }
+    }
 
     // We implement custom JSON serialization that supports circular references
     // because we don't want to raise an exception on bad JSON because JSON
@@ -296,8 +507,6 @@ class Interrupt extends Error {
         }
 
         Instances.set(this, instance)
-
-        console.log(properties)
 
         Object.defineProperties(this, properties)
 
@@ -735,6 +944,15 @@ class Interrupt extends Error {
         return coalesce(error.message)
     }
 
+    static parse (stack) {
+        const parser = new Interrupt.Parser
+        for (const line of stack.split('\n')) {
+            parser.push(line)
+        }
+        parser.end()
+        return parser._node
+    }
+
     static dedup (error, keyify = (_, file, line) => [ file, line ]) {
         const seen = {}
         let id = 0
@@ -910,6 +1128,35 @@ class Interrupt extends Error {
         // print('', $ => [ $.id, 1 + $.duplicates.size ], tree)
         return format(tree)
     }
+}
+
+// A valid JavaScript identifier. Taken from [this
+// gist](https://gist.github.com/mathiasbynens/6334847) and used as a string for
+// inclusion into other regexen.
+const identifier = require('./identifier.json')
+
+const RE = {
+    exceptionStart: new RegExp(`^(\\s*)(${identifier}(?:\.${identifier})*)(:)\\s([\\s\\S]*)`, 'm')
+}
+
+const unstacker = require('stacktrace-parser')
+
+const Dedents = new Map
+
+function dedent (line, depth, position) {
+    if (depth == 0 || line.length == 0) {
+        return line
+    }
+    const dedenter = Dedents.get(depth)
+    if (dedenter == null) {
+        Dedents.set(depth, new RegExp(`^ {${depth}}(.*)$`))
+        return dedent(line, depth, position)
+    }
+    const $ = dedenter.exec(line)
+    if ($ == null) {
+        throw new Interrupt.Error('incorrect indent', position)
+    }
+    return $[1]
 }
 
 module.exports = Interrupt

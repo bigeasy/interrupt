@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(112, async okay => {
+require('proof')(114, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -520,8 +520,7 @@ require('proof')(112, async okay => {
         try {
             parse(null)
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'NULL_ARGUMENT', 'error code is set')
         }
     }
@@ -3048,7 +3047,6 @@ require('proof')(112, async okay => {
         } catch (error) {
             console.log('>>>', error.stack, '!')
         }
-        return
 
         try {
             throw new Config.Error('message')
@@ -3135,11 +3133,96 @@ require('proof')(112, async okay => {
             return _all(all, {}, vargs)
         }
 
+        const one = new Error('one')
+        const two = new Error('two')
+
+        const error = new Config.Error('FILE_READ_ERROR')
+
+        console.log(Interrupt.stringify(new Error))
+        console.log(Interrupt.stringify(one))
+        console.log(Interrupt.explode(one))
+        console.log(Interrupt.explode(new Error))
+        one.code = 'ERROR'
+        console.log(Interrupt.explode(one))
+        const parser = new Interrupt.Parser
+        for (const line of error.stack.split('\n')) {
+            parser.push(line)
+        }
+        parser.end()
+        console.log(parser._node)
         /*
         await all([ async () => {
             await new Promise(resolve => setTimeout(resolve, 50))
         }, Promise.reject(new Error('thrown')) ], 'wrapped')
         */
+    }
+
+    // ## Parsing Stack Traces
+
+    // The stack trace emitted from an Interrupt generated error is both human
+    // readable and machine readable. Using the `Interrupt.parse()` method you
+    // can parse the stack trace of an `Interrupt` error.
+    console.log('\n--- parse an Interrupt stack trace ---\n')
+    {
+        const path = require('path')
+
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                'FILE_READ_ERROR': 'unable to read file'
+            })
+        }
+
+        const nested = new Error('nested')
+        nested.code = 'ERRORED'
+
+        const error = new Config.Error('FILE_READ_ERROR', [ nested ])
+
+        console.log('--- stack trace ---\n')
+        console.log(error.stack)
+        console.log('\n--- parsed ---\n')
+
+        const object = Interrupt.parse(error.stack)
+
+        console.log(object)
+        console.log('')
+
+        okay(Object.keys(object).sort(), [
+            '_errors', 'className', 'errors', 'message', 'properties', 'stack'
+        ], 'properties of parsed object')
+
+        okay({
+            className: object.className,
+            message: object.message,
+            properties: object.properties,
+            errors: object.errors.map(object => {
+                if (object.className) {
+                    return {
+                        className: object.className,
+                        message: object.message,
+                        properties: object.properties,
+                        errors: object.errors,
+                        _errors: object.errors,
+                        top: path.basename(object.stack[0].file)
+                    }
+                }
+            }),
+            _errors: object._errors,
+            top: path.basename(object.stack[0].file)
+        }, {
+            className: 'Config.Error',
+            message: 'unable to read file',
+            properties: { code: 'FILE_READ_ERROR' },
+            errors: [{
+                className: 'Error',
+                message: 'nested',
+                properties: { code: 'ERRORED' },
+                errors: [],
+                _errors: [],
+                top: 'readme.t.js'
+            }],
+            _errors: [],
+            top: 'readme.t.js'
+        }, 'parsed stack traces object values')
     }
 })
 
