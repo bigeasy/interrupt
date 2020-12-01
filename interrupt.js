@@ -38,6 +38,7 @@ const AUDIT = new Error('example')
 // includes the message in the stack trace.
 function context (options, prototype, instance, stack = true) {
     let message
+    console.log('>>>', options.format, prototype.message, prototype.code)
     const format = options.format || prototype.message || prototype.code
     try {
         message = instance.message = sprintf(format, options.properties)
@@ -94,7 +95,8 @@ function get (object, path) {
 //
 class Interrupt extends Error {
     // **TODO** Maybe a set of common symbols mapped to the existing Node.js
-    // error types?
+    // error types? No, the ability to specify a symbol, but it must be unique,
+    // and we can put those types in `Interrupt.Error`.
 
     // The `Interrupt.Error` class is itself an interrupt defined error.
     static Error = Interrupt.create('Interrupt.Error', {
@@ -137,8 +139,8 @@ class Interrupt extends Error {
                                     ) {
                                         replacements.set(value, [ '_array' ].concat(value))
                                     }
-                                } else if (value instanceof Error) {
-                                    const error = { message: value.message, stack: value.stack }
+                                } else if (value instanceof Error && ! (value instanceof Interrupt && value === object)) {
+                                    const error = { message: value.message }
                                     for (const key in value) {
                                         error[key] = value[key]
                                     }
@@ -242,40 +244,62 @@ class Interrupt extends Error {
         // empty error.
         const { options, prototype } = function () {
             const options = Class._options(vargs)
-            const prototype = Prototype.codes[options.code] || { message: null, properties: null, code: null }
+            const prototype = Prototype.codes[options.code] || { message: null, properties: {}, code: null }
             return {
-                options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
+                options: Class._options([{ properties: prototype.properties }], [ options ]),
                 prototype: prototype
             }
         } ()
-        const instance = { errors: [], options }
+
+        const properties = {
+            name: {
+                value: Prototype.name,
+                enumerable: false
+            },
+            errors: {
+                value: options.errors,
+                enumerable: false
+            }
+        }
+
+        if (options.code) {
+            properties.code = {
+                value: options.code,
+                enumerable: true
+            }
+            properties.symbol = {
+                value: Prototype.codes[options.code].symbol,
+                enumerable: false
+            }
+        }
+
+        for (const property in options.properties) {
+            if (!/^name|message|stack$/.test(property) && !(properties in properties)) {
+                properties[property] = {
+                    value: options.properties[property],
+                    enumerable: coalesce(Prototype.enumerable[property], true)
+                }
+            }
+        }
+
+        const instance = { message: null, errors: options._errors, options }
+
         if (
             options.code == null &&
             options.format == null &&
             options.errors.length == 0 &&
-            Object.keys(options.properties).length == 0 &&
-            options.callee == null
+            Object.keys(options.properties).length == 0
         ) {
             super()
-            Instances.set(this, instance)
-            Object.defineProperties(this, {
-                name: {
-                    value: this.constructor.name,
-                    enumerable: false
-                },
-                errors: { value: [] },
-                contexts: { value: [] }
-            })
-            return
+        } else {
+            super(context(options, prototype, instance))
         }
-        super(context(options, prototype, instance))
 
         Instances.set(this, instance)
 
-        Object.defineProperty(this, "name", {
-            value: this.constructor.name,
-            enumerable: false
-        })
+        console.log(properties)
+
+        Object.defineProperties(this, properties)
 
         // FYI It is faster to use `Error.captureStackTrace` again than
         // it is to try to strip the stack frames created by `Error`
@@ -286,24 +310,6 @@ class Interrupt extends Error {
         //
         if (options.callee != null) {
             Error.captureStackTrace(this, options.callee)
-        }
-
-        const assign = { label: options.message, errors: options.errors, ...options.properties }
-        if (Prototype.codes[prototype.code]) {
-            assign.code = prototype.code
-        }
-        if (Prototype.codes[prototype.code] != null) {
-            Object.defineProperty(this, 'symbol', {
-                value: Prototype.codes[prototype.code].symbol,
-                enumerable: false
-            })
-        }
-        const IGNORE = [ 'message', 'code', 'name', 'symbol' ]
-        for (const property in assign) {
-            if (! ~IGNORE.indexOf(property) || this[property] == null) {
-                //this[property] = assign[property]
-                Object.defineProperty(this, property, { value: assign[property], enumerable: true })
-            }
         }
     }
 
@@ -323,7 +329,7 @@ class Interrupt extends Error {
         const SuperClass = typeof vargs[0] == 'function' ? vargs.shift() : Interrupt
 
         if (Interrupt.Error != null) {
-            Interrupt.Error.assert(SuperClass == Interrupt || SuperClass.prototype instanceof Interrupt, 'INVALID_SUPER_CLASS', SuperClass.name)
+            Interrupt.Error.assert(SuperClass === Interrupt || SuperClass.prototype instanceof Interrupt, 'INVALID_SUPER_CLASS', SuperClass.name)
         }
 
         const Class = class extends SuperClass {
@@ -350,7 +356,7 @@ class Interrupt extends Error {
             }
 
             constructor (...vargs) {
-                if (SuperClass == Interrupt) {
+                if (SuperClass === Interrupt) {
                     super(PROTECTED, Class, Prototype, vargs)
                 } else {
                     super(...vargs)
@@ -626,7 +632,8 @@ class Interrupt extends Error {
         const Prototype = {
             name: name,
             symbols: new Map,
-            codes: {}
+            codes: {},
+            enumerable: {}
         }
 
         const Codes = {}

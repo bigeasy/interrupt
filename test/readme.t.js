@@ -2997,7 +2997,9 @@ require('proof')(112, async okay => {
     }
     //
 
-    // ## Dedup
+    // ## Reducing the Verbosity of Stack Traces
+
+    // **TODO** Dedup goes here.
 
     //
     {
@@ -3027,15 +3029,123 @@ require('proof')(112, async okay => {
         }))
         console.log(Interrupt.dedup(new Error))
     }
+    //
+
+    // Putting this here for test coverage. What needs to be covered? Where is
+    // the dead code?
+
+    //
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                FILE_READ_ERROR: 'unable to read file',
+                MISSING_CODE_ERROR: null
+            })
+        }
+
+        try {
+            throw new Config.Error('MISSING_CODE_ERROR')
+        } catch (error) {
+            console.log('>>>', error.stack, '!')
+        }
+        return
+
+        try {
+            throw new Config.Error('message')
+        } catch (error) {
+            console.log(error)
+        }
+
+        try {
+            throw new Error('message')
+        } catch (error) {
+            console.log(error)
+        }
+        //
+
+        // **TODO** Multi-line messages. We can still parse them if we indent.
+        // The indent escapes a lot of stuff. If you don't like our formatting,
+        // that's fine, your stuff can look bad, we don't care.
+
+        // **TODO** We really need to bring parse into `readme.t.js`. We should
+        // probably be using it through out, we should probably have an error
+        // extraction stream, or at least a buffer parser.
+
+        // But, yes, if something is an Error, you can format a message such
+        // that it cannot be parsed. The only thing we could do is check the
+        // type at serialzation time and assert that it is as expected. That the
+        // message is not multi-line, and if it is, that it does not begin with
+        // `    at` at any point. I suppose that is the only condition that
+        // would make it unparsable. If it is unparsable, then we can display it
+        // as JSON.
+
+        // We are always going to have `cause:` and we can put a type specifier
+        // right after that colon, no type specifier means parsable error.
+
+        // Still no good place to put the internal errors, except maybe an
+        // `errors` section, we might have to say `constructor:` or something
+        // because the word error can be in all the error codes.
+
+        //
+        try {
+            throw new Error('multi-line\nmessage\n    at')
+        } catch (error) {
+            console.log(error)
+        }
+
+        try {
+        } catch (error) {
+        }
+
+        console.log(JSON.stringify(new Config.Error('FILE_READ_ERROR', { key: 1 }), null, 4))
+        console.log(Interrupt.JSON.stringify(new Config.Error('FILE_READ_ERROR', { key: 1 }), null, 4))
+
+        // **TODO** Wondering if you get an unresolved exception of promise 0
+        // does a `setTimeout` and promise 1 throws an exception synchronously.
+        async function _gather (callee, promises, options, vargs) {
+            const errors = [], results = []
+            for (const promise of promises) {
+                try {
+                    results.push(await promise)
+                } catch (error) {
+                    errors.push(error)
+                }
+            }
+            // **TODO** Some reason why you'd want to allow properties before
+            // the constructor occurred to me but I forgot it.
+            //
+            // Expose construct.
+            if (errors.length) {
+                throw Interrupt.construct(options, vargs, errors, callee)
+            }
+            return results
+        }
+
+        function _all (callee, options, vargs) {
+            if (Array.isArray(vargs[0])) {
+                return _gather(called, vargs.shift(), options, vargs)
+            }
+            const merged = Interrupt._options([ options ], vargs)
+            return function all (promises, ...vargs) {
+                return _all(all, merged, vargs)
+            }
+        }
+
+        function all (...vargs) {
+            return _all(all, {}, vargs)
+        }
+
+        /*
+        await all([ async () => {
+            await new Promise(resolve => setTimeout(resolve, 50))
+        }, Promise.reject(new Error('thrown')) ], 'wrapped')
+        */
+    }
 })
 
 // ## Using Codes Without Exceptions
 
 // Say something about this because I'm doing it in interrupt.
-
-// ## Reducing the Verbosity of Stack Traces
-
-// **TODO** Dedup goes here.
 
 // ## Swipe
 
