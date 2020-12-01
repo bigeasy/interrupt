@@ -137,8 +137,22 @@ class Interrupt extends Error {
         const preamble = error.message == ''
             ? `${error.name}`
             : `${error.name}: ${error.message}`
-        if (error.stack.indexOf(preamble) != 0) {
-            throw new Interrupt.Error('PARSE_ERROR', 'cannot find start of stack')
+        if (
+            error.name == null ||
+            error.message == null ||
+            error.stack == null ||
+            error.stack.indexOf(preamble) != 0 ||
+            !RE.identifier.test(error.name)
+        ) {
+            return [{
+                constructor: error.constructor.name,
+                error: {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack == null ? null : unstacker.parse(error.stack),
+                    properties: { ...error }
+                }
+            }]
         }
         const stack = error.stack[preamble.length] == '\n'
             ? error.stack.substring(preamble.length + 1)
@@ -156,6 +170,9 @@ class Interrupt extends Error {
             return error.stack
         }
         const exploded = Interrupt.explode(error)
+        if (Array.isArray(exploded)) {
+            return Interrupt.JSON.stringify(exploded[0])
+        }
         if (exploded.message == '' && Object.keys(exploded.properties).length == 0) {
             return error.stack
         }
@@ -201,7 +218,8 @@ class Interrupt extends Error {
             'message': [ 'properties', 'errors', 'stack' ],
             'properties': [ 'errors', 'stack' ],
             'errors': [ 'errors', 'stack' ],
-            'stack': []
+            'stack': [],
+            'object': []
         }
 
         static _INCLUDE = {
@@ -230,6 +248,10 @@ class Interrupt extends Error {
                     this._node.errors.push(this._collector.end())
                 }
                 break
+            case 'object': {
+                    this._node = Interrupt.JSON.parse(this._collector.end())
+                }
+                break
             }
         }
 
@@ -254,6 +276,29 @@ class Interrupt extends Error {
             return true
         }
 
+        _exception (line) {
+            const $ = RE.exceptionStart.exec(line)
+            if ($ != null) {
+                const [ , space, className, separator, message ] = $
+                this._depth = space.length
+                this._collector = new Collector
+                this._node = {
+                    className: className,
+                    message: null,
+                    properties: {},
+                    errors: [],
+                    _errors: [],
+                    stack: []
+                }
+                if (separator != null) {
+                    this._collector.push(message)
+                }
+                this._mode = 'message'
+                return true
+            }
+            return false
+        }
+
         push(line) {
             switch (this._mode) {
             case 'exception': {
@@ -262,7 +307,6 @@ class Interrupt extends Error {
                     const $ = RE.exceptionStart.exec(line)
                     assert($ != null, 'PARSE_ERROR', this._position)
                     const [ , space, className, separator, message ] = $
-                    console.log(`Space <${space}> ${line}`)
                     this._depth = space.length
                     this._collector = new Collector
                     this._node = {
@@ -280,25 +324,11 @@ class Interrupt extends Error {
                 }
                 break
             case 'cause': {
-                    if (/\S+/.test(line)) {
-                        const $ = RE.exceptionStart.exec(line)
-                        if ($ != null) {
-                            const [ , space, className, separator, message ] = $
-                            this._depth = space.length
-                            this._collector = new Collector
-                            this._node = {
-                                className: className,
-                                message: null,
-                                properties: {},
-                                errors: [],
-                                _errors: [],
-                                stack: []
-                            }
-                            if (separator != null) {
-                                this._collector.push(message)
-                            }
-                            this._mode = 'message'
-                        }
+                    if (/\S+/.test(line) && ! this._exception(line)) {
+                        console.log('OH, NO!')
+                        this._collector = new Collector
+                        this._collector.push(line)
+                        this._mode = 'object'
                     }
                 }
                 break
@@ -1136,6 +1166,7 @@ class Interrupt extends Error {
 const identifier = require('./identifier.json')
 
 const RE = {
+    identifier: new RegExp(`^${identifier}$`),
     exceptionStart: new RegExp(`^(\\s*)(${identifier}(?:\.${identifier})*)(:)\\s([\\s\\S]*)`, 'm')
 }
 

@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(114, async okay => {
+require('proof')(118, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -3223,6 +3223,69 @@ require('proof')(114, async okay => {
             _errors: [],
             top: 'readme.t.js'
         }, 'parsed stack traces object values')
+    }
+    //
+
+    // Errors that are not objects are serialized as JSON. There is an ambiguity
+    // where someone could create an exception whose name is `null` has no stack
+    // trace or properties, which would be valid JSON.
+
+    // As you can see from Interrupt itself, you can override the default
+    // `Error` properties and hack the stack to create custom messages. Too much
+    // hacking and you'll defeat `Interrupt.parse()` so `Interrupt.parse()` will
+    // first make sure everything is in order with a nested `Error` and if it is
+    // not, it will serialize that `Error` as JSON.
+
+    //
+    {
+        const path = require('path')
+
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                'FILE_READ_ERROR': 'unable to read file'
+            })
+        }
+
+        class NullError extends Error {
+            constructor () {
+                super()
+                Object.defineProperty(this, 'name', { value: 'null' })
+            }
+        }
+
+        const stackTraceLimit = Error.stackTraceLimit
+        Error.stackTraceLimit = 0
+
+        const evil = new NullError
+
+        Error.stackTraceLimit = stackTraceLimit
+
+        // _We now have an error whose `error.stack` is `'null'`.
+        okay(evil.stack, 'null', 'confusing error')
+        okay(Interrupt.JSON.parse(Interrupt.stringify(evil)), {
+            constructor: 'NullError',
+            error: {
+                name: 'null',
+                message: '',
+                stack: [],
+                properties: {}
+            }
+        }, 'serialized bad identifier as JSON')
+
+        Object.defineProperty(evil, 'stack', { value: null })
+        okay(evil.stack, null, 'made things even worse')
+        okay(Interrupt.JSON.parse(Interrupt.stringify(evil)), {
+            constructor: 'NullError',
+            error: {
+                name: 'null',
+                message: '',
+                stack: null,
+                properties: {}
+            }
+        }, 'serialized missing stack as JSON')
+
+        const interrupt = new Config.Error('FILE_READ_ERROR', [ evil ])
+        console.log(Interrupt.parse(interrupt.stack))
     }
 })
 
