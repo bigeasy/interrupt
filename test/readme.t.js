@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(129, async okay => {
+require('proof')(132, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1919,6 +1919,84 @@ require('proof')(129, async okay => {
         }
     }
     //
+
+    // ## Message Tables
+
+    // You might not be able to create a message generic enough for a particular
+    // code, or you might want to use generialized codes with customized
+    // messages.
+
+    // **TODO** Stabbing at how to say this. Rewrite.
+
+    // Codes and messages are a matter of taste. You might want to have a small
+    // set of generic codes but a lot of detailed messages and error properties
+    // for context. If this is the case, you'll have to litter the specialized
+    // messages throughout your program.
+
+    // You can instead define a message table.
+
+    //
+    {
+        const ConfigError = Interrupt.create('ConfigError', [
+            'MISSING_PARAM', 'INVALID_PARAM_TYPE'
+        ], function (codes) {
+            return {
+                'SETTINGS_MISSING': {
+                    symbol: codes.MISSING_PARAM.symbol,
+                    message: 'the settings property is missing'
+                },
+                'VOLUME_MISSING': {
+                    symbol: codes.MISSING_PARAM.symbol,
+                    message: 'the volume property is missing'
+                },
+                'INVALID_SETTINGS_TYPE': {
+                    symbol: codes.INVALID_PARAM_TYPE.symbol,
+                    message: 'the settings must be an object, got type: %(_type)s'
+                },
+                'INVALID_VOLUME_TYPE': {
+                    symbol: codes.INVALID_PARAM_TYPE.symbol,
+                    message: 'the volume must be integer, got type: %(_type)s'
+                }
+            }
+        })
+
+        okay(ConfigError.INVALID_PARAM_TYPE != null, 'defined symbol property on class')
+        okay(ConfigError.INVALID_VOLUME_TYPE == null, 'did not define message table as symbol')
+        okay(ConfigError.code('INVALID_VOLUME_TYPE') == null, 'not available from codes either')
+
+        function assertConfig (config) {
+            if (!('settings' in config)) {
+                throw new ConfigError('SETTINGS_MISSING')
+            }
+            if (typeof config.settings != 'object') {
+                throw new ConfigError('INVALID_SETTINGS_TYPE', { _type: typeof config.settings })
+            }
+            if (!('volume' in config.settings)) {
+                throw new ConfigError('VOLUME_MISSING')
+            }
+            if (typeof config.settings.volume != 'number') {
+                throw new ConfigError('INVALID_VOLUME_TYPE', { _type: typeof config.settings.volume })
+            }
+        }
+
+        try {
+            assertConfig({ settings: { volume: 'loud' } })
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+        }
+    }
+    //
+
+    // **TODO** Getting poorly written here abouts.
+
+    // When you specify a symbol or a code in your definition it is used as an
+    // alias for that code. The properties and format for that code are used but
+    // they are overwritten by the alias. The referenced code is used for
+    // exceptions code. Aliases can reference aliases.
+
+    // You cannot declare an alias or code more than once in `create()`. You
+    // will inherit the aliases of the super class and they can be overridden in
+    // the sub class.
 
     // ## Nested Exceptions
 

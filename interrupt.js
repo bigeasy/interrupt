@@ -480,14 +480,17 @@ class Interrupt extends Error {
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
-        const { options, prototype } = function () {
+        const { options, prototype } = function (Class, Protected, vargs) {
             const options = Class._options(vargs)
             const prototype = Prototype.codes[options.code] || { message: null, properties: {}, code: null }
+            options.code = prototype.code
             return {
-                options: Class._options([{ properties: prototype.properties }], [ options ]),
+                options: Class._options([{
+                    properties: prototype.properties
+                }], [ options ]),
                 prototype: prototype
             }
-        } ()
+        } (Class, Prototype, vargs)
 
         const properties = {
             name: {
@@ -650,11 +653,12 @@ class Interrupt extends Error {
                                 }
                             }
                             break
-                        case 'string':
-                            if (Prototype.codes[argument] == null) {
-                                options.format = argument
-                            } else {
-                                options.code = argument
+                        case 'string': {
+                                if (Prototype.codes[argument] == null) {
+                                    options.format = argument
+                                } else {
+                                    options.code = argument
+                                }
                             }
                             break
                         default:
@@ -912,7 +916,7 @@ class Interrupt extends Error {
         for (const arg of vargs) {
             const codes = convert(arg)
             for (const code in codes) {
-                // Duplicate declaration detection.
+                // Duplicate declaration detection. **TODO** Better error.
                 assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
                 duplicates.add(code)
 
@@ -922,6 +926,36 @@ class Interrupt extends Error {
                 assert(existing == null || typeof existing == 'symbol', 'INVALID_CODE')
                 const symbol = SuperClass[code] || Symbol(code)
 
+                // Convert the defintion to a code prototype.
+                switch (typeof codes[code]) {
+                case 'string':
+                    Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol }
+                    break
+                case 'object':
+                    // Goes here.
+                    if (codes[code] == null) {
+                        Prototype.codes[code] = { code, message: null, properties: {}, symbol }
+                    } else {
+                        const entry = Prototype.codes[code] = {
+                            code: code,
+                            message: coalesce(codes[code].message),
+                            properties: codes[code],
+                            symbol: symbol
+                        }
+                        if ('symbol' in codes[code]) {
+                            assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
+                            const actual = Prototype.symbols.get(codes[code].symbol)
+                            assert(actual != null, 'INVALID_CODE')
+                            entry.symbol = codes[code].symbol
+                            entry.code = actual
+                            console.log('continuing', actual, codes[code].symbol)
+                            continue
+                        }
+                    }
+                    break
+                }
+                console.log('continued', code)
+
                 // Create a property to hold the symbol in the class.
                 Object.defineProperty(Class, code, { get: function () { return symbol } })
 
@@ -930,25 +964,6 @@ class Interrupt extends Error {
 
                 Codes[code] = { code: code }
                 Object.defineProperty(Codes[code], 'symbol', { value: symbol, enumerable: false })
-
-                // Convert the defintion to a code prototype.
-                switch (typeof codes[code]) {
-                case 'string':
-                    Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol }
-                    break
-                case 'object':
-                    if (codes[code] == null) {
-                        Prototype.codes[code] = { code, message: null, properties: {}, symbol }
-                    } else {
-                        Prototype.codes[code] = {
-                            code: code,
-                            message: coalesce(codes[code].message),
-                            properties: codes[code],
-                            symbol: symbol
-                        }
-                    }
-                    break
-                }
             }
         }
 
