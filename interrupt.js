@@ -208,6 +208,8 @@ class Interrupt extends Error {
             'stack': 0
         }
 
+        // **TODO** Need to be regex so we can detect a naked error with no
+        // message and a stack that starts with `'    at'`.
         static _START = {
             'properties': '{',
             'stack': 'stack:',
