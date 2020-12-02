@@ -1942,10 +1942,11 @@ require('proof')(132, async okay => {
         ], function (codes) {
             return {
                 'SETTINGS_MISSING': {
-                    symbol: codes.MISSING_PARAM.symbol,
+                    code: codes.MISSING_PARAM.code,
                     message: 'the settings property is missing'
                 },
                 'VOLUME_MISSING': {
+                    code: codes.MISSING_PARAM.code,
                     symbol: codes.MISSING_PARAM.symbol,
                     message: 'the volume property is missing'
                 },
@@ -1997,6 +1998,8 @@ require('proof')(132, async okay => {
     // You cannot declare an alias or code more than once in `create()`. You
     // will inherit the aliases of the super class and they can be overridden in
     // the sub class.
+
+    // You can specify both a symbol and a code, but they must agree.
 
     // ## Nested Exceptions
 

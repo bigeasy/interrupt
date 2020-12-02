@@ -14,6 +14,8 @@ const Keyify = require('keyify')
 // to be violated.
 const Instances = new WeakMap
 
+const Prototypes = new WeakMap
+
 // Parse the file and line number from a Node.js stack trace.
 const location = require('./location')
 
@@ -36,19 +38,18 @@ const AUDIT = new Error('example')
 // Generate the message for the Goole V8 exception. The message is specially
 // formatted to appear integrated with the stack trace from `error.stack` which
 // includes the message in the stack trace.
-function context (options, prototype, instance, stack = true) {
+function context (options, instance, stack = true) {
     let message
-    const format = options.format || prototype.message || prototype.code
     try {
-        message = instance.message = sprintf(format, options.properties)
+        message = instance.message = sprintf(options.format, options.properties)
     } catch (error) {
         instance.errors.push({
             code: Interrupt.Error.SPRINTF_ERROR,
-            format: format,
+            format: options.format,
             properties: options.properties,
             error: error
         })
-        message = instance.message = format
+        message = instance.message = options.format
     }
     const properties = {}
     if (Object.keys(instance.displayed).length != 0) {
@@ -110,10 +111,22 @@ function assert (condition, ...vargs) {
     }
 }
 
+/*
+*/
+
 // The Interrupt class extends `Error` using class ES6 extension.
 
 //
 class Interrupt extends Error {
+    // Private static initializer. We are committed to Node.js 12 or greater.
+    static #initializer = (function () {
+        Prototypes.set(Interrupt, {
+            symbols: new Map,
+            codes: {},
+            enumerable: {}
+        })
+    } ())
+
     // **TODO** Maybe a set of common symbols mapped to the existing Node.js
     // error types? No, the ability to specify a symbol, but it must be unique,
     // and we can put those types in `Interrupt.Error`.
@@ -480,16 +493,12 @@ class Interrupt extends Error {
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
-        const { options, prototype } = function (Class, Protected, vargs) {
+        const  options = function (Class, Protected, vargs) {
             const options = Class._options(vargs)
             const prototype = Prototype.codes[options.code] || { message: null, properties: {}, code: null }
             options.code = prototype.code
-            return {
-                options: Class._options([{
-                    properties: prototype.properties
-                }], [ options ]),
-                prototype: prototype
-            }
+            options.format = options.format || prototype.message || prototype.code
+            return Class._options([{ properties: prototype.properties }], [ options ])
         } (Class, Prototype, vargs)
 
         const properties = {
@@ -539,7 +548,7 @@ class Interrupt extends Error {
         ) {
             super()
         } else {
-            super(context(options, prototype, instance))
+            super(context(options, instance))
         }
 
         Instances.set(this, instance)
@@ -583,13 +592,14 @@ class Interrupt extends Error {
                     const { options, prototype } = function () {
                         const options = Class._options(vargs)
                         const prototype = Prototype.codes[options.code] || { message: null, properties: null, code: null }
+                        options.format = options.format || prototype.message || prototype.code
                         return {
                             options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
                             prototype: prototype
                         }
                     } ()
                     const instance = { errors: [] }
-                    this._dump = `${name}.Context: ${context(options, prototype, instance, false)}`
+                    this._dump = `${name}.Context: ${context(options, instance, false)}`
                     for (const property in options.properties) {
                         this[property] = options.properties[property]
                     }
@@ -608,6 +618,7 @@ class Interrupt extends Error {
                 }
             }
 
+            // **TODO** Broken now. Includes aliases.
             static get codes () {
                 return Object.keys(Prototype.codes)
             }
@@ -626,6 +637,8 @@ class Interrupt extends Error {
                         switch (typeof argument.code) {
                         case 'string':
                         case 'symbol':
+                            // **TODO** Only if the code is valid!!! We count on
+                            // this being valid in the constructor.
                             options.code = argument.code
                         }
                         if (typeof argument.format == 'string') {
@@ -875,13 +888,19 @@ class Interrupt extends Error {
         // We have an prototypical state of an exception that we do not want to
         // store in the class and we definitely do not want to expose it
         // publicly.
+
+        // Running out of names, must tidy.
+        const SuperPrototype = Prototypes.get(SuperClass)
         const Prototype = {
             name: name,
-            symbols: new Map,
-            codes: {},
-            enumerable: {}
+            symbols: new Map(SuperPrototype.symbols),
+            codes: { ...SuperPrototype.codes },
+            enumerable: { ...SuperPrototype.enumerable }
         }
+        Prototypes.set(Class, Prototype)
 
+        // **TODO** Here's where names are running out. Prototype.codes should
+        // be for codes, and Prototype.defaults should be for templates.
         const Codes = {}
 
         // Detect duplicate declarations.
@@ -939,22 +958,31 @@ class Interrupt extends Error {
                         const entry = Prototype.codes[code] = {
                             code: code,
                             message: coalesce(codes[code].message),
-                            properties: codes[code],
-                            symbol: symbol
+                            properties: codes[code]
                         }
+                        let merge = codes[code].code
                         if ('symbol' in codes[code]) {
                             assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
                             const actual = Prototype.symbols.get(codes[code].symbol)
                             assert(actual != null, 'INVALID_CODE')
-                            entry.symbol = codes[code].symbol
-                            entry.code = actual
-                            console.log('continuing', actual, codes[code].symbol)
+                            if ('code' in codes[code]) {
+                                assert(codes[code].code === actual, 'INVALID_CODE')
+                            } else {
+                                merge = actual
+                            }
+                        }
+                        if (merge != null) {
+                            const previous = Prototype.codes[merge]
+                            entry.code = previous.code
+                            if (entry.message == null) {
+                                entry.message = previous.message
+                            }
+                            entry.properties = { ...previous.properties, ...entry.properties }
                             continue
                         }
                     }
                     break
                 }
-                console.log('continued', code)
 
                 // Create a property to hold the symbol in the class.
                 Object.defineProperty(Class, code, { get: function () { return symbol } })
