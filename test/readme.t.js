@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(122, async okay => {
+require('proof')(125, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -103,6 +103,7 @@ require('proof')(122, async okay => {
         await fs.mkdir(path.join(tmp, 'enoent'))
         await fs.mkdir(path.join(tmp, 'good'))
         await fs.mkdir(path.join(tmp, 'bad'))
+        await fs.mkdir(path.join(tmp, 'create'))
 
         await fs.writeFile(path.join(tmp, 'good', 'config.json'), JSON.stringify({
             settings: {
@@ -183,8 +184,12 @@ require('proof')(122, async okay => {
     //
 
     // In the contrived example above we had to use a regular expression on the
-    // human readable message to recover from a file I/O error. If someone where
-    // to reword the message to "unable to read file:" that code would break.
+    // human readable message to recover from a file I/O error. We couldn't use
+    // an equality test because the message contains the file name which is
+    // variable.
+
+    // Furthermore, if someone where to reword the message to "unable to read
+    // file:" that code would break.
 
     // One way to add programmatic error type information is to create multiple
     // error types. This is what they taught you to do when you first learned
@@ -420,7 +425,7 @@ require('proof')(122, async okay => {
     }
     //
 
-    // But, error messages are really for debugging, aren't they. If we really
+    // But, error messages are really for debugging, aren't they? If we really
     // wanted a facility to display messages to the user, certianly we'd want
     // one that supports internationalization. We'd want string tables and we'd
     // want to solicit translations from open source contributors. We wouldn't
@@ -862,6 +867,7 @@ require('proof')(122, async okay => {
             FILE_READ_ERROR: 'unable to read file'
         })
 
+        // **TODO** Obviously broken. Please fix.
         async function read (filename) {
             try {
                 return await fs.readdir(dirname)
@@ -881,6 +887,165 @@ require('proof')(122, async okay => {
         }
     }
     //
+
+    // Properties primarily be used for reporting. Only codes and other flags
+    // should be acted upon in a catch block.
+
+    //
+    console.log('\n--- the bad practice of using exception properties in application logic ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            DIRECTORY_MISSING: 'directory cannot be found',
+            IO_ERROR: 'unable to read directory'
+        })
+
+        async function read (dirname) {
+            try {
+                return await fs.readdir(dirname)
+            } catch (error) {
+                if (error.code == 'ENOENT') {
+                    throw new ReaderError('DIRECTORY_MISSING', { dirname })
+                }
+                throw new ReaderError('IO_ERROR', { dirname })
+            }
+        }
+
+        async function readOrCreate (dirname) {
+            try {
+                return await read(dirname)
+            } catch (error) {
+                if (error.code == 'DIRECTORY_MISSING') {
+                    try {
+                        await fs.mkdir(error.dirname, { recursive: true })
+                    } catch (error) {
+                        throw new ReaderError('IO_ERROR', { dirname: error.dirname })
+                    }
+                    return await read(error.dirname)
+                }
+            }
+        }
+
+        const dirname = path.join(__dirname, 'tmp', 'create', 'one')
+
+        okay(await readOrCreate(dirname), [], 'created a missing directory')
+    }
+    //
+
+    // There are many reasons why this is bad, but primarily you've now treating
+    // your exceptions as if they where a part of your interface. If someone
+    // decides they don't like having the directory reported, or they decide to
+    // rename the `dirame` property to `directoryName` the code will break.
+
+    // The exception properties will have to be documented so that users can
+    // depend on then.
+
+    // Instead, admonish your users not to use the properties, they are for
+    // reporting only, except for the error code.
+
+    // Catch blocks that perform recovery should not be at the root of the call
+    // stack. They should be as close to the source of the error as possible and
+    // they should be able to perform any recovery using the variables visible
+    // within the scope of the catch block.
+
+    //
+    console.log('\n--- use the variables in scope in your catch block instead ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            DIRECTORY_MISSING: 'directory cannot be found',
+            IO_ERROR: 'unable to read directory'
+        })
+
+        async function read (dirname) {
+            try {
+                return await fs.readdir(dirname)
+            } catch (error) {
+                if (error.code == 'ENOENT') {
+                    throw new ReaderError('DIRECTORY_MISSING', { dirname })
+                }
+                throw new ReaderError('IO_ERROR', { dirname })
+            }
+        }
+
+        async function readOrCreate (dirname) {
+            try {
+                return await read(dirname)
+            } catch (error) {
+                if (error.code == 'DIRECTORY_MISSING') {
+                    try {
+                        await fs.mkdir(dirname, { recursive: true })
+                    } catch (error) {
+                        throw new ReaderError('IO_ERROR', { dirname })
+                    }
+                    return await read(dirname)
+                }
+            }
+        }
+
+        const dirname = path.join(__dirname, 'tmp', 'create', 'two')
+
+        okay(await readOrCreate(dirname), [], 'created a missing directory')
+    }
+    //
+
+    // Now the catch block is only dependent on the error for the error code,
+    // essentially the error type information. It uses the same dirname
+    // variable it used to initial the exceptional function call to recover.
+
+    // The exception to this rule is additional error flags that may help a
+    // developer resolve an internal state. We might pass the POSIX error code
+    // onto the user.
+
+    //
+    console.log('\n--- immutable laws of programming are always flexible ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            IO_ERROR: 'unable to read directory'
+        })
+
+        async function read (dirname) {
+            try {
+                return await fs.readdir(dirname)
+            } catch (error) {
+                throw new ReaderError('IO_ERROR', { dirname, posixCode: error.code  })
+            }
+        }
+
+        async function readOrCreate (dirname) {
+            try {
+                return await read(dirname)
+            } catch (error) {
+                if (error.code == 'IO_ERROR' && error.posixCode == 'ENOENT') {
+                    try {
+                        await fs.mkdir(error.dirname, { recursive: true })
+                    } catch (error) {
+                        throw new ReaderError('IO_ERROR', { dirname, posixCode: error.code })
+                    }
+                    return await read(error.dirname)
+                }
+            }
+        }
+
+        const dirname = path.join(__dirname, 'tmp', 'create', 'three')
+
+        okay(await readOrCreate(dirname), [], 'created a missing directory')
+    }
+    //
+
+    // Actually, how about we don't make a rule? Let's call this an opinion. I
+    // just don't want you, dear reader, to mistakenly think that Interrupt is
+    // encouraging you migrate your application code into the catch blocks.
+    // Interrupt is all about reporting. Exceptions are tricky on a good day.
+    // The error path is fraught with peril. Try to keep your application logic
+    // out of it if you can.
 
     // In addition to setting properties at construction, you can assign default
     // properties by code.
@@ -923,7 +1088,6 @@ require('proof')(122, async okay => {
             try {
                 return await load(filename)
             } catch (error) {
-                console.log(error)
                 if (error.fallback) {
                     return {}
                 }
@@ -1193,10 +1357,9 @@ require('proof')(122, async okay => {
     //
 
     // This esoteric behavior is there for you to abuse in your own programs.
-    // The end user will have the simple static symbol contents to test, might
-    // notice that the symbol goes missing if they JSON serialize the value
-    // themselves, but such is the mystery of exception handling with its many
-    // non-enumerable properties.
+    // The end user might notice that the symbol goes missing if they JSON
+    // serialize the value themselves, but such are the mysteries of exception
+    // handling with its many non-enumerable properties.
 
     // If you've made it this far, you may have noticed that we tend to use
     // `switch` statements with codes in our catch blocks. This is nice because
@@ -1405,9 +1568,11 @@ require('proof')(122, async okay => {
     }
     //
 
-    // ## **TODO** JSON Begins Here
+    // ## Property Serialization JSON
 
-    // Error properties are written to the stack trace as JSON.
+    // Error properties are written to the stack trace as JSON. If run this unit
+    // test from the command line, you will have seen stack traces that include
+    // formatted JSON of the properties.
 
     // We use JSON instead of `util.inspect()` because we want the ability to
     // gather our stack trace messages from our production logs and parse them
@@ -1415,11 +1580,13 @@ require('proof')(122, async okay => {
 
     // There are object trees that JSON cannot serialize, however. We've made
     // some accommodations so that JSON will do its best to serialize as much as
-    // it can. It's unreasonable to insist that only value JSON objects are
-    // allowed as error properties. A function could be trying to say, "I
-    // expected an integer but instead you gave me this." If the bad argument
-    // the function is trying to report contains circular references we don't
-    // want `JSON.stringify()` to chime in with its own exception.
+    // it can.
+
+    // It's unreasonable to insist that only valid JSON objects are allowed as
+    // error properties. A function could be trying to say, "I expected an
+    // integer but instead you gave me this." If the bad argument the function
+    // is trying to report contains circular references we don't want
+    // `JSON.stringify()` to chime in with its own exception.
 
     // If given JSON that `JSON.stringify()` cannot stringify, rather than
     // failing silently, or worse, throwing an exception, Interrupt tries to
