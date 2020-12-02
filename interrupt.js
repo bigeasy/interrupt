@@ -50,12 +50,9 @@ function context (options, prototype, instance, stack = true) {
         })
         message = instance.message = format
     }
-    const contexts = []
-    const context = options.code != null
-        ? { code: options.code, ...options.properties }
-        : { ...options.properties }
-    if (Object.keys(context).length != 0) {
-        message += '\n\n' + Interrupt.JSON.stringify(context)
+    const properties = {}
+    if (Object.keys(instance.displayed).length != 0) {
+        message += '\n\n' + Interrupt.JSON.stringify(instance.displayed)
     }
     // **TODO** Without context messages we have more space. We could, if the
     // type is not an Error, serialize the cause as JSON. Parsing would be a
@@ -109,7 +106,7 @@ class Collector {
 // An assert internal to Interrupt that will not get audited.
 function assert (condition, ...vargs) {
     if (! condition) {
-        throw new Interrupt.Error(Interrupt._options([{ callee: assert }], vargs))
+        throw new Interrupt.Error(Interrupt.Error._options([{ callee: assert }], vargs))
     }
 }
 
@@ -479,9 +476,7 @@ class Interrupt extends Error {
     constructor (Protected, Class, Prototype, vargs) {
         // We can't use `Interrupt.Error.assert` because auditing will make us
         // blow the stack.
-        if (PROTECTED !== Protected) {
-            throw new Interrupt.Error('INVALID_ACCESS')
-        }
+        assert(PROTECTED === Protected, 'INVALID_ACCESS')
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
@@ -517,7 +512,7 @@ class Interrupt extends Error {
         }
 
         for (const property in options.properties) {
-            if (!/^name|message|stack$/.test(property) && !(properties in properties)) {
+            if (property[0] != '_' && !/^name|message|stack$/.test(property) && !(properties in properties)) {
                 properties[property] = {
                     value: options.properties[property],
                     enumerable: coalesce(Prototype.enumerable[property], true)
@@ -525,7 +520,13 @@ class Interrupt extends Error {
             }
         }
 
-        const instance = { message: null, errors: options._errors, options }
+        const instance = { message: null, errors: options._errors, options, displayed: {} }
+
+        for (const property in properties) {
+            if (properties[property].enumerable) {
+                instance.displayed[property] = properties[property].value
+            }
+        }
 
         if (
             options.code == null &&
@@ -890,14 +891,10 @@ class Interrupt extends Error {
                     return codes
                 }
             case 'object': {
-                    if (arg == null) {
-                        throw new Interrupt.Error('INVALID_ARGUMENT')
-                    }
+                    assert(arg != null, 'INVALID_ARGUMENT')
                     if (Array.isArray(arg)) {
                         return arg.reduce((codes, value) => {
-                            if (typeof value != 'string') {
-                                throw new Interrupt.Error('INVALID_ARGUMENT')
-                            }
+                            assert(typeof value == 'string', 'INVALID_ARGUMENT')
                             codes[value] = null
                             return codes
                         }, {})
@@ -916,17 +913,13 @@ class Interrupt extends Error {
             const codes = convert(arg)
             for (const code in codes) {
                 // Duplicate declaration detection.
-                if (duplicates.has(code)) {
-                    throw new Interrupt.Error('DUPLICATE_CODE', { code })
-                }
+                assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
                 duplicates.add(code)
 
                 // Use an existing code symbol from the super class if one exists,
                 // otherwise create a new symbol.
                 const existing = SuperClass[code]
-                if (existing != null && typeof existing != 'symbol') {
-                    throw new Interrupt.Error('INVALID_CODE')
-                }
+                assert(existing == null || typeof existing == 'symbol', 'INVALID_CODE')
                 const symbol = SuperClass[code] || Symbol(code)
 
                 // Create a property to hold the symbol in the class.
@@ -1186,9 +1179,7 @@ function dedent (line, depth, position) {
         return dedent(line, depth, position)
     }
     const $ = dedenter.exec(line)
-    if ($ == null) {
-        throw new Interrupt.Error('incorrect indent', position)
-    }
+    assert($ != null, 'PARSE_ERROR', position)
     return $[1]
 }
 

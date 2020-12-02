@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(125, async okay => {
+require('proof')(129, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1776,8 +1776,6 @@ require('proof')(125, async okay => {
     // original objects if they are not plain `objects`. That isn't really
     // important for reporting purposes however, just don't be surprised is all.
 
-    // ## **TODO** JSON Ends Here
-
     // ## Formatted Messages
 
     // Messages are formatted using `sprintf-fs` which has a named parameter
@@ -1795,7 +1793,7 @@ require('proof')(125, async okay => {
 
         async function read (filename) {
             try {
-                return await fs.readdir(dirname)
+                return await fs.readFile(filename)
             } catch (error) {
                 throw new ReaderError('FILE_READ_ERROR', { filename })
             }
@@ -1806,7 +1804,7 @@ require('proof')(125, async okay => {
         try {
             await read(filename)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'FILE_READ_ERROR', 'code set')
             okay(error.filename, filename, 'filename property set')
         }
@@ -1823,30 +1821,103 @@ require('proof')(125, async okay => {
     // the `sprintf` format.
 
     //
-    /* **TODO** `sprintf` only parameters
+    console.log('\n--- sprintf-only properties ---\n')
     {
         const ReaderError = Interrupt.create('ConfigError', {
+            INVALID_FILENAME: `filename must be a string, received: %(_type)s`,
             FILE_READ_ERROR: 'unable to read file: %(filename)s'
         })
 
         async function read (filename) {
+            if (typeof filename != 'string') {
+                throw new ReaderError('INVALID_FILENAME', { _type: typeof filename })
+            }
             try {
-                return await fs.readdir(dirname)
+                return await fs.readFile(filename)
             } catch (error) {
-                throw new ReadError('READ_ERROR', { filename })
+                throw new ReadError('FILE_READ_ERROR', { filename })
             }
         }
 
         try {
-            await read(path.join(__dirname, 'missing'))
+            await read([])
         } catch (error) {
-            conosle.log(error.stack)
-            console.log('')
-            okay(error.code, 'READ_ERROR', 'code set')
-            okay(error.filename, filename, 'filename property set')
+            console.log(`${error.stack}\n`)
+            okay(!('_type' in error), 'sprintf-only property is not a property of the exception')
+            okay(Interrupt.message(error), 'filename must be a string, received: object', 'sprintf-only property available for sprintf')
         }
     }
-    */
+    //
+
+    // In the above example we decided add the incorrect type to the error
+    // message, but decided against making it a property of the exception. For
+    // an assertion that should be raised by unit testing, the message ought to
+    // be enough.
+
+    // Because underbars make properties disappear you should be careful not to
+    // dump arbitrary objects into your properties with destructuring.
+
+    //
+    console.log('\n--- ruining a properties object with destructuring ---\n')
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARAM_MISSING: 'config parameter missing',
+            INVALID_PARAM_TYPE: 'invalid config parameter type'
+        })
+
+        function assertConfig (config) {
+            if (config.settings == null) {
+                throw new ConfigError('PARAM_MISSING', { ...config })
+            }
+            if (config.settings.volume != 'number') {
+                throw new ConfigError('INVALID_PARAM_TYPE', { ...config })
+            }
+        }
+
+        try {
+            assertConfig({ _settings: { volume: 0 } })
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay({ ...error }, { code: 'PARAM_MISSING' }, 'desired context infomration removed because of underbar')
+        }
+    }
+    //
+
+    // This is not a good thing to do in any case.
+
+    // Only properties with underbar'd names at the top level of the properties
+    // object are removed. We do not recursively search for underbar'd
+    // properties to remove.
+
+    // We can fix the above by removing the destructuring.
+
+    //
+    console.log('\n--- explicitly set your property names ---\n')
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARAM_MISSING: 'config parameter missing',
+            INVALID_PARAM_TYPE: 'invalid config parameter type'
+        })
+
+        function assertConfig (config) {
+            if (config.settings == null) {
+                throw new ConfigError('PARAM_MISSING', { config })
+            }
+            if (config.settings.volume != 'number') {
+                throw new ConfigError('INVALID_PARAM_TYPE', { config })
+            }
+        }
+
+        try {
+            assertConfig({ _settings: { volume: 0 } })
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay({ ...error }, {
+                code: 'PARAM_MISSING',
+                config: { _settings: { volume: 0 } }
+            }, 'we know our property names')
+        }
+    }
     //
 
     // ## Nested Exceptions
