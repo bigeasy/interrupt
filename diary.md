@@ -1,3 +1,24 @@
+## Tue Dec  1 22:00:30 CST 2020
+
+Seems like we should use the parsed representation of an object to `dedup` so
+that `dedup` works after the fact. It also means we need to know how to identify
+error types in the parsed representation, which we could do with a special
+wrapper object just for the sake of the constructor, or we could do it by just
+insisting that an object have a very particlar shape, these properties with
+these types, and a value JavaScript identifer here or there, or else it gets
+serialized as JSON. If we ever do get a case of mistaken identity it would be
+quite something.
+
+An interrupt could stringify and parse or there could be a function to just
+recursively JSONify an error, perhaps that is our JSONify function, and if so
+then we should have it treat an error specially by breaking up the error and
+serializing it as expected, with name, message, and a parsed stack trace.
+Perhaps we stash JSONified objects in the Instance map?
+
+We really want to add somewhere in the documentation that the user should
+consider a generated object to be immutable, that any interpretation will be
+done from the `stack` value and you should not reset it.
+
 ## Mon Oct 19 16:53:27 CDT 2020
 
 Could use `sprintf` to create formatted messages, but I don't know that I really

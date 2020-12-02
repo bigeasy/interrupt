@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(114, async okay => {
+require('proof')(115, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -114,27 +114,8 @@ require('proof')(114, async okay => {
     }
     //
 
-    //
-
-    // ## Interrupt Codes
-
-    //
-    {
-        const ParseError = Interrupt.create('ParseError', {
-            NULL_ARGUMENT: 'the JSON string to parse must not be null',
-            INVALID_JSON: 'unable to parse JSON string'
-        })
-    }
-    //
-
-    //
-
-    // We'll get started from some examples using `JSON.parse` which throws a
-    // `SyntaxError` exception when the JSON cannot be parsed.
-
-    // All of the examples in this code are _contrived_, however, and in
-    // practice, I'm never quite this zealous with my use of Interrupt. I
-    // probably wouldn't bother to wrap a `SyntaxError`.
+    // All of the examples in this code are _contrived_, and in practice, I'm
+    // never quite this zealous with my use of exceptions or Interrupt.
 
     // ## Errors by Code
 
@@ -147,6 +128,7 @@ require('proof')(114, async okay => {
     // developer many innocently reword a message for clarity and break code
     // that uses that old wording as test in a conditional statement.
 
+    //
     console.log('\n--- message only Errors ---\n')
     {
         const path = require('path')
@@ -758,7 +740,6 @@ require('proof')(114, async okay => {
         try {
             parse(null)
         } catch (error) {
-            // _Note that the `m` suffix makes this a multi-line matching regex._
             console.log(error.stack, '\n')
             okay(Interrupt.message(error), 'the JSON string to parse must not be null', 'specify message as first argument instead of code')
             okay(!('code' in error), 'no code is set')
@@ -1157,9 +1138,12 @@ require('proof')(114, async okay => {
     //
 
     // An interesting property of the codes map given to a code function is that
-    // the `code` property is enumerable and the `symbol` property is not. This
-    // means that if you use this property as the value of a default property,
-    // the code will be serialized in the stack trace, but the symbol will not.
+    // the `code` property is enumerable and the `symbol` property is not.
+    //
+    // Because Interrupt uses JSON to serialize properties, and because JSON
+    // will only serialize enumberable properties, this means that if you use
+    // this object as the value of a default property, the code will be
+    // serialized in the stack trace, but the symbol will not.
 
     //
     {
@@ -1200,6 +1184,7 @@ require('proof')(114, async okay => {
             await load(path.join(__dirname, 'tmp', 'missing.json'))
         } catch (error) {
             console.log(`\n${error.stack}\n`)
+            okay(error.subsystem.code, 'SUBSYSTEM_IO', 'additional code property set')
             okay(error.subsystem.symbol, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
             okay(JSON.stringify(error.subsystem), '{"code":"SUBSYSTEM_IO"}', 'only code is serialized')
         }
@@ -1222,7 +1207,7 @@ require('proof')(114, async okay => {
     // trouble reading from the filesystem, but if it gets a back configuration
     // it will rethrow the error.
 
-    // It has a sutble bug that is on the error path.
+    // It has a subtle bug that is on the error path.
 
     //
     {
@@ -1265,7 +1250,7 @@ require('proof')(114, async okay => {
                 return await loadConfigs(dirname)
             } catch (error) {
                 switch (error.symbol) {
-                 // _Someone can't spell._
+                 // _Spelling error._
                 case ConfigError.DIRECTROY_READ_ERROR:
                 case ConfigError.FILE_READ_ERROR:
                     return [{ settings: { volume: 0 } }]
@@ -1335,7 +1320,7 @@ require('proof')(114, async okay => {
                 return await loadConfigs(dirname)
             } catch (error) {
                 switch (error.symbol) {
-                 // _Someone can't spell._
+                 // _Spelling error._
                 case ConfigError.code('DIRECTROY_READ_ERROR').symbol:
                 case ConfigError.code('FILE_READ_ERROR').symbol:
                     return [{ settings: { volume: 0 } }]
@@ -1358,8 +1343,9 @@ require('proof')(114, async okay => {
 
     // It's more verbose but it allows us to use large sets of codes in switch
     // statements without having to write a unit test for every conceivable
-    // error to ensure that the error codes are correct. It also allows us to
-    // rename an error code and catch any overlooked renames.
+    // error to ensure that the error codes are correct. We only need to unit
+    // test the last case before the logic. It also allows us to rename an error
+    // code and catch any overlooked renames.
 
     //
     {
@@ -1402,7 +1388,7 @@ require('proof')(114, async okay => {
                 return await loadConfigs(dirname)
             } catch (error) {
                 switch (error.symbol) {
-                 // _Someone can't spell._
+                 // _Spelling error fixed._
                 case ConfigError.code('DIRECTORY_READ_ERROR').symbol:
                 case ConfigError.code('FILE_READ_ERROR').symbol:
                     return [{ settings: { volume: 0 } }]
@@ -1704,7 +1690,8 @@ require('proof')(114, async okay => {
 
     // If you pass in more than one error they will both be added to the errors
     // array. (**TODO** An example with a primary attempt and a fallback and
-    // they both fail.)
+    // they both fail. Hmm... Now I have an aggregate but that is for the
+    // context example, this example is still good.)
 
     // Any `Array` argument to the constructor is treated as an array of nested
     // errors and added to the error array.
@@ -1798,8 +1785,8 @@ require('proof')(114, async okay => {
 
     // **TODO** The code or message format is always required, but somtimes it
     // is not desired. If you want to specify that you do not want to use a code
-    // nor a message pass in null. This is useful when you are overriding
-    // properties
+    // nor a message pass in null. (No, pass in an empty object!) This is useful
+    // when you are overriding properties
 
     // ## Named Arguments
 
@@ -1935,6 +1922,13 @@ require('proof')(114, async okay => {
     // instead create a `Syntax.Error`, an error that has a dot qualfiied name
     // and is a static member of our `Syntax` class.
 
+    // **TODO** Terrible example. Just rewrite any of your existing file opening
+    // examples. You're talking about `assert` before you've introduced it. The
+    // example is more contrived than any you're written before.
+
+    // Also, any test of the file to see if it contains hippopotus will succeed
+    // without having to write hippopotus anywhere except in the test.
+
     //
     console.log('--- qualified Error class names ---\n')
     {
@@ -1963,6 +1957,9 @@ require('proof')(114, async okay => {
 
     // These days I'm targeting Node.js 12 or greater, which has a `static`
     // keyword that makes declaration easier.
+
+    // **TODO** Who cares about these days? Interrupt targets Node.js 12.
+    // Enough!
 
     //
     console.log('--- qualified Error class names in ES6 classes ---\n')
@@ -2157,6 +2154,14 @@ require('proof')(114, async okay => {
     //
 
     // **TODO** Didn't I write about this at length? Is it in the swipe?
+
+    // **TODO** Okay, look in swipe, but it is not above. This is the beginnning
+    // of the discussion of stack trace preservation. Needs more preamble.
+
+    // **TODO** Needs to be introduced with callbacks which have no caveats.
+    // Promises are fixed in Node.js 14, so, no wait. Isn't it broken regardless
+    // if you call a Node.js filesystem function? I believe I decided to do
+    // callbacks first for some reason.
 
     // Often times you invoke system functions that produce stubby contextless
     // errors like `EBADFD` stack trace at all. This is an [known issue in
@@ -3092,6 +3097,9 @@ require('proof')(114, async okay => {
             return _all(all, {}, vargs)
         }
 
+        // **TODO** An `assertEqual` function would be a good tour of the
+        // currying issues.
+
         const one = new Error('one')
         const two = new Error('two')
 
@@ -3121,6 +3129,8 @@ require('proof')(114, async okay => {
     // The stack trace emitted from an Interrupt generated error is both human
     // readable and machine readable. Using the `Interrupt.parse()` method you
     // can parse the stack trace of an `Interrupt` error.
+
+    //
     console.log('\n--- parse an Interrupt stack trace ---\n')
     {
         const path = require('path')
