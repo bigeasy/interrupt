@@ -597,10 +597,10 @@ class Interrupt extends Error {
             }
 
             constructor (...vargs) {
-                if (SuperClass === Interrupt) {
-                    super(PROTECTED, Class, Prototype, vargs)
-                } else {
+                if (vargs[0] === PROTECTED) {
                     super(...vargs)
+                } else {
+                    super(PROTECTED, Class, Prototype, vargs)
                 }
             }
 

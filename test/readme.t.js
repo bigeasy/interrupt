@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(115, async okay => {
+require('proof')(122, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -518,10 +518,126 @@ require('proof')(115, async okay => {
             okay(/^the JSON string to parse must not be null$/m.test(error.message), 'message is first line of message property')
         }
     }
+
+    // If you provide a code parameter that was not defined when you called
+    // `Interrupt.create()` the string value is used as a message.
+
+    //
+    console.log('\n--- create interrupt with missing code ---\n')
+    {
+        const ParseError = Interrupt.create('ParseError', {
+            INVALID_JSON: 'unable to parse JSON string'
+        })
+
+        function parse (string) {
+            if (string == null) {
+                throw new ParseError('NULL_ARGUMENT')
+            }
+            try {
+                return JSON.parse(string)
+            } catch (error) {
+                throw new ParseError('INVALID_JSON')
+            }
+        }
+
+        try {
+            parse(null)
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(Interrupt.message(error), 'NULL_ARGUMENT', 'no code found, use first argument as message')
+            okay(!('code' in error), 'no code is set')
+        }
+    }
     //
 
-    // But a code is unambiguous, not liable to change, easier to document and
-    // if you do make changes to code, it is easier to document and document the
+    // This means you can just use Interrupt directly without code if you so
+    // choose, but I really like codes.
+
+    //
+    console.log('\n--- using Interrupt without codes ---\n')
+    {
+        const ParseError = Interrupt.create('ParseError')
+
+        function parse (string) {
+            if (string == null) {
+                throw new ParseError('the JSON string to parse must not be null')
+            }
+            try {
+                return JSON.parse(string)
+            } catch (error) {
+                throw new ParseError('unable to parse JSON string')
+            }
+        }
+
+        try {
+            parse(null)
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(Interrupt.message(error), 'the JSON string to parse must not be null', 'specify message as first argument instead of code')
+            okay(!('code' in error), 'no code is set')
+        }
+    }
+    //
+
+    // You can pass in a code followed by message to override the default
+    // message for the code. This is useful when you use a generic code like
+    // `INVALID_ARGUMENT` but you want to details about the specific error.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            IO_ERROR: 'unable to read file',
+            PARSE_ERROR: 'unable to parse file'
+        })
+
+        async function loadConfigs (dirname) {
+            let dir
+            try {
+                dir = await fs.readdir(dirname)
+            } catch (error) {
+                throw new ConfigError('IO_ERROR', 'unable to read dir')
+            }
+            const files = []
+            for (const file of dir) {
+                let body
+                try {
+                    body = fs.readFile(path.join(dir, file), 'utf8')
+                } catch (error) {
+                    throw new ConfigError('IO_ERROR')
+                }
+                try {
+                    configs.push(JSON.parse(body))
+                } catch (error) {
+                    throw new ConfigError('PARSE_ERROR')
+                }
+            }
+        }
+
+        try {
+            const dirname = path.join(__dirname, 'tmp', 'eisdir')
+            await loadConfigs(dirname)
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(error.code, 'IO_ERROR', 'code set')
+            okay(Interrupt.message(error), 'unable to read file', 'use default message for code')
+        }
+
+        try {
+            const dirname = path.join(__dirname, 'tmp', 'missing')
+            await loadConfigs(dirname)
+        } catch (error) {
+            console.log('\n', error.stack, '\n')
+            okay(error.code, 'IO_ERROR', 'code set')
+            okay(Interrupt.message(error), 'unable to read dir', 'override default message for code')
+        }
+    }
+    //
+
+    // Codes are unambiguous, not liable to change, easier to document and if
+    // you do make changes to code, it is easier to document and document the
     // deprecation.
 
     // Codes get even more unambiguous when you use `Symbol`.
@@ -686,121 +802,6 @@ require('proof')(115, async okay => {
 
     // **TODO** We probably need sub-headings.
     // **TODO** Move this up above symbols.
-
-    // If you provide a code parameter that was not defined when you called
-    // `Interrupt.create()` the string value is used as a message.
-
-    //
-    console.log('\n--- create interrupt with missing code ---\n')
-    {
-        const ParseError = Interrupt.create('ParseError', {
-            INVALID_JSON: 'unable to parse JSON string'
-        })
-
-        function parse (string) {
-            if (string == null) {
-                throw new ParseError('NULL_ARGUMENT')
-            }
-            try {
-                return JSON.parse(string)
-            } catch (error) {
-                throw new ParseError('INVALID_JSON')
-            }
-        }
-
-        try {
-            parse(null)
-        } catch (error) {
-            console.log(error.stack, '\n')
-            okay(Interrupt.message(error), 'NULL_ARGUMENT', 'no code found, use first argument as message')
-            okay(!('code' in error), 'no code is set')
-        }
-    }
-    //
-
-    // This means you can just use Interrupt directly without code if you so
-    // choose, but I really like codes.
-
-    //
-    console.log('\n--- using Interrupt without codes ---\n')
-    {
-        const ParseError = Interrupt.create('ParseError')
-
-        function parse (string) {
-            if (string == null) {
-                throw new ParseError('the JSON string to parse must not be null')
-            }
-            try {
-                return JSON.parse(string)
-            } catch (error) {
-                throw new ParseError('unable to parse JSON string')
-            }
-        }
-
-        try {
-            parse(null)
-        } catch (error) {
-            console.log(error.stack, '\n')
-            okay(Interrupt.message(error), 'the JSON string to parse must not be null', 'specify message as first argument instead of code')
-            okay(!('code' in error), 'no code is set')
-        }
-    }
-    //
-
-    // You can pass in a code followed by message to override the default
-    // message for the code.
-
-    //
-    {
-        const path = require('path')
-        const fs = require('fs').promises
-
-        const ConfigError = Interrupt.create('ConfigError', {
-            FILE_READ_ERROR: 'unable to read file'
-        })
-
-        async function loadConfigs (dirname) {
-            let dir
-            try {
-                dir = await fs.readdir(dirname)
-            } catch (error) {
-                throw new ConfigError('FILE_READ_ERROR', 'unable to read dir')
-            }
-            const files = []
-            for (const file of dir) {
-                let body
-                try {
-                    body = fs.readFile(path.join(dir, file), 'utf8')
-                } catch (error) {
-                    throw new ConfigError('FILE_READ_ERROR')
-                }
-                try {
-                    configs.push(JSON.parse(body))
-                } catch (error) {
-                    throw new ConfigError('FILE_PARSE_ERROR')
-                }
-            }
-        }
-
-        try {
-            const dirname = path.join(__dirname, 'tmp', 'eisdir')
-            await loadConfigs(dirname)
-        } catch (error) {
-            console.log(error.stack, '\n')
-            okay(error.code, 'FILE_READ_ERROR', 'code set')
-            okay(Interrupt.message(error), 'unable to read file', 'use default message for code')
-        }
-
-        try {
-            const dirname = path.join(__dirname, 'tmp', 'missing')
-            await loadConfigs(dirname)
-        } catch (error) {
-            console.log('\n', error.stack, '\n')
-            okay(error.code, 'FILE_READ_ERROR', 'code set')
-            okay(Interrupt.message(error), 'unable to read dir', 'override default message for code')
-        }
-    }
-    //
 
     // **TODO** Additional codes.
 
@@ -1840,21 +1841,87 @@ require('proof')(115, async okay => {
     // redefined in derived classes use the same symbol but you can override the
     // error message.
 
+    // **TODO** Default properties are merged. If they are defined in the
+    // derived class they are overwritten.
+
+    // **TODO** There is no room for it now, but what if you wanted to specify
+    // code with one string and message with another? Seems like this might be a
+    // solution for it though, simply state that you'd be using the derived
+    // classes to create string tables. Ultimately, you could create an
+    // `Interrupt.Messages` class and `Reader.Messages.raise()` or
+    // `Reader.Messages.create()`. Could be a helper function too. Getting
+    // really close to internationalization.
+
+    // **TODO** Actually, code overrides, so you could have a whole set of
+    // message only codes, a string table, and then use an actual code after it,
+    // and if you like, you could underbar them so that they are private.
+
     //
     {
-        const IOError = Interrupt.create('IOError', {
-            ERROR_MISSING: 'file is missing'
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('IOError', {
+            PARSE_ERROR: 'unable to parse JSON'
+        }, 'IO_ERROR')
+
+        const DirectoryError = Interrupt.create('DirectoryError', ConfigError, {
+            IO_ERROR: 'unable to read dir'
         })
 
-        const DirectoryError = Interrupt.create('DirectoryError', IOError, {
-            ERROR_MISSING: 'directory is missing'
+        const FileError = Interrupt.create('FileError', ConfigError, {
+            IO_ERROR: 'unable to read file'
         })
 
-        okay(IOError.ERROR_MISSING == DirectoryError.ERROR_MISSING, 'symbols are the same')
+        okay(
+            ConfigError.IO_ERROR == FileError.IO_ERROR &&
+            ConfigError.IO_ERROR == DirectoryError.IO_ERROR &&
+            FileError.IO_ERROR == DirectoryError.IO_ERROR
+        , 'symbols are the same')
 
-        /*const FileError = Interrupt.create('FileError', IOError, {
-            code: 'SHOULD NOT WORK'
-        })*/
+        async function loadConfigs (dirname) {
+            let dir
+            try {
+                dir = await fs.readdir(dirname)
+            } catch (error) {
+                throw new DirectoryError('IO_ERROR')
+            }
+            const files = []
+            for (const file of dir) {
+                let body
+                try {
+                    body = fs.readFile(path.join(dir, file), 'utf8')
+                } catch (error) {
+                    throw new FileError('IO_ERROR')
+                }
+                try {
+                    configs.push(JSON.parse(body))
+                } catch (error) {
+                    throw new ConfigError('PARSE_ERROR')
+                }
+            }
+        }
+
+        try {
+            const dirname = path.join(__dirname, 'tmp', 'eisdir')
+            await loadConfigs(dirname)
+        } catch (error) {
+            console.log(error.stack, '\n')
+            okay(error.code, 'IO_ERROR', 'code set')
+            okay(Interrupt.message(error), 'unable to read file', 'use default message for code')
+        }
+
+        try {
+            const dirname = path.join(__dirname, 'tmp', 'missing')
+            await loadConfigs(dirname)
+        } catch (error) {
+            console.log(`\n${error.stack}\n`)
+            okay(error.code, 'IO_ERROR', 'code set')
+            okay(Interrupt.message(error), 'unable to read dir', 'override default message for code')
+            okay(error instanceof DirectoryError, 'object is of derived class type')
+            okay(error instanceof ConfigError, 'object is of derived super class type')
+            okay(error instanceof Interrupt, 'object is an Interrupt')
+        }
     }
     //
 
