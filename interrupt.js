@@ -123,7 +123,8 @@ class Interrupt extends Error {
         Prototypes.set(Interrupt, {
             symbols: new Map,
             codes: {},
-            enumerable: {}
+            enumerable: {},
+            inherited: { coded: {}, symbolized: new Map }
         })
     } ())
 
@@ -893,9 +894,9 @@ class Interrupt extends Error {
         const SuperPrototype = Prototypes.get(SuperClass)
         const Prototype = {
             name: name,
-            symbols: new Map(SuperPrototype.symbols),
-            codes: { ...SuperPrototype.codes },
-            enumerable: { ...SuperPrototype.enumerable }
+            symbols: new Map,
+            codes: {},
+            enumerable: {}
         }
         Prototypes.set(Class, Prototype)
 
@@ -906,34 +907,30 @@ class Interrupt extends Error {
         // Detect duplicate declarations.
         const duplicates = new Set
 
-        function convert (arg) {
-            switch (typeof arg) {
+        while (vargs.length != 0) {
+            const codes = vargs.shift()
+            switch (typeof codes) {
             case 'string': {
-                    const codes = {}
-                    codes[arg] = null
-                    return codes
+                    const object = {}
+                    object[codes] = null
+                    vargs.unshift(object)
+                    continue
+                }
+            case 'function': {
+                    vargs.unshift(codes(Codes, SuperPrototype.inherited.coded))
+                    continue
                 }
             case 'object': {
-                    assert(arg != null, 'INVALID_ARGUMENT')
-                    if (Array.isArray(arg)) {
-                        return arg.reduce((codes, value) => {
-                            assert(typeof value == 'string', 'INVALID_ARGUMENT')
-                            codes[value] = null
-                            return codes
-                        }, {})
-                    } else {
-                        return arg
+                    assert(codes != null, 'INVALID_ARGUMENT')
+                    if (Array.isArray(codes)) {
+                        vargs.unshift.apply(vargs, codes)
+                        continue
                     }
                 }
-            case 'function':
-                return convert(arg(Codes))
+                break
             default:
                 throw new Interrupt.Error('INVALID_ARGUMENT')
             }
-        }
-
-        for (const arg of vargs) {
-            const codes = convert(arg)
             for (const code in codes) {
                 // Duplicate declaration detection. **TODO** Better error.
                 assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
@@ -947,18 +944,24 @@ class Interrupt extends Error {
 
                 // Convert the defintion to a code prototype.
                 switch (typeof codes[code]) {
-                case 'string':
-                    Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol }
+                case 'symbol': {
+
+                    }
+                    break
+                case 'string': {
+                        Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol, enumerable: {} }
+                    }
                     break
                 case 'object':
                     // Goes here.
                     if (codes[code] == null) {
-                        Prototype.codes[code] = { code, message: null, properties: {}, symbol }
+                        Prototype.codes[code] = { code, message: null, properties: {}, symbol, enumerable: {} }
                     } else {
                         const entry = Prototype.codes[code] = {
                             code: code,
                             message: coalesce(codes[code].message),
-                            properties: codes[code]
+                            properties: codes[code],
+                            enumerable: {}
                         }
                         let merge = codes[code].code
                         if ('symbol' in codes[code]) {
@@ -994,6 +997,8 @@ class Interrupt extends Error {
                 Object.defineProperty(Codes[code], 'symbol', { value: symbol, enumerable: false })
             }
         }
+
+        // **TODO** Some kind of inherited value.
 
         Object.defineProperty(Class, 'name', { value: name })
 
