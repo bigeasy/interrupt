@@ -2393,17 +2393,20 @@ require('proof')(140, async okay => {
         // Really need to punt. Don't want to spent three weeks on this project
         // before I've tested all these facilities.
 
+        // Need to redocument because we don't do anything implicitly anymore.
+
         //
         const ConfigError = Interrupt.create('IOError', {
             PARSE_ERROR: 'unable to parse JSON'
         }, 'IO_ERROR')
 
-        const DirectoryError = Interrupt.create('DirectoryError', ConfigError, {
-            IO_ERROR: 'unable to read dir'
-        })
+        const DirectoryError = Interrupt.create('DirectoryError', ConfigError, new Map([[
+            ConfigError.IO_ERROR, 'unable to read dir'
+        ]]))
 
-        const FileError = Interrupt.create('FileError', ConfigError, {
-            IO_ERROR: 'unable to read file'
+        // **TODO** Make argument an object, destructure.
+        const FileError = Interrupt.create('FileError', ConfigError, function (codes, inherited) {
+            return new Map([[ inherited.IO_ERROR.code.symbol, 'unable to read file' ]])
         })
 
         okay(

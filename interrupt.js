@@ -929,6 +929,18 @@ class Interrupt extends Error {
         while (vargs.length != 0) {
             const codes = vargs.shift()
             switch (typeof codes) {
+            // Straight symbol means to inherit symbol from parent.
+            case 'symbol': {
+                    const entry = SuperPrototype.inherited.symbolized.get(codes)
+                    assert(entry != null, 'INVALID_ARGUMENT')
+                    // We already have this code defined.
+                    assert(!(entry.code.code in Prototype.codes), 'DUPLICATE_CODE')
+                    // **TODO** Ensure that code is not already defined?
+                    vargs.unshift(new Map([[
+                        entry.code.symbol,  Merge.argument(entry.properties, { code: entry.code.code })
+                    ]]))
+                    continue
+                }
             case 'string': {
                     const object = {}
                     object[codes] = null
@@ -950,73 +962,158 @@ class Interrupt extends Error {
             default:
                 throw new Interrupt.Error('INVALID_ARGUMENT')
             }
-            for (const code in codes) {
-                // Duplicate declaration detection. **TODO** Better error.
-                assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
-                duplicates.add(code)
-
-                // Use an existing code symbol from the super class if one exists,
-                // otherwise create a new symbol.
-                const existing = SuperClass[code]
-                assert(existing == null || typeof existing == 'symbol', 'INVALID_CODE')
-                const symbol = SuperClass[code] || Symbol(code)
-
-                // Convert the defintion to a code prototype.
-                switch (typeof codes[code]) {
-                case 'symbol': {
-
+            // **TODO** Aliases, code => symbol with multiple codes to same
+            // symbol would allow from renames.
+            if (codes instanceof Map) {
+                // **TODO** New rule. If you do not specify a code, we'll look
+                // up the symbol in the inheritance.
+                for (let [ symbol, template ] of codes) {
+                    if (typeof template == 'string') {
+                        template = { message: template }
                     }
-                    break
-                case 'string': {
-                        Prototype.prototypes[code] = { code, message: codes[code], properties: {}, symbol }
-                    }
-                    break
-                case 'object':
-                    // Goes here.
-                    if (codes[code] == null) {
-                        Prototype.prototypes[code] = { code, message: null, properties: {}, symbol }
-                    } else {
-                        const entry = Prototype.prototypes[code] = {
-                            code: code,
-                            message: coalesce(codes[code].message),
-                            properties: codes[code]
-                        }
-                        let merge = codes[code].code
-                        if ('symbol' in codes[code]) {
-                            assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
-                            const actual = Prototype.symbols.get(codes[code].symbol)
-                            assert(actual != null, 'INVALID_CODE')
-                            if ('code' in codes[code]) {
-                                assert(codes[code].code === actual, 'INVALID_CODE')
-                            } else {
-                                merge = actual
-                            }
-                        }
-                        if (merge != null) {
-                            const previous = Prototype.prototypes[merge]
-                            entry.code = previous.code
-                            if (entry.message == null) {
-                                entry.message = previous.message
-                            }
-                            entry.properties = Merge.argument(previous.properties, entry.properties)
-                            continue
+                    // **TODO** Getting annoying to pluck out the message and
+                    // code, maybe they are just properties????
+
+                    // Maybe we insist that properties are always valid
+                    // JavaScript identifiers, then we can use `'#callee'` and
+                    // `'#type'` for our special properties? Then we have even
+                    // simplier merge options.
+
+                    // **TODO** Big change, but simplifies greatly.
+
+                    // **TODO** BIG CHANGE. BIG BIG CHANGE.
+
+                    // **TODO** You could merge errors too.
+
+                    // **TODO** `#errors` is your special errors.
+
+                    //
+                    if (template == null || !('code' in template)) {
+                        const entry = SuperPrototype.inherited.symbolized.get(symbol)
+                        if (template != null) {
+                            template = Merge.argument(entry.properties, {
+                                code: entry.code.code,
+                                symbol: entry.code.symbol
+                            }, entry.message != null ? { message: entry.message } : {}, template)
                         }
                     }
-                    break
+                    const code = template.code
+                    assert(typeof code == 'string', 'INVALID_ARGUMENT')
+                    assert(!duplicates.has(code), 'DUPLICATE_CODE', { code: template.code })
+                    const prototype = Prototype.prototypes[code] = {
+                        code: code,
+                        message: coalesce(template.message),
+                        // **TODO** Have this merge strip codes, messages, etc.
+                        properties: Merge.argument(template)
+                    }
+
+                    // Create a property to hold the symbol in the class.
+                    Object.defineProperty(Class, code, { get: function () { return symbol } })
+
+                    // Our internal tracking of symbols.
+                    Prototype.symbols.set(symbol, code)
+
+                    // Create an entry in our `codes` lookup.
+                    Object.defineProperty(Prototype.codes[code] = { code }, 'symbol', { value: symbol, enumerable: false })
                 }
+            } else {
+                for (const code in codes) {
+                    // Duplicate declaration detection. **TODO** Better error.
+                    assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
+                    duplicates.add(code)
 
-                // Create a property to hold the symbol in the class.
-                Object.defineProperty(Class, code, { get: function () { return symbol } })
+                    // Use an existing code symbol from the super class if one exists,
+                    // otherwise create a new symbol.
+                    const existing = SuperClass[code]
+                    assert(existing == null || typeof existing == 'symbol', 'INVALID_CODE')
+                    const symbol = SuperClass[code] || Symbol(code)
 
-                // Our internal tracking of symbols.
-                Prototype.symbols.set(symbol, code)
+                    // Convert the defintion to a code prototype.
+                    switch (typeof codes[code]) {
+                    case 'symbol': {
 
-                Prototype.codes[code] = { code: code }
-                Object.defineProperty(Prototype.codes[code], 'symbol', { value: symbol, enumerable: false })
+                        }
+                        break
+                    case 'string': {
+                            Prototype.prototypes[code] = { code, message: codes[code], properties: {}, symbol }
+                        }
+                        break
+                    case 'object':
+                        // Goes here.
+                        if (codes[code] == null) {
+                            Prototype.prototypes[code] = { code, message: null, properties: {}, symbol }
+                        } else {
+                            const entry = Prototype.prototypes[code] = {
+                                code: code,
+                                message: coalesce(codes[code].message),
+                                properties: codes[code]
+                            }
+                            let merge = codes[code].code
+                            if ('symbol' in codes[code]) {
+                                assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
+                                const actual = Prototype.symbols.get(codes[code].symbol)
+                                assert(actual != null, 'INVALID_CODE')
+                                if ('code' in codes[code]) {
+                                    assert(codes[code].code === actual, 'INVALID_CODE')
+                                } else {
+                                    merge = actual
+                                }
+                            }
+                            if (merge != null) {
+                                const previous = Prototype.prototypes[merge]
+                                entry.code = previous.code
+                                if (entry.message == null) {
+                                    entry.message = previous.message
+                                }
+                                entry.properties = Merge.argument(previous.properties, entry.properties)
+                                continue
+                            }
+                        }
+                        break
+                    }
+
+                    // Create a property to hold the symbol in the class.
+                    Object.defineProperty(Class, code, { get: function () { return symbol } })
+
+                    // Our internal tracking of symbols.
+                    Prototype.symbols.set(symbol, code)
+
+                    Prototype.codes[code] = { code: code }
+                    Object.defineProperty(Prototype.codes[code], 'symbol', { value: symbol, enumerable: false })
+                }
             }
         }
 
         // **TODO** Some kind of inherited value.
+
+        Prototype.inherited = {
+            coded: {},
+            symbolized: new Map
+        }
+        for (const name in Prototype.prototypes) {
+            const prototype = Prototype.prototypes[name]
+            const code = { code: name }
+            Object.defineProperty(code, 'symbol', {
+                value: prototype.code != name ? Symbol(name) : prototype.symbol
+            })
+            const alias = prototype.code != name ? Object.defineProperties({}, {
+                code: {
+                    value: prototype.code,
+                    enumerable: true
+                },
+                symbol: {
+                    value: Prototype.codes[prototype.code].symbol,
+                    enumerable: false
+                }
+            }) : null
+            const entry = {
+                code: code,
+                alias: alias,
+                properties: prototype.properties
+            }
+            Prototype.inherited.coded[name] = entry
+            Prototype.inherited.symbolized.set(entry.code.symbol, entry)
+        }
 
         Object.defineProperty(Class, 'name', { value: name })
 
