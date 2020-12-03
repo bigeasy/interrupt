@@ -146,7 +146,6 @@ class Interrupt extends Error {
         Prototypes.set(Interrupt, {
             symbols: new Map,
             prototypes: {},
-            enumerable: {},
             inherited: { coded: {}, symbolized: new Map },
             codes: {}
         })
@@ -920,7 +919,6 @@ class Interrupt extends Error {
             name: name,
             symbols: new Map,
             prototypes: {},
-            enumerable: {},
             codes: {}
         }
         Prototypes.set(Class, Prototype)
@@ -970,19 +968,18 @@ class Interrupt extends Error {
                     }
                     break
                 case 'string': {
-                        Prototype.prototypes[code] = { code, message: codes[code], properties: {}, symbol, enumerable: {} }
+                        Prototype.prototypes[code] = { code, message: codes[code], properties: {}, symbol }
                     }
                     break
                 case 'object':
                     // Goes here.
                     if (codes[code] == null) {
-                        Prototype.prototypes[code] = { code, message: null, properties: {}, symbol, enumerable: {} }
+                        Prototype.prototypes[code] = { code, message: null, properties: {}, symbol }
                     } else {
                         const entry = Prototype.prototypes[code] = {
                             code: code,
                             message: coalesce(codes[code].message),
-                            properties: codes[code],
-                            enumerable: {}
+                            properties: codes[code]
                         }
                         let merge = codes[code].code
                         if ('symbol' in codes[code]) {
@@ -1001,7 +998,7 @@ class Interrupt extends Error {
                             if (entry.message == null) {
                                 entry.message = previous.message
                             }
-                            entry.properties = { ...previous.properties, ...entry.properties }
+                            entry.properties = Merge.argument(previous.properties, entry.properties)
                             continue
                         }
                     }

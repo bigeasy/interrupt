@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(134, async okay => {
+require('proof')(140, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1572,6 +1572,7 @@ require('proof')(134, async okay => {
     // applied to the properties when then are set on the constructed exception.
 
     //
+    console.log('\n--- defining non-enumerable properties in the constructor ---\n')
     {
         const path = require('path')
         const fs = require('fs').promises
@@ -1611,15 +1612,93 @@ require('proof')(134, async okay => {
             okay(Object.keys(error).sort(), [ 'code', 'filename' ], 'only two enumerable properties')
             console.log(Object.getOwnPropertyNames(error))
             okay(error.hasOwnProperty('json'), 'added a non-enumerable properties')
+            okay(error.json.length > 4096, 'really too big to add to the stack trace')
         }
     }
     //
 
-    // You can also set non-enumerable properties. Non enumerable properties
-    // will not appear in the stack trace, JSON serialization and many utilties
-    // that print errors will skip those properties. You can use non-enumerable
-    // properties when you want to provide context information that may need
-    // specialized reporting, that would look rediculous in the stack trace.
+    // Non enumerable properties will not appear in the stack trace, JSON
+    // serialization and many utilties that print errors will skip those
+    // properties. You can use non-enumerable properties when you want to
+    // provide context information that may need specialized reporting, that
+    // would look rediculous in the stack trace.
+
+    // Note that when you use `Object.defineProperties` you must set the
+    // `enumerable` property to `true` for the property to be enumerable. The
+    // default is `false`. **TODO** Double check. (Internet is down now.)
+
+    // You can also specify non-enumerable properties in the default properties
+    // for a code with `Interrupt.create()`.
+
+    //
+    console.log('\n--- defining non-enumerable default properties at create ---\n')
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            NULL_ARGUMENT: Object.defineProperties({}, {
+                // _We ask that `message` be made enumerable, but our request
+                // will be ignored._
+                message: {
+                    value: 'the JSON string to parse must not be null',
+                    enumerable: true
+                },
+                fallback: {
+                    value: false,
+                    enumerable: false
+                }
+            }),
+            INVALID_JSON: Object.defineProperties({}, {
+                message: {
+                    value: 'the argument must not be null',
+                    enumerable: true
+                },
+                fallback: {
+                    value: true,
+                    enumerable: false
+                }
+            })
+        })
+
+        function parse (json) {
+            if (json == null) {
+                throw new ConfigError('NULL_ARGUMENT')
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('INVALID_JSON')
+            }
+        }
+
+        try {
+            parse(null)
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Object.keys(error), [ 'code' ], 'only code property set')
+            okay(!error.propertyIsEnumerable('message'), 'despite our requests, message is not enumerable')
+            okay(error.fallback, false, 'non-enumerable default property set')
+        }
+
+        try {
+            parse('!')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Object.keys(error), [ 'code' ], 'only code property set')
+            okay(error.fallback, true, 'non-enumerable default property set')
+        }
+    }
+    //
+
+    // In this example we do not enumerable the `fallback` property. It is just
+    // a handling hint so we don't want to see it in our stack trace.
+
+    // The `message`, `errors`, and `symbol` properties will never be enumerable
+    // on the created exception regardless of whether or not they are specified
+    // as enumerable in the constructor or defaults.
+
+    // The `code` property will always be enumerable regardless of whether or
+    // not the property is enumerable in the constructor or defaults.
+
+    // You cannot override the `stack`, `errors`, or `name` properties.
 
     // ## Property Serialization JSON
 
