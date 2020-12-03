@@ -122,9 +122,10 @@ class Interrupt extends Error {
     static #initializer = (function () {
         Prototypes.set(Interrupt, {
             symbols: new Map,
-            codes: {},
+            prototypes: {},
             enumerable: {},
-            inherited: { coded: {}, symbolized: new Map }
+            inherited: { coded: {}, symbolized: new Map },
+            codes: {}
         })
     } ())
 
@@ -496,7 +497,7 @@ class Interrupt extends Error {
         // empty error.
         const  options = function (Class, Protected, vargs) {
             const options = Class._options(vargs)
-            const prototype = Prototype.codes[options.code] || { message: null, properties: {}, code: null }
+            const prototype = Prototype.prototypes[options.code] || { message: null, properties: {}, code: null }
             options.code = prototype.code
             options.format = options.format || prototype.message || prototype.code
             return Class._options([{ properties: prototype.properties }], [ options ])
@@ -519,7 +520,7 @@ class Interrupt extends Error {
                 enumerable: true
             }
             properties.symbol = {
-                value: Prototype.codes[options.code].symbol,
+                value: Prototype.prototypes[options.code].symbol,
                 enumerable: false
             }
         }
@@ -592,7 +593,7 @@ class Interrupt extends Error {
                 constructor (...vargs) {
                     const { options, prototype } = function () {
                         const options = Class._options(vargs)
-                        const prototype = Prototype.codes[options.code] || { message: null, properties: null, code: null }
+                        const prototype = Prototype.prototypes[options.code] || { message: null, properties: null, code: null }
                         options.format = options.format || prototype.message || prototype.code
                         return {
                             options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
@@ -621,11 +622,11 @@ class Interrupt extends Error {
 
             // **TODO** Broken now. Includes aliases.
             static get codes () {
-                return Object.keys(Prototype.codes)
+                return Object.keys(Prototype.prototypes)
             }
 
             static code (code) {
-                return Codes[code]
+                return Prototype.codes[code]
             }
 
             static _options (...vargs) {
@@ -668,7 +669,7 @@ class Interrupt extends Error {
                             }
                             break
                         case 'string': {
-                                if (Prototype.codes[argument] == null) {
+                                if (Prototype.prototypes[argument] == null) {
                                     options.format = argument
                                 } else {
                                     options.code = argument
@@ -711,7 +712,7 @@ class Interrupt extends Error {
                                 }
                                 break
                             case 'string':
-                                if (Prototype.codes[argument] == null) {
+                                if (Prototype.prototypes[argument] == null) {
                                     options.format = argument
                                 } else {
                                     options.code = argument
@@ -895,14 +896,11 @@ class Interrupt extends Error {
         const Prototype = {
             name: name,
             symbols: new Map,
-            codes: {},
-            enumerable: {}
+            prototypes: {},
+            enumerable: {},
+            codes: {}
         }
         Prototypes.set(Class, Prototype)
-
-        // **TODO** Here's where names are running out. Prototype.codes should
-        // be for codes, and Prototype.defaults should be for templates.
-        const Codes = {}
 
         // Detect duplicate declarations.
         const duplicates = new Set
@@ -917,7 +915,7 @@ class Interrupt extends Error {
                     continue
                 }
             case 'function': {
-                    vargs.unshift(codes(Codes, SuperPrototype.inherited.coded))
+                    vargs.unshift(codes(Prototype.codes, SuperPrototype.inherited.coded))
                     continue
                 }
             case 'object': {
@@ -949,15 +947,15 @@ class Interrupt extends Error {
                     }
                     break
                 case 'string': {
-                        Prototype.codes[code] = { code, message: codes[code], properties: {}, symbol, enumerable: {} }
+                        Prototype.prototypes[code] = { code, message: codes[code], properties: {}, symbol, enumerable: {} }
                     }
                     break
                 case 'object':
                     // Goes here.
                     if (codes[code] == null) {
-                        Prototype.codes[code] = { code, message: null, properties: {}, symbol, enumerable: {} }
+                        Prototype.prototypes[code] = { code, message: null, properties: {}, symbol, enumerable: {} }
                     } else {
-                        const entry = Prototype.codes[code] = {
+                        const entry = Prototype.prototypes[code] = {
                             code: code,
                             message: coalesce(codes[code].message),
                             properties: codes[code],
@@ -975,7 +973,7 @@ class Interrupt extends Error {
                             }
                         }
                         if (merge != null) {
-                            const previous = Prototype.codes[merge]
+                            const previous = Prototype.prototypes[merge]
                             entry.code = previous.code
                             if (entry.message == null) {
                                 entry.message = previous.message
@@ -993,8 +991,8 @@ class Interrupt extends Error {
                 // Our internal tracking of symbols.
                 Prototype.symbols.set(symbol, code)
 
-                Codes[code] = { code: code }
-                Object.defineProperty(Codes[code], 'symbol', { value: symbol, enumerable: false })
+                Prototype.codes[code] = { code: code }
+                Object.defineProperty(Prototype.codes[code], 'symbol', { value: symbol, enumerable: false })
             }
         }
 
