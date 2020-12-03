@@ -76,6 +76,29 @@ function context (options, instance, stack = true) {
     return message
 }
 
+const Merge = {
+    template: function () {
+    },
+    argument: function (...vargs) {
+        const properties = {}
+        for (const object of vargs) {
+            for (const property of Object.getOwnPropertyNames(object)) {
+                if (object[property] === undefined) {
+                    properties[property] = {
+                        enumerable: object.propertyIsEnumerable(property)
+                    }
+                } else {
+                    properties[property] = {
+                        value: object[property],
+                        enumerable: object.propertyIsEnumerable(property)
+                    }
+                }
+            }
+        }
+        return Object.defineProperties({}, properties)
+    }
+}
+
 // Get an object from a tree of objects `object` using the given array of
 // indexes in the given `path`. Used by our specialized JSON to generate and
 // resolve references.
@@ -525,11 +548,11 @@ class Interrupt extends Error {
             }
         }
 
-        for (const property in options.properties) {
+        for (const property of Object.getOwnPropertyNames(options.properties)) {
             if (property[0] != '_' && !/^name|message|stack$/.test(property) && !(properties in properties)) {
                 properties[property] = {
                     value: options.properties[property],
-                    enumerable: coalesce(Prototype.enumerable[property], true)
+                    enumerable: options.properties.propertyIsEnumerable(property)
                 }
             }
         }
@@ -653,7 +676,7 @@ class Interrupt extends Error {
                             options._errors.push.apply(options._errors, argument._errors)
                         }
                         if (typeof argument.properties == 'object' && argument.properties != null) {
-                            options.properties = { ...options.properties, ...argument.properties }
+                            options.properties = Merge.argument(options.properties, argument.properties)
                         }
                         if (typeof argument.callee == 'function') {
                             options.callee = argument.callee
@@ -698,7 +721,7 @@ class Interrupt extends Error {
                             // Assign the context object.
                             case 'object':
                                 if (argument != null) {
-                                    options.properties = { ...options.prerties, ...argument }
+                                    options.properties = Merge.argument(options.properties, argument)
                                 } else {
                                     options._errors.push({ code: NULL_POSITIONAL_ARGUMENT })
                                 }

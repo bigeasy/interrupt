@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(132, async okay => {
+require('proof')(134, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1306,7 +1306,7 @@ require('proof')(132, async okay => {
     // the `code` property is enumerable and the `symbol` property is not.
     //
     // Because Interrupt uses JSON to serialize properties, and because JSON
-    // will only serialize enumberable properties, this means that if you use
+    // will only serialize enumerable properties, this means that if you use
     // this object as the value of a default property, the code will be
     // serialized in the stack trace, but the symbol will not.
 
@@ -1567,6 +1567,59 @@ require('proof')(132, async okay => {
         }], 'finally working correctly')
     }
     //
+
+    // The enumerability of the properties of your property object will be
+    // applied to the properties when then are set on the constructed exception.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            'FILE_READ_ERROR': 'unable to read file',
+            'PARSE_ERROR': 'unable to parse JSON'
+        })
+
+        async function load (filename) {
+            let json
+            try {
+                json = await fs.readFile(filename, 'utf8')
+            } catch (error) {
+                throw new ConfigError('FILE_READ_ERROR', { filename })
+            }
+            try {
+                return JSON.parse(json)
+            } catch (error) {
+                throw new ConfigError('PARSE_ERROR', Object.defineProperties({}, {
+                    filename: {
+                        value: filename,
+                        enumerable: true
+                    },
+                    json: {
+                        value: json,
+                        enumerable: false
+                    }
+                }))
+            }
+        }
+
+        try {
+            await load(__filename)
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Object.keys(error).sort(), [ 'code', 'filename' ], 'only two enumerable properties')
+            console.log(Object.getOwnPropertyNames(error))
+            okay(error.hasOwnProperty('json'), 'added a non-enumerable properties')
+        }
+    }
+    //
+
+    // You can also set non-enumerable properties. Non enumerable properties
+    // will not appear in the stack trace, JSON serialization and many utilties
+    // that print errors will skip those properties. You can use non-enumerable
+    // properties when you want to provide context information that may need
+    // specialized reporting, that would look rediculous in the stack trace.
 
     // ## Property Serialization JSON
 
