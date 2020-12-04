@@ -98,6 +98,12 @@ const Merge = {
     }
 }
 
+function merge2 (Class, Prototype, vargs) {
+    const options = Class.options.apply(Class, vargs)
+    const prototype = Prototype.prototypes[options.code] || { message: null, properties: {}, code: null }
+    return Class.options({ message: prototype.code }, prototype.properties, options, { code: prototype.code })
+}
+
 // Get an object from a tree of objects `object` using the given array of
 // indexes in the given `path`. Used by our specialized JSON to generate and
 // resolve references.
@@ -129,7 +135,7 @@ class Collector {
 // An assert internal to Interrupt that will not get audited.
 function assert (condition, ...vargs) {
     if (! condition) {
-        throw new Interrupt.Error(Interrupt.Error._options([{ '#callee': assert }], vargs))
+        throw new Interrupt.Error(Interrupt.Error.options.apply(Interrupt.Error, [{ '#callee': assert }].concat(vargs)))
     }
 }
 
@@ -518,11 +524,7 @@ class Interrupt extends Error {
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
-        const  options = function (Class, Prototype, vargs) {
-            const options = Class.options.apply(Class, vargs)
-            const prototype = Prototype.prototypes[options.code] || { message: null, properties: {}, code: null }
-            return Class.options({ message: prototype.code }, prototype.properties, options, { code: prototype.code })
-        } (Class, Prototype, vargs)
+        const options = merge2(Class, Prototype, vargs)
 
         const properties = {
             name: {
@@ -615,16 +617,9 @@ class Interrupt extends Error {
         const Class = class extends SuperClass {
             static Context = class {
                 constructor (...vargs) {
-                    const { options, prototype } = function () {
-                        const options = Class._options(vargs)
-                        const prototype = Prototype.prototypes[options.code] || { message: null, properties: null, code: null }
-                        options.format = options.format || prototype.message || prototype.code
-                        return {
-                            options: prototype.properties ? Class._options([{ properties: prototype.properties }], [ options ]) : options,
-                            prototype: prototype
-                        }
-                    } ()
-                    const instance = { errors: [] }
+                    const options = merge2(Class, Prototype, vargs)
+                    // **TODO** Common population of displayed.
+                    const instance = { errors: [], displayed: {} }
                     this._dump = `${name}.Context: ${context(options, instance, false)}`
                     for (const property in options.properties) {
                         this[property] = options.properties[property]
@@ -1041,7 +1036,14 @@ class Interrupt extends Error {
                     Prototype.symbols.set(symbol, code)
 
                     // Create an entry in our `codes` lookup.
-                    Object.defineProperty(Prototype.codes[code] = { code }, 'symbol', { value: symbol, enumerable: false })
+                    Prototype.codes[code] = Object.defineProperties({}, {
+                        code: {
+                            value: symbol, enumerable: true
+                        },
+                        symbol: {
+                            value: symbol, enumerable: false
+                        }
+                    })
                 }
             } else {
                 for (const code in codes) {
@@ -1079,6 +1081,7 @@ class Interrupt extends Error {
                                 assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
                                 const actual = Prototype.symbols.get(codes[code].symbol)
                                 assert(actual != null, 'INVALID_CODE')
+                                console.log(actual, code, codes[code].code)
                                 if ('code' in codes[code]) {
                                     assert(codes[code].code === actual, 'INVALID_CODE')
                                 } else {
@@ -1099,13 +1102,15 @@ class Interrupt extends Error {
                     }
 
                     // Create a property to hold the symbol in the class.
-                    Object.defineProperty(Class, code, { get: function () { return symbol } })
+                    Object.defineProperty(Class, code, { value: symbol })
 
                     // Our internal tracking of symbols.
                     Prototype.symbols.set(symbol, code)
 
-                    Prototype.codes[code] = { code: code }
-                    Object.defineProperty(Prototype.codes[code], 'symbol', { value: symbol, enumerable: false })
+                    Prototype.codes[code] = Object.defineProperties({}, {
+                        symbol: { value: symbol, enumerable: false },
+                        code: { value: code, enumerable: true }
+                    })
                 }
             }
         }

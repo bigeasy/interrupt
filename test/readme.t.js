@@ -1306,6 +1306,20 @@ require('proof')(140, async okay => {
     // An interesting property of the codes map given to a code function is that
     // the `code` property is enumerable and the `symbol` property is not.
     //
+    // **TODO** Would I use this and why dishearten the user with this sort of
+    // thing? Simply suggest that they use a single symbol. I suppose it was for
+    // the sake of output. Perhaps a `toJSON` method?
+    //
+    // Can't find a way. The only thing that bothers me about this is that
+    // you'll display a symbol in the stack trace instead of a string and it
+    // won't turn back into a string when you parse. Seems dubious. This is
+    // such a triviality, I shouldn't make such a big deal of it.
+    //
+    // Not sure that naming it `'string'` is such a great idea. Using a
+    // `toJSON()` changes the shape of the object.
+    //
+    // **TODO** Okay, this is now the silliest bit. Don't overthink it.
+    //
     // Because Interrupt uses JSON to serialize properties, and because JSON
     // will only serialize enumerable properties, this means that if you use
     // this object as the value of a default property, the code will be
