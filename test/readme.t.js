@@ -67,7 +67,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(140, async okay => {
+require('proof')(141, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -2111,6 +2111,7 @@ require('proof')(140, async okay => {
         okay(ConfigError.INVALID_PARAM_TYPE != null, 'defined symbol property on class')
         okay(ConfigError.INVALID_VOLUME_TYPE == null, 'did not define message table as symbol')
         okay(ConfigError.code('INVALID_VOLUME_TYPE') == null, 'not available from codes either')
+        okay(ConfigError.codes.sort(), [ 'INVALID_PARAM_TYPE', 'MISSING_PARAM' ], 'codes created, not templates')
 
         function assertConfig (config) {
             if (!('settings' in config)) {

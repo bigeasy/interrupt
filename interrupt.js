@@ -639,9 +639,8 @@ class Interrupt extends Error {
                 }
             }
 
-            // **TODO** Broken now. Includes aliases.
             static get codes () {
-                return Object.keys(Prototype.prototypes)
+                return Object.keys(Prototype.codes)
             }
 
             static code (code) {
@@ -993,23 +992,6 @@ class Interrupt extends Error {
                     if (typeof template == 'string') {
                         template = { message: template }
                     }
-                    // **TODO** Getting annoying to pluck out the message and
-                    // code, maybe they are just properties????
-
-                    // Maybe we insist that properties are always valid
-                    // JavaScript identifiers, then we can use `'#callee'` and
-                    // `'#type'` for our special properties? Then we have even
-                    // simplier merge options.
-
-                    // **TODO** Big change, but simplifies greatly.
-
-                    // **TODO** BIG CHANGE. BIG BIG CHANGE.
-
-                    // **TODO** You could merge errors too.
-
-                    // **TODO** `#errors` is your special errors.
-
-                    //
                     if (template == null || !('code' in template)) {
                         const entry = SuperPrototype.inherited.symbolized.get(symbol)
                         if (template != null) {
@@ -1037,12 +1019,8 @@ class Interrupt extends Error {
 
                     // Create an entry in our `codes` lookup.
                     Prototype.codes[code] = Object.defineProperties({}, {
-                        code: {
-                            value: symbol, enumerable: true
-                        },
-                        symbol: {
-                            value: symbol, enumerable: false
-                        }
+                        code: { value: symbol, enumerable: true },
+                        symbol: { value: symbol, enumerable: false }
                     })
                 }
             } else {
@@ -1081,7 +1059,6 @@ class Interrupt extends Error {
                                 assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
                                 const actual = Prototype.symbols.get(codes[code].symbol)
                                 assert(actual != null, 'INVALID_CODE')
-                                console.log(actual, code, codes[code].code)
                                 if ('code' in codes[code]) {
                                     assert(codes[code].code === actual, 'INVALID_CODE')
                                 } else {
@@ -1094,7 +1071,7 @@ class Interrupt extends Error {
                                 if (entry.message == null) {
                                     entry.message = previous.message
                                 }
-                                entry.properties = Merge.argument(previous.properties, entry.properties)
+                                entry.properties = Class.options(previous.properties, entry.properties)
                                 continue
                             }
                         }
@@ -1115,12 +1092,7 @@ class Interrupt extends Error {
             }
         }
 
-        // **TODO** Some kind of inherited value.
-
-        Prototype.inherited = {
-            coded: {},
-            symbolized: new Map
-        }
+        Prototype.inherited = { coded: {}, symbolized: new Map }
         for (const name in Prototype.prototypes) {
             const prototype = Prototype.prototypes[name]
             const code = { code: name }
@@ -1128,14 +1100,8 @@ class Interrupt extends Error {
                 value: prototype.code != name ? Symbol(name) : prototype.symbol
             })
             const alias = prototype.code != name ? Object.defineProperties({}, {
-                code: {
-                    value: prototype.code,
-                    enumerable: true
-                },
-                symbol: {
-                    value: Prototype.codes[prototype.code].symbol,
-                    enumerable: false
-                }
+                code: { value: prototype.code, enumerable: true },
+                symbol: { value: Prototype.codes[prototype.code].symbol, enumerable: false }
             }) : null
             const entry = {
                 code: code,
