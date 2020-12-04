@@ -168,8 +168,7 @@ require('proof')(141, async okay => {
         try {
             config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             if (/file unreadable/.test(error.message) && error.cause.code == 'ENOENT') {
                 // _If the file doesn't exist, use a default configuration._
                 config = { size: 5 }
@@ -242,8 +241,7 @@ require('proof')(141, async okay => {
         try {
             config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             if ((error instanceof ConfigIOError) && error.cause.code == 'ENOENT') {
                 // _If the file doesn't exist, use a default configuration._
                 config = { size: 5 }
@@ -336,8 +334,7 @@ require('proof')(141, async okay => {
         try {
             config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             if (error.code == 'IO_ERROR'  && error.cause.code == 'ENOENT') {
                 // _If the file doesn't exist, use a default configuration._
                 config = { size: 5 }
@@ -463,8 +460,7 @@ require('proof')(141, async okay => {
         try {
             parse(null)
         } catch (error) {
-            console.log(Interrupt.message(error))
-            console.log('')
+            console.log(`${Interrupt.message(error)}\n`)
             okay(new ParseError('INVALID_JSON').message != invalid_argument, 'error message has added context information')
             okay(Interrupt.message(error), invalid_argument, 'get error message')
         }
@@ -549,7 +545,7 @@ require('proof')(141, async okay => {
         try {
             parse(null)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(Interrupt.message(error), 'NULL_ARGUMENT', 'no code found, use first argument as message')
             okay(!('code' in error), 'no code is set')
         }
@@ -578,7 +574,7 @@ require('proof')(141, async okay => {
         try {
             parse(null)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(Interrupt.message(error), 'the JSON string to parse must not be null', 'specify message as first argument instead of code')
             okay(!('code' in error), 'no code is set')
         }
@@ -626,7 +622,7 @@ require('proof')(141, async okay => {
             const dirname = path.join(__dirname, 'tmp', 'eisdir')
             await loadConfigs(dirname)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'IO_ERROR', 'code set')
             okay(Interrupt.message(error), 'unable to read file', 'use default message for code')
         }
@@ -635,7 +631,7 @@ require('proof')(141, async okay => {
             const dirname = path.join(__dirname, 'tmp', 'missing')
             await loadConfigs(dirname)
         } catch (error) {
-            console.log('\n', error.stack, '\n')
+            console.log(`\n${error.stack}\n`)
             okay(error.code, 'IO_ERROR', 'code set')
             okay(Interrupt.message(error), 'unable to read dir', 'override default message for code')
         }
@@ -688,7 +684,7 @@ require('proof')(141, async okay => {
         try {
             parse('!')
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.symbol === ParseError.INVALID_JSON, 'symbol is set')
         }
     }
@@ -721,7 +717,7 @@ require('proof')(141, async okay => {
         try {
             parse('!')
         } catch (error) {
-            console.log(error, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.symbol === ParseError.INVALID_JSON, 'symbol is set')
         }
     }
@@ -790,7 +786,7 @@ require('proof')(141, async okay => {
         try {
             parse('!')
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.symbol === JSONError.INVALID_JSON, 'invalid JSON error rethrown')
         }
     }
@@ -848,7 +844,7 @@ require('proof')(141, async okay => {
         try {
             await read(filename)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.filename, filename, 'filename property set')
         }
     }
@@ -1104,7 +1100,7 @@ require('proof')(141, async okay => {
         try {
             await load(filename)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'CONFIG_IO_ERROR', 'default property code set')
             okay(error.fallback, 'default property set')
         }
@@ -1112,7 +1108,7 @@ require('proof')(141, async okay => {
         try {
             await load(path.join(__dirname, 'tmp', 'bad', 'config.json'))
         } catch (error) {
-            console.log('\n', error.stack, '\n')
+            console.log(`\n${error.stack}\n`)
             okay(error.code, 'CONFIG_PARSE_ERROR', 'no default property code set')
             okay(!error.fallback, 'no default property property not set')
         }
@@ -1155,7 +1151,7 @@ require('proof')(141, async okay => {
         try {
             await load(path.join(__dirname, 'tmp', 'missing.json'))
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.subsystem, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
         }
     }
@@ -1199,7 +1195,7 @@ require('proof')(141, async okay => {
         try {
             await load(path.join(__dirname, 'tmp', 'missing.json'))
         } catch (error) {
-            console.log('\n', error.stack, '\n')
+            console.log(`\n${error.stack}\n`)
             okay(error.subsystem, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
         }
     }
@@ -1242,7 +1238,7 @@ require('proof')(141, async okay => {
         try {
             await load(path.join(__dirname, 'tmp', 'missing.json'))
         } catch (error) {
-            console.log('\n', error.stack, '\n')
+            console.log(`\n${error.stack}\n`)
             okay(error.subsystem, ConfigError.SUBSYSTEM_IO, 'additional symbol code property set')
         }
     }
@@ -1760,7 +1756,7 @@ require('proof')(141, async okay => {
 
         const stringified = Interrupt.JSON.stringify(object)
 
-        console.log(stringified, '\n')
+        console.log(`${stringified}\n`)
 
         const parsed = Interrupt.JSON.parse(stringified)
 
@@ -1780,7 +1776,7 @@ require('proof')(141, async okay => {
 
         const stringified = Interrupt.JSON.stringify({ a: object, b: object })
 
-        console.log(stringified, '\n')
+        console.log(`${stringified}\n`)
 
         const parsed = Interrupt.JSON.parse(stringified)
 
@@ -1799,7 +1795,7 @@ require('proof')(141, async okay => {
 
         const stringified = Interrupt.JSON.stringify(object)
 
-        console.log(stringified, '\n')
+        console.log(`${stringified}\n`)
 
         const parsed = Interrupt.JSON.parse(stringified, '\n')
 
@@ -1824,7 +1820,7 @@ require('proof')(141, async okay => {
 
         const stringified = Interrupt.JSON.stringify(object)
 
-        console.log(stringified)
+        console.log(`${stringified}\n`)
 
         const parsed = Interrupt.JSON.parse(stringified, '\n')
 
@@ -1841,11 +1837,11 @@ require('proof')(141, async okay => {
     //
     console.log('\n--- default JSON serialization of Error ---\n')
     {
-        console.log(JSON.stringify(new Error('thrown')), '\n')
+        console.log(`${JSON.stringify(new Error('thrown'))}\n`)
 
         const error = new Error('thrown')
         error.code = 'ENOENT'
-        console.log(JSON.stringify(error), '\n')
+        console.log(`${JSON.stringify(error)}\n`)
     }
     //
 
@@ -1856,13 +1852,13 @@ require('proof')(141, async okay => {
     //
     console.log('\n--- Interrupt JSON serialization of Error ---\n')
     {
-        console.log(Interrupt.JSON.stringify(new Error('thrown')), '\n')
+        console.log(`${Interrupt.JSON.stringify(new Error('thrown'))}\n`)
 
         const error = new Error('thrown')
         error.code = 'ENOENT'
         const stringified = Interrupt.JSON.stringify(error)
 
-        console.log(stringified, '\n')
+        console.log(`${stringified}\n`)
 
         const parsed = Interrupt.JSON.parse(stringified)
         okay(parsed.message, 'thrown', 'parsed JSON serialized error message')
@@ -1879,7 +1875,7 @@ require('proof')(141, async okay => {
     {
         const stringified = Interrupt.JSON.stringify({ f: number => number + 1 })
 
-        console.log(stringified, '\n')
+        console.log(`${stringified}\n`)
 
         const parsed = Interrupt.JSON.parse(stringified)
 
@@ -1907,7 +1903,7 @@ require('proof')(141, async okay => {
             buffer: Buffer.from('a')
         })
 
-        console.log(stringified, '\n')
+        console.log(`${stringified}\n`)
 
         const parsed = Interrupt.JSON.parse(stringified, '\n')
 
@@ -2226,7 +2222,7 @@ require('proof')(141, async okay => {
         try {
             await slurpDirectory(dirname)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
         }
     }
     //
@@ -2457,7 +2453,7 @@ require('proof')(141, async okay => {
             const dirname = path.join(__dirname, 'tmp', 'eisdir')
             await loadConfigs(dirname)
         } catch (error) {
-            console.log(error.stack, '\n')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'IO_ERROR', 'code set')
             okay(Interrupt.message(error), 'unable to read file', 'use default message for code')
         }
@@ -2566,8 +2562,7 @@ require('proof')(141, async okay => {
             const syntax = new Syntax
             console.log(`Syntax is valid? ${syntax.validate(null)}`)
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.name, 'Syntax.Error', 'name allowed to have dot qualifiers')
         }
     }
@@ -2597,8 +2592,7 @@ require('proof')(141, async okay => {
             const syntax = new Syntax
             console.log(`Syntax is valid? ${syntax.validate(null)}`)
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.name, 'Syntax.Error', 'name allowed to have dot qualifiers in ES6 classes')
         }
     }
@@ -2650,8 +2644,7 @@ require('proof')(141, async okay => {
         try {
             parse(1)
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.symbol, ParseError.INVALID_TYPE, 'symbol set')
             okay(error.code, 'INVALID_TYPE', 'code set')
             okay(error.type, 'number', 'type property set')
@@ -2706,8 +2699,7 @@ require('proof')(141, async okay => {
         try {
             parse(JSON.stringify('x'.repeat(1023)))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.symbol, ParseError.TOO_MUCH_JSON, 'deferred assert symbol set')
             okay(error.code, 'TOO_MUCH_JSON', 'deferred assert code set')
             okay(error.difference, 1, 'deferred assert property set')
@@ -2741,8 +2733,7 @@ require('proof')(141, async okay => {
         try {
             parse('!')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'INVALID_JSON', 'synchronous try/catch wrapper code set')
             okay(error.errors[0] instanceof SyntaxError, 'synchronous try/catch wrapper nested error present')
         }
@@ -2769,8 +2760,7 @@ require('proof')(141, async okay => {
         try {
             parse('!')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'INVALID_JSON', 'synchronous try/catch wrapper code set')
             okay(error.length, 1, 'synchronous try/catch wrapper property set')
             okay(error.errors[0] instanceof SyntaxError, 'synchronous try/catch wrapper nested error present')
@@ -2808,8 +2798,7 @@ require('proof')(141, async okay => {
             const reader = new Reader
             await reader.read(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
         }
     }
     //
@@ -2844,8 +2833,7 @@ require('proof')(141, async okay => {
             const reader = new Reader
             await reader.read(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'UNABLE_TO_READ_FILE')
         }
     }
@@ -2924,8 +2912,7 @@ require('proof')(141, async okay => {
             const reader = new Reader
             await reader.read(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
         }
     }
@@ -2966,8 +2953,7 @@ require('proof')(141, async okay => {
             const reader = new Reader
             await reader.read(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'UNABLE_TO_READ_FILE', 'monolithic catch block')
         }
 
@@ -3026,8 +3012,7 @@ require('proof')(141, async okay => {
             const reader = new Reader
             await reader.read(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
         }
 
@@ -3077,8 +3062,7 @@ require('proof')(141, async okay => {
             const reader = new Reader
             await reader.read(path.join(__dirname, 'missing.txt'))
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'UNABLE_TO_OPEN_FILE', 'detailed catch blocks')
         }
 
@@ -3143,8 +3127,7 @@ require('proof')(141, async okay => {
 
         reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
             if (error) {
-                console.log(error.stack)
-                console.log('')
+                console.log(`${error.stack}\n`)
             } else {
                 console.log(/hippopotomus/.test(body.toString()))
             }
@@ -3188,8 +3171,7 @@ require('proof')(141, async okay => {
 
         reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
             if (error) {
-                console.log(error.stack)
-                console.log('')
+                console.log(`${error.stack}\n`)
                 okay(error.code, 'UNABLE_TO_READ_FILE', 'code set')
             } else {
                 console.log(/hippopotomus/.test(body.toString()))
@@ -3238,7 +3220,7 @@ require('proof')(141, async okay => {
         const reader = new Reader
         reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
             if (error) {
-                console.log(error.stack)
+                console.log(`${error.stack}\n`)
             } else {
                 console.log(/hippopotomus/.test(body.toString()))
             }
@@ -3271,8 +3253,7 @@ require('proof')(141, async okay => {
 
         reader.read(path.join(__dirname, 'missing.txt'), (error, body) => {
             if (error) {
-                console.log(error.stack)
-                console.log('')
+                console.log(`${error.stack}\n`)
                 okay(error.code, 'UNABLE_TO_READ_FILE', 'code set')
                 okay(error.errors[0].code, 'ENOENT', 'nested code set')
             } else {
@@ -3316,8 +3297,7 @@ require('proof')(141, async okay => {
 
         reader.load(path.join(__dirname, 'missing.txt'), (error, body) => {
             if (error) {
-                console.log(error.stack)
-                console.log('')
+                console.log(`${error.stack}\n`)
             } else {
                 console.log(/hippopotomus/.test(body.toString()))
             }
@@ -3372,8 +3352,7 @@ require('proof')(141, async okay => {
 
         reader.read(path.join(__dirname, 'missing'), (error, body) => {
             if (error) {
-                console.log(error.stack)
-                console.log('')
+                console.log(`${error.stack}\n`)
                 okay(error.code, 'UNABLE_TO_READ_DIRECTORY', 'curried callback wrapper code set')
                 okay(error.errors[0].code, 'ENOENT', 'curried callback nested error set')
             } else {
@@ -3381,8 +3360,7 @@ require('proof')(141, async okay => {
             }
             reader.read(path.join(__dirname, 'tmp', 'eisdir'), (error, body) => {
                 if (error) {
-                    console.log(error.stack)
-                    console.log('')
+                    console.log(`${error.stack}\n`)
                     okay(error.code, 'UNABLE_TO_READ_FILE', 'curried callback wrapper code set')
                     okay(error.errors[0].code, 'EISDIR', 'curried callback nested error set')
                 } else {
@@ -3410,8 +3388,7 @@ require('proof')(141, async okay => {
         try {
             parseConfig('!')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'CONFIG_PARSE_ERROR', 'curried invoke code set')
             okay(error.errors[0] instanceof SyntaxError, 'curried invoke nested error set')
         }
@@ -3419,8 +3396,7 @@ require('proof')(141, async okay => {
         try {
             parseConfig('{}')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'CONFIG_PARAM_MISSING_ERROR', 'curried invoke code set')
             okay(error.errors[0] instanceof TypeError, 'curried invoke nested error set')
         }
@@ -3446,16 +3422,14 @@ require('proof')(141, async okay => {
         try {
             parseConfig('{}')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'CONFIG_PARAM_MISSING_ERROR', 'curried assert code set')
         }
 
         try {
             parseConfig('{"settings":{}}')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'CONFIG_PARAM_MISSING_ERROR', 'curried assert code set')
         }
 
@@ -3620,7 +3594,7 @@ require('proof')(141, async okay => {
     //
 
     // Putting this here for test coverage. What needs to be covered? Where is
-    // the dead code?
+    // the dead code? **TODO** Move to `swipe.t.js`.
 
     //
     {
@@ -3677,7 +3651,7 @@ require('proof')(141, async okay => {
         try {
             throw new Error('multi-line\nmessage\n    at')
         } catch (error) {
-            console.log(error)
+            console.log(`${error.stack}\n`)
         }
 
         try {
