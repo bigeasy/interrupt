@@ -41,5 +41,12 @@ require('proof')(2, async okay => {
 
         okay(Descend.Error.IO_ERROR != null && Descend.Error.IO_ERROR === Config.Error.IO_ERROR, 'inherited code')
         okay(Descend.Error.PARSE_ERROR != null && Descend.Error.PARSE_ERROR === Config.Error.PARSE_ERROR, 'inherited another code')
+        //
+
+        //
+
+        //
+        {
+        }
     }
 })

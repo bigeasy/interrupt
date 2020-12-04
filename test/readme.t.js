@@ -523,6 +523,7 @@ require('proof')(140, async okay => {
             okay(/^the JSON string to parse must not be null$/m.test(error.message), 'message is first line of message property')
         }
     }
+    //
 
     // If you provide a code parameter that was not defined when you called
     // `Interrupt.create()` the string value is used as a message.
@@ -2269,8 +2270,8 @@ require('proof')(140, async okay => {
                 throw new ParseError({
                     code: 'INVALID_JSON',
                     errors: [ error ],
-                    properties: { json },
-                    callee: parse
+                    json: json,
+                    '#callee': parse
                 })
             }
         }
@@ -2278,8 +2279,7 @@ require('proof')(140, async okay => {
         try {
             parse('!')
         } catch (error) {
-            console.log(error.stack)
-            console.log('')
+            console.log(`${error.stack}\n`)
             okay(error.code, 'INVALID_JSON', 'named parameters code set')
             okay(error.json, '!', 'named parameters property set')
         }
@@ -2589,6 +2589,12 @@ require('proof')(140, async okay => {
     }
     //
 
+    // **TODO** Maybe parsing goes here so we can us it to ensure that assert
+    // and the rest set the correct file and line in the stack. That is,
+    // introduce parsing and then use it to get the top of the stack.
+
+    //
+
     // ## Assertions
 
     // If you're using Interrupt in your code would probably like to raise
@@ -2605,6 +2611,7 @@ require('proof')(140, async okay => {
     //
     console.log('\n--- Interrupt assertions ---\n')
     {
+        debugger
         const ParseError = Interrupt.create('ParseError', {
             NULL_ARGUMENT: 'the JSON string to parse must not be null',
             INVALID_TYPE: 'JSON must be a string, received: %(type)s',
@@ -3193,7 +3200,7 @@ require('proof')(140, async okay => {
         function encase (callback, message, properties) {
             return function (...vargs) {
                 function constructor (message) {
-                    return new Reader.Error({ callee: constructor }, message, vargs[0], properties)
+                    return new Reader.Error({ '#callee': constructor }, message, vargs[0], properties)
                 }
                 if (vargs[0] != null) {
                     callback(message(constructor))

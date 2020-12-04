@@ -39,9 +39,9 @@ const AUDIT = new Error('example')
 // formatted to appear integrated with the stack trace from `error.stack` which
 // includes the message in the stack trace.
 function context (options, instance, stack = true) {
-    let message
+    let message = instance.message
     try {
-        message = instance.message = sprintf(options.format, options.properties)
+        message = instance.message = sprintf(options.message, options)
     } catch (error) {
         instance.errors.push({
             code: Interrupt.Error.SPRINTF_ERROR,
@@ -49,7 +49,6 @@ function context (options, instance, stack = true) {
             properties: options.properties,
             error: error
         })
-        message = instance.message = options.format
     }
     const properties = {}
     if (Object.keys(instance.displayed).length != 0) {
@@ -130,12 +129,9 @@ class Collector {
 // An assert internal to Interrupt that will not get audited.
 function assert (condition, ...vargs) {
     if (! condition) {
-        throw new Interrupt.Error(Interrupt.Error._options([{ callee: assert }], vargs))
+        throw new Interrupt.Error(Interrupt.Error._options([{ '#callee': assert }], vargs))
     }
 }
-
-/*
-*/
 
 // The Interrupt class extends `Error` using class ES6 extension.
 
@@ -157,12 +153,17 @@ class Interrupt extends Error {
 
     // The `Interrupt.Error` class is itself an interrupt defined error.
     static Error = Interrupt.create('Interrupt.Error', {
+        // **TODO** Rename.
         INVALID_CODE: 'code is already a property of the superclass',
         UNKNOWN_CODE: 'unknown code',
         INVALID_CODE_TYPE: 'invalid code type',
         INVALID_ACCESS: 'constructor is not a public interface',
         PARSE_ERROR: null,
         SPRINTF_ERROR: null,
+        NULL_ARGUMENT: 'null argument given to exception constructor',
+        INVALID_PROPERTY_NAME: 'invalid property name',
+        INVALID_PROPERTY_TYPE: 'invalid property type',
+        INVALID_PROPERTY_NAME: 'invalid property name',
         DEFERRED_CONSTRUCTOR_INVALID_RETURN: null,
         DEFERRED_CONSTRUCTOR_NOT_CALLED: null
     })
@@ -517,46 +518,46 @@ class Interrupt extends Error {
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
-        const  options = function (Class, Protected, vargs) {
-            const options = Class._options(vargs)
+        const  options = function (Class, Prototype, vargs) {
+            const options = Class.options.apply(Class, vargs)
             const prototype = Prototype.prototypes[options.code] || { message: null, properties: {}, code: null }
-            options.code = prototype.code
-            options.format = options.format || prototype.message || prototype.code
-            return Class._options([{ properties: prototype.properties }], [ options ])
+            return Class.options({ message: prototype.code }, prototype.properties, options, { code: prototype.code })
         } (Class, Prototype, vargs)
 
         const properties = {
             name: {
                 value: Prototype.name,
-                enumerable: false
+                enumerable: false,
+                writable: false
             },
             errors: {
                 value: options.errors,
-                enumerable: false
+                enumerable: false,
+                writable: false
             }
         }
 
         if (options.code) {
             properties.code = {
                 value: options.code,
-                enumerable: true
+                enumerable: true,
+                writable: false
             }
             properties.symbol = {
                 value: Prototype.prototypes[options.code].symbol,
-                enumerable: false
+                enumerable: false,
+                writable: false
             }
         }
 
-        for (const property of Object.getOwnPropertyNames(options.properties)) {
-            if (property[0] != '_' && !/^name|message|stack$/.test(property) && !(properties in properties)) {
-                properties[property] = {
-                    value: options.properties[property],
-                    enumerable: options.properties.propertyIsEnumerable(property)
-                }
+        for (const property of Object.getOwnPropertyNames(options)) {
+            if (property[0] != '_' && property[0] != '#' && !/^name|message|stack$/.test(property) && !(property in properties)) {
+                properties[property] = Object.getOwnPropertyDescriptor(options, property)
             }
         }
 
-        const instance = { message: null, errors: options._errors, options, displayed: {} }
+        // **TODO** Maybe option errors are in a weak map?
+        const instance = { message: null, errors: options['#errors'], options, displayed: {} }
 
         for (const property in properties) {
             if (properties[property].enumerable) {
@@ -564,11 +565,12 @@ class Interrupt extends Error {
             }
         }
 
+        // **TODO** Display internal errors.
         if (
             options.code == null &&
-            options.format == null &&
+            options.message == null &&
             options.errors.length == 0 &&
-            Object.keys(options.properties).length == 0
+            Object.keys(options).length == 0
         ) {
             super()
         } else {
@@ -586,8 +588,8 @@ class Interrupt extends Error {
         // coming back to experiment with it.
 
         //
-        if (options.callee != null) {
-            Error.captureStackTrace(this, options.callee)
+        if (options['#callee'] != null) {
+            Error.captureStackTrace(this, options['#callee'])
         }
     }
 
@@ -596,7 +598,7 @@ class Interrupt extends Error {
     }
 
     static get CURRY () {
-        return { type: OPTIONS }
+        return { '#type': OPTIONS }
     }
 
     // **TODO** Wouldn't it be nice to have some sort of way to specify
@@ -651,116 +653,144 @@ class Interrupt extends Error {
                 return Prototype.codes[code]
             }
 
-            static _options (...vargs) {
-                function merge (options, vargs) {
-                    if (vargs.length == 0) {
-                        return options
-                    }
-                    const argument = vargs.shift()
-                    if (typeof argument == 'object' && argument != null) {
-                        switch (typeof argument.code) {
-                        case 'string':
-                        case 'symbol':
-                            // **TODO** Only if the code is valid!!! We count on
-                            // this being valid in the constructor.
-                            options.code = argument.code
-                        }
-                        if (typeof argument.format == 'string') {
-                            options.format = argument.format
-                        }
-                        if (Array.isArray(argument.errors)) {
-                            options.errors.push.apply(options.errors, argument.errors)
-                        }
-                        if (Array.isArray(argument._errors)) {
-                            options._errors.push.apply(options._errors, argument._errors)
-                        }
-                        if (typeof argument.properties == 'object' && argument.properties != null) {
-                            options.properties = Merge.argument(options.properties, argument.properties)
-                        }
-                        if (typeof argument.callee == 'function') {
-                            options.callee = argument.callee
-                        }
-                    } else {
-                        switch (typeof argument) {
-                        // Possibly assign the code.
-                        case 'symbol': {
-                                const code = Prototype.symbols.get(argument)
-                                if (code != null) {
-                                    options.code = code
-                                }
-                            }
-                            break
-                        case 'string': {
-                                if (Prototype.prototypes[argument] == null) {
-                                    options.format = argument
-                                } else {
-                                    options.code = argument
-                                }
-                            }
-                            break
-                        default:
-                            return options
-                        }
-                    }
-                    // If the argument cannot be interpreted, discard it.
-                    while (vargs.length != 0) {
-                        const argument = vargs.shift()
-                        // Assign a single error or an array of errors to the errors array.
-                        if (argument instanceof Error) {
-                            options.errors.push(argument)
-                        } else if (Array.isArray(argument)) {
-                            // **TODO** Going to say that contexts for errors, it's
-                            // dubious. If you really want to give context to errors you
-                            // should wrap them in an Interrupt, which is more
-                            // consistent and therefor easier to document. We'll have to
-                            // revisit Destructible to make this happen.
-                            options.errors.push.apply(options.errors, argument)
-                        } else {
-                            switch (typeof argument) {
-                            // Assign the context object.
-                            case 'object':
-                                if (argument != null) {
-                                    options.properties = Merge.argument(options.properties, argument)
-                                } else {
-                                    options._errors.push({ code: NULL_POSITIONAL_ARGUMENT })
-                                }
-                                break
-                            // Possibly assign the code.
-                            case 'symbol': {
-                                    const code = Prototype.symbols.get(argument)
-                                    if (code != null) {
-                                        options.code = code
-                                    }
-                                }
-                                break
-                            case 'string':
-                                if (Prototype.prototypes[argument] == null) {
-                                    options.format = argument
-                                } else {
-                                    options.code = argument
-                                }
-                                break
-                            }
-                        }
-                    }
-                    // Return the generated options object.
-                    return options
+            static options (...vargs) {
+                function attr (value) {
+                    return { value: value, enumerable: true, writable: true, configurable: true }
                 }
                 const options = {
-                    type: OPTIONS,
-                    code: null,
-                    format: null,
-                    errors: [],
-                    _errors: [],
-                    properties: {},
-                    callee: null
+                    '#type': attr(OPTIONS),
+                    '#errors': attr([]),
+                    errors: attr([]),
+                    '#callee': attr(null)
                 }
-                while (vargs.length != 0) {
-                    merge(options, vargs.shift())
+                for (const argument of vargs) {
+                    switch (typeof argument) {
+                    case 'string': {
+                            if (Prototype.prototypes[argument] != null) {
+                                options.code = attr(argument)
+                            } else {
+                                options.message = attr(argument)
+                            }
+                        }
+                        break
+                    case 'symbol': {
+                            const code = Prototype.symbols.get(argument)
+                            if (code != null) {
+                                options.code = attr(code)
+                            }
+                        }
+                        break
+                    case 'object': {
+                            if (argument == null) {
+                                // **TODO** code = { text, symbol } // name? label? identifier? id? string?
+                                options['#errors'].push(Merge.argument(Interrupt.Error.codes('NULL_ARGUMENT')))
+                            } else if (argument instanceof Error) {
+                                options.errors.value.push(argument)
+                            } else if (Array.isArray(argument)) {
+                                options.errors.value.push.apply(options.errors.value, argument)
+                            } else {
+                                for (const property of Object.getOwnPropertyNames(argument)) {
+                                    switch (property) {
+                                    case '#type': {
+                                            if (argument[property] !== OPTIONS) {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case '#errors': {
+                                            if (
+                                                Array.isArray(argument[property]) &&
+                                                argument[property].every(error => {
+                                                    return Interrupt.Error[error.code] === error.symbol
+                                                })
+                                            ) {
+                                                options['#errors'].value.push.apply(options['#errors'].value, argument[property])
+                                            } else {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case 'stack':
+                                    case 'name': {
+                                            options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_NAME'), { property }))
+                                        }
+                                        break
+                                    case 'errors': {
+                                            if (Array.isArray(argument[property])) {
+                                                options.errors.value.push.apply(options.errors.value, argument[property])
+                                            } else {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case 'message': {
+                                            if (argument[property] == null) {
+                                            } else if (typeof argument[property] === 'string') {
+                                                options.message = attr(argument[property])
+                                            } else {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case 'code': {
+                                            // **TODO** Convert `symbol` to `string`.
+                                            if (argument[property] == null) {
+                                            } else if (typeof argument[property] === 'string') {
+                                                if (Prototype.prototypes[argument[property]]) {
+                                                    options.code = attr(argument[property])
+                                                } else {
+                                                    options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('UNKNOWN_CODE'), {
+                                                        property: property,
+                                                        value: argument[property]
+                                                    }))
+                                                }
+                                            } else {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case 'symbol': {
+                                            if (argument[property] == null) {
+                                            } else if (typeof argument[property] == 'symbol') {
+                                                const code = Prototype.symbols.get(argument[property])
+                                                if (code != null) {
+                                                    options.code = attr(code)
+                                                } else {
+                                                    options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('UNKNOWN_CODE'), {
+                                                        property: property,
+                                                        value: argument[property]
+                                                    }))
+                                                }
+                                            } else {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case '#callee': {
+                                            if (argument[property] == null) {
+                                            } else if (typeof argument[property] == 'function') {
+                                                options[property] = attr(argument[property])
+                                            } else {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    default: {
+                                            if (!RE.identifier.test(property)) {
+                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.code('INVALID_PROPERTY_NAME'), { property }))
+                                            } else {
+                                                options[property] = Object.getOwnPropertyDescriptor(argument, property)
+                                            }
+                                        }
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                return options
+                return Object.defineProperties({}, options)
             }
-
 
             static assert (...vargs) {
                 return _assert(Class.assert, {}, vargs)
@@ -774,8 +804,6 @@ class Interrupt extends Error {
                 return _callback(Class.callback, {}, vargs)
             }
 
-            //
-
             static resolve (...vargs) {
                 return _resolver(Class.resolve, {}, vargs)
             }
@@ -784,8 +812,7 @@ class Interrupt extends Error {
         function construct (options, vargs, errors, ...callees) {
             const error = _construct(options, vargs, errors, callees)
             if (typeof Interrupt.audit === 'function') {
-                const instance = Instances.get(error)
-                Interrupt.audit(error, instance.errors)
+                Interrupt.audit(error, Instances.get(error).errors)
             }
             return error
         }
@@ -794,10 +821,10 @@ class Interrupt extends Error {
             if (vargs.length === 1 && typeof vargs[0] == 'function') {
                 let called = false
                 const f = vargs.pop()
-                const merged = Class._options([{ callee: callees[1] || $ }], [ options ])
+                const merged = Class.options({ '#callee': callees[1] || $ }, options)
                 function $ (...vargs) {
                     called = true
-                    const options = Class._options([ merged ], vargs, [{ errors }])
+                    const options = Class.options.apply(Class, [ merged ].concat(vargs, { errors }))
                     return new Class(options)
                 }
                 const error = f($)
@@ -819,13 +846,13 @@ class Interrupt extends Error {
                 }
                 return error
             } else {
-                return new Class(Class._options([{ callee: callees[0] }], [ options ], vargs, [{ errors }]))
+                return new Class(Class.options.apply(Class, [{ '#callee': callees[0] }, options ].concat(vargs, { errors })))
             }
         }
 
         function _assert (callee, options, vargs) {
-            if (typeof vargs[0] === 'object' && vargs[0].type === OPTIONS) {
-                const merged = Class._options([ options ], vargs)
+            if (typeof vargs[0] === 'object' && vargs[0]['#type'] === OPTIONS) {
+                const merged = Class.options.apply(Class, [ options ].concat(vargs))
                 return function assert (...vargs) {
                     _assert(assert, merged, vargs)
                 }
@@ -850,7 +877,7 @@ class Interrupt extends Error {
                     throw construct(options, vargs, [ error ], callee, callee)
                 }
             }
-            const merged = Class._options([ options ], vargs)
+            const merged = Class.options.apply(Class, [ options ].concat(vargs))
             return function invoker (...vargs) {
                 return _invoke(invoker, merged, vargs)
             }
@@ -871,7 +898,7 @@ class Interrupt extends Error {
                     }
                 }
             }
-            const merged = Class._options([ options ], vargs)
+            const merged = Class.options.apply(Class, [ options ].concat(vargs))
             return function wrapper (...vargs) {
                 return _callback(wrapper, merged, vargs)
             }
@@ -903,7 +930,7 @@ class Interrupt extends Error {
             ) {
                 return resolve(callee, vargs.shift(), options, vargs)
             }
-            const merged = Class._options([ options ], vargs)
+            const merged = Class.options.apply(Class, [ options ].concat(vargs))
             return function resolver (...vargs) {
                 return _resolver(resolver, merged, vargs)
             }
@@ -1035,7 +1062,7 @@ class Interrupt extends Error {
                         }
                         break
                     case 'string': {
-                            Prototype.prototypes[code] = { code, message: codes[code], properties: {}, symbol }
+                            Prototype.prototypes[code] = { code, properties: { message: codes[code] }, symbol }
                         }
                         break
                     case 'object':
@@ -1043,11 +1070,10 @@ class Interrupt extends Error {
                         if (codes[code] == null) {
                             Prototype.prototypes[code] = { code, message: null, properties: {}, symbol }
                         } else {
-                            const entry = Prototype.prototypes[code] = {
-                                code: code,
-                                message: coalesce(codes[code].message),
-                                properties: codes[code]
-                            }
+                            const entry = Prototype.prototypes[code] = { code: code, properties: codes[code] }
+                            // **TODO** Assert that a code property is the same
+                            // as the code or if different, then raise an
+                            // exception.
                             let merge = codes[code].code
                             if ('symbol' in codes[code]) {
                                 assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
