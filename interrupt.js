@@ -75,27 +75,23 @@ function context (options, instance, stack = true) {
     return message
 }
 
-const Merge = {
-    template: function () {
-    },
-    argument: function (...vargs) {
-        const properties = {}
-        for (const object of vargs) {
-            for (const property of Object.getOwnPropertyNames(object)) {
-                if (object[property] === undefined) {
-                    properties[property] = {
-                        enumerable: object.propertyIsEnumerable(property)
-                    }
-                } else {
-                    properties[property] = {
-                        value: object[property],
-                        enumerable: object.propertyIsEnumerable(property)
-                    }
+function combine (...vargs) {
+    const properties = {}
+    for (const object of vargs) {
+        for (const property of Object.getOwnPropertyNames(object)) {
+            if (object[property] === undefined) {
+                properties[property] = {
+                    enumerable: object.propertyIsEnumerable(property)
+                }
+            } else {
+                properties[property] = {
+                    value: object[property],
+                    enumerable: object.propertyIsEnumerable(property)
                 }
             }
         }
-        return Object.defineProperties({}, properties)
     }
+    return Object.defineProperties({}, properties)
 }
 
 function merge2 (Class, Prototype, vargs) {
@@ -677,7 +673,7 @@ class Interrupt extends Error {
                     case 'object': {
                             if (argument == null) {
                                 // **TODO** code = { text, symbol } // name? label? identifier? id? string?
-                                options['#errors'].push(Merge.argument(Interrupt.Error.codes('NULL_ARGUMENT')))
+                                options['#errors'].push(combine(Interrupt.Error.codes('NULL_ARGUMENT')))
                             } else if (argument instanceof Error) {
                                 options.errors.value.push(argument)
                             } else if (Array.isArray(argument)) {
@@ -687,7 +683,7 @@ class Interrupt extends Error {
                                     switch (property) {
                                     case '#type': {
                                             if (argument[property] !== OPTIONS) {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -700,20 +696,20 @@ class Interrupt extends Error {
                                             ) {
                                                 options['#errors'].value.push.apply(options['#errors'].value, argument[property])
                                             } else {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
                                     case 'stack':
                                     case 'name': {
-                                            options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_NAME'), { property }))
+                                            options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_NAME'), { property }))
                                         }
                                         break
                                     case 'errors': {
                                             if (Array.isArray(argument[property])) {
                                                 options.errors.value.push.apply(options.errors.value, argument[property])
                                             } else {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -722,7 +718,7 @@ class Interrupt extends Error {
                                             } else if (typeof argument[property] === 'string') {
                                                 options.message = attr(argument[property])
                                             } else {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -733,13 +729,13 @@ class Interrupt extends Error {
                                                 if (Prototype.prototypes[argument[property]]) {
                                                     options.code = attr(argument[property])
                                                 } else {
-                                                    options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('UNKNOWN_CODE'), {
+                                                    options['#errors'].value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
                                                         property: property,
                                                         value: argument[property]
                                                     }))
                                                 }
                                             } else {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -750,13 +746,13 @@ class Interrupt extends Error {
                                                 if (code != null) {
                                                     options.code = attr(code)
                                                 } else {
-                                                    options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('UNKNOWN_CODE'), {
+                                                    options['#errors'].value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
                                                         property: property,
                                                         value: argument[property]
                                                     }))
                                                 }
                                             } else {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -765,13 +761,13 @@ class Interrupt extends Error {
                                             } else if (typeof argument[property] == 'function') {
                                                 options[property] = attr(argument[property])
                                             } else {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
                                     default: {
                                             if (!RE.identifier.test(property)) {
-                                                options['#errors'].value.push(Merge.argument(Interrupt.Error.code('INVALID_PROPERTY_NAME'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.code('INVALID_PROPERTY_NAME'), { property }))
                                             } else {
                                                 options[property] = Object.getOwnPropertyDescriptor(argument, property)
                                             }
@@ -958,7 +954,7 @@ class Interrupt extends Error {
                     assert(!(entry.code.code in Prototype.codes), 'DUPLICATE_CODE')
                     // **TODO** Ensure that code is not already defined?
                     vargs.unshift(new Map([[
-                        entry.code.symbol,  Merge.argument(entry.properties, { code: entry.code.code })
+                        entry.code.symbol,  combine(entry.properties, { code: entry.code.code })
                     ]]))
                     continue
                 }
@@ -986,33 +982,43 @@ class Interrupt extends Error {
             // **TODO** Aliases, code => symbol with multiple codes to same
             // symbol would allow from renames.
             if (codes instanceof Map) {
-                // **TODO** New rule. If you do not specify a code, we'll look
-                // up the symbol in the inheritance.
+                // In this pass of the code, this is symbol import which is
+                // separate from symbol inheritance. Inheritance rules have not
+                // yet been settled. Wait...
+                //
+                // We can get rid of `null` and simply say it is invalid for
+                // both string codes, just use an empty array, then say if you
+                // want to import nothing then... Uh. What? Yeah, get rid of
+                // `null` though.
                 for (let [ symbol, template ] of codes) {
-                    if (typeof template == 'string') {
+                    if (template == null) {
+                        template = {}
+                    } else if (typeof template == 'string') {
                         template = { message: template }
                     }
+                    /*
                     if (template == null || !('code' in template)) {
                         const entry = SuperPrototype.inherited.symbolized.get(symbol)
                         if (template != null) {
-                            template = Merge.argument(entry.properties, {
+                            template = combine(entry.properties, {
                                 code: entry.code.code,
                                 symbol: entry.code.symbol
                             }, entry.message != null ? { message: entry.message } : {}, template)
                         }
                     }
-                    const code = template.code
+                    */
+                    const code = template.code || /^Symbol\((.*)\)$/.exec(symbol.toString())[1]
                     assert(typeof code == 'string', 'INVALID_ARGUMENT')
                     assert(!duplicates.has(code), 'DUPLICATE_CODE', { code: template.code })
                     const prototype = Prototype.prototypes[code] = {
                         code: code,
-                        message: coalesce(template.message),
+                        symbol: symbol,
                         // **TODO** Have this merge strip codes, messages, etc.
-                        properties: Merge.argument(template)
+                        properties: combine(template)
                     }
 
                     // Create a property to hold the symbol in the class.
-                    Object.defineProperty(Class, code, { get: function () { return symbol } })
+                    Object.defineProperty(Class, code, { value: symbol })
 
                     // Our internal tracking of symbols.
                     Prototype.symbols.set(symbol, code)

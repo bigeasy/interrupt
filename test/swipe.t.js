@@ -109,20 +109,16 @@
 // callback will originate at the same file and line where the originating
 // function was called.
 
-// **TODO** Also convert this to Docco.
-
 // **TODO** Document `Interrupt.Error` as an example of how to document an
 // external error.
 
 // **TODO** Already serializing `undefined` as `[ '_undefined' ]` has caught
 // dead code in an Interrupt sneak (`ln -s`) preview.
 
-// **TODO** Not sure how I'm feeling about `enumerable`.
-
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(2, async okay => {
+require('proof')(5, async okay => {
     const Interrupt = require('..')
 
     // ## Thoughts on inhertiance.
@@ -136,6 +132,9 @@ require('proof')(2, async okay => {
                 [ 'PARSE_ERROR', 'INVALID_ARGUMENT' ],
                 function (codes) {
                     return 'RANGE_ERROR'
+                },
+                {
+                    'NULL_ARGUMENT': `argument must not be null: %(_name)s`
                 }
             ])
         }
@@ -146,18 +145,116 @@ require('proof')(2, async okay => {
         //
         class Descend {
             static Error = Interrupt.create('Descend.Error', Config.Error, Config.Error.code('PARSE_ERROR').symbol, function (codes, inherited) {
-                return [ inherited.IO_ERROR.code.symbol ]
+                return [ inherited.NULL_ARGUMENT.code.symbol ]
             })
         }
 
         okay(Descend.Error.IO_ERROR != null && Descend.Error.IO_ERROR === Config.Error.IO_ERROR, 'inherited code')
-        okay(Descend.Error.PARSE_ERROR != null && Descend.Error.PARSE_ERROR === Config.Error.PARSE_ERROR, 'inherited another code')
+        okay(Descend.Error.NULL_ARGUMENT != null && Descend.Error.NULL_ARGUMENT === Config.Error.NULL_ARGUMENT, 'inherited another code')
         //
 
-        //
-
-        //
-        {
+        try {
+            throw new Descend.Error('NULL_ARGUMENT', { _name: 'count' })
+        } catch (error) {
+            console.log(`${error.stack}\n`)
         }
     }
+    //
+
+    // You can define symbols elsewhere and import them into the defintion of
+    // your expcetion.
+
+    // To do so you use a `Map` where the key is the symbol and the definition
+    // either the message or the default properties for the code. The code name
+    // will be extracted from the `toString()` value of the `Symbol`. This is
+    // fine because the `toString()` value is defined in the specification, so
+    // we can get it out across platforms with a regular expression. If you want
+    // to override the name used to create the `Symbol` you can specify a new
+    // name as the `code` property of a default properties object.
+
+    //
+    console.log(`\n--- use existing codes ---\n`)
+    {
+        const Constants = {
+            IO_ERROR: Symbol('IO_ERROR'),
+            INVALID_ARGUMENT: Symbol('INVALID_ARGUMENT'),
+            YET_ANOTHER_SYMBOL: Symbol('YET_ANOTHER_SYMBOL')
+        }
+
+        class Config {
+            static Error = Interrupt.create('Config.Error', new Map([
+                [ Constants.IO_ERROR, null ],
+                [ Constants.INVALID_ARGUMENT, 'invalid argument for: %(_name)s' ],
+                [
+                    Constants.YET_ANOTHER_SYMBOL,
+                    {
+                        code: 'NULL_ARGUMENT',
+                        message: 'argument must not be null: %(_name)s'
+                    }
+                ]
+            ]))
+        }
+
+        try {
+            throw new Config.Error('IO_ERROR')
+        } catch (error) {
+            okay(error.symbol, Config.Error.IO_ERROR, 'use symbol')
+            okay(error.code, 'IO_ERROR', 'use symbol name as code')
+            okay(Interrupt.message(error), 'IO_ERROR', 'use symbol name as message')
+        }
+    }
+    //
+
+    // To inherit a code from the parent... (Do simple.)
+
+    //
+    {
+    }
+
+    // To inherit a code but redefine it's properties specify the symbol and any
+    // properties you wish to override. Your properties will be merged with the
+    // inherited properties. (But, what if you want to completely reset? Expose
+    // `combine` and instruct)
+
+    // Starting to doubt whether this needs to be so complicated, or rather
+    // whether it needs to have all this syntax bashing. It's a definition. It
+    // is mostly fluid, but do we need to have all these syntax rules for
+    // inheritance?
+
+    // I appreciate the syntax bashing for being able to one-liner throws, but
+    // I'm not loving it for declarations, even if I don't want to encourage
+    // error heirarchies, I don't want to make them so punishing that people
+    // open GitHub Issues to ask me how to use a feature I don't use myself.
+
+    // Well, just using `extend` is not a method chained interface really. I can
+    // live with it. Gets me through this bit, I think.
+
+    //
+    return
+    {
+
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'io error',
+                    recoverable: false
+                },
+            })
+        }
+
+        class Derived {
+            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Codes, Super }) {
+                return [
+                    Super.IO_ERROR,
+                    Super.IO_ERROR.extend({ recoverable: false })
+                ]
+            })
+        }
+    }
+
+    // To inherit a code from the parent you simply as a symbol-based code
+    // delclaration with a new set of default properties. The new properties
+    // will be overwritten.
+
+    //
 })
