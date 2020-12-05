@@ -130,7 +130,7 @@ require('proof')(5, async okay => {
             static Error = Interrupt.create('Config.Error', [
                 'IO_ERROR',
                 [ 'PARSE_ERROR', 'INVALID_ARGUMENT' ],
-                function (codes) {
+                function () {
                     return 'RANGE_ERROR'
                 },
                 {
@@ -144,7 +144,7 @@ require('proof')(5, async okay => {
 
         //
         class Descend {
-            static Error = Interrupt.create('Descend.Error', Config.Error, Config.Error.code('PARSE_ERROR').symbol, function (codes, inherited) {
+            static Error = Interrupt.create('Descend.Error', Config.Error, Config.Error.code('PARSE_ERROR').symbol, function ({ codes, inherited }) {
                 return [ inherited.NULL_ARGUMENT.code.symbol ]
             })
         }
@@ -232,23 +232,102 @@ require('proof')(5, async okay => {
     //
     return
     {
-
+        // **TODO** Do not flatten, recurse at time of construction.
+        // **TODO** Upcase Codes.
+        // **TODO** Bring inheritance into Swipe.
+        // **TODO** Determine the Super and Template types.
         class Config {
             static Error = Interrupt.create('Config.Error', {
                 IO_ERROR: {
                     message: 'io error',
+                    recoverable: false,
+                    type: 'file'
+                },
+                TYPED_IO_ERROR: {
+                    code: 'IO_ERROR',
+                    type: 'file'
+                },
+                FATAL_IO_ERROR: {
+                    code: 'TYPED_IO_ERROR',
                     recoverable: false
                 },
+                RECOVERABLE_IO_ERROR: {
+                    code: 'TYPED_IO_ERROR',
+                    recoverable: true
+                }
             })
         }
 
+        // I mean, I could just say that these Super objects are not supposed to
+        // be dumped at all.
         class Derived {
-            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Codes, Super }) {
-                return [
-                    Super.IO_ERROR,
-                    Super.IO_ERROR.extend({ recoverable: false })
-                ]
+            static Error = Interrupt.create('Derived.Error', Config.Error,
+            function ({ Super: { Codes, Templates } }) {
+                // If you want to import all the codes.
+                const codes = Object.keys(Super.Codes).map(code => Super.Codes[code])
+                // If you want to import all the codes and templates, just return them.
+                return [ Super ]
+                // Same as the above.
+                return [ Codes, Templates ]
+                // More likely, import all the codes, update some of the
+                // templates. Okay, problem because we're trying to be strict
+                // here and say that you must declare things in order, but I'm
+                // already imagining having the dependencies differed so that we
+                // could redefined `TYPED_IO_ERROR` and have type be
+                // `'directory'` everywhere.
+                //
+                // No, the order is maintained.
+                return [ Codes, { ...Templates,
+                    TYPED_IO_ERROR: {
+                        code: Super.Templates.TYPED_IO_ERROR,
+                        type: 'directory'
+                    }
+                }]
+                /*
+                return {
+                    // Import Code.
+                    IO_ERROR: Super.Codes.IO_ERROR,
+                    // Import parent tempalte as is.
+                    RECOVERABLE_IO_ERROR: Super.Templates.RECOVERABLE_IO_ERROR,
+                    // Redefine a parent template property (there is no way to pair them down.)
+                    RECOVERABLE_IO_ERROR: {
+                        code: Super.Templates.RECOVERABLE_IO_ERROR, // Will automatically import parent Codes.IO_ERROR.
+                        type: 'directory'
+                    }
+                }
+                */
             })
+
+            /*
+
+            function ({ Codes, Super }) {
+                const inherit = 'IO_ERROR'.split(/\s+/).map(code => Super[code])
+                return [
+                    Super.IO_ERROR, // Inherit as is.
+                    {
+                        // Does it get easier if everything is in the object, code and all, everything except the symbol?
+                        DERIVED_IO_ERROR: {
+                            code: Super.IO_ERROR,
+                            reoverable: true
+                        }
+                    }
+                    Super.IO_ERROR.extend({ recoverable: false }),
+                    Super.IO_ERROR.extend(Object.defineProperties({}, {
+                        recoverable: { value: false, enumerable: false }
+                    })),
+                    {
+                        IO_ERROR: {
+                            code: Super.IO_ERROR,
+                            message: 'i/o error',
+                            recoverable: false
+                        }
+                    }
+                ]
+                return [{
+                    IO_ERROR: Interrupt.merge(Super.IO_ERROR, { message: 'i/o error' })
+                }, Super.IO_ERROR ]
+            })
+            */
         }
     }
 

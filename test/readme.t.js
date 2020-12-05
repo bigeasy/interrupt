@@ -1262,7 +1262,7 @@ require('proof')(141, async okay => {
 
         const ConfigError = Interrupt.create('ConfigError', [
             'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG'
-        ], function (codes) {
+        ], function ({ codes }) {
             return {
                 'READ_FILE_ERROR': {
                     message: 'unable to read file',
@@ -1329,7 +1329,7 @@ require('proof')(141, async okay => {
 
         const ConfigError = Interrupt.create('ConfigError', [
             'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG'
-        ], function (codes) {
+        ], function ({ codes }) {
             return {
                 'READ_FILE_ERROR': {
                     message: 'unable to read file',
@@ -2079,27 +2079,34 @@ require('proof')(141, async okay => {
 
     // You can instead define a message table.
 
+    // A default defines a `code` property that is either the string name of an
+    // existing code, the symbol for an existing code or one of the code objects
+    // in the code object map passed into a code definition function.
+
     //
     {
         const ConfigError = Interrupt.create('ConfigError', [
             'MISSING_PARAM', 'INVALID_PARAM_TYPE'
-        ], function (codes) {
+        ], function ({ codes }) {
             return {
+                // _Specify by code name._
                 'SETTINGS_MISSING': {
-                    code: codes.MISSING_PARAM.code,
+                    code: 'MISSING_PARAM',
                     message: 'the settings property is missing'
                 },
+                // _Specify by code symbol._
                 'VOLUME_MISSING': {
-                    code: codes.MISSING_PARAM.code,
-                    symbol: codes.MISSING_PARAM.symbol,
+                    code: codes.MISSING_PARAM.symbol,
                     message: 'the volume property is missing'
                 },
+                // _Use `symbol` property instead of code, value must be a `Symbol`._
                 'INVALID_SETTINGS_TYPE': {
                     symbol: codes.INVALID_PARAM_TYPE.symbol,
                     message: 'the settings must be an object, got type: %(_type)s'
                 },
+                // _Easiest to read, just the `code` object itself._
                 'INVALID_VOLUME_TYPE': {
-                    symbol: codes.INVALID_PARAM_TYPE.symbol,
+                    code: codes.INVALID_PARAM_TYPE,
                     message: 'the volume must be integer, got type: %(_type)s'
                 }
             }
@@ -2417,7 +2424,7 @@ require('proof')(141, async okay => {
         ]]))
 
         // **TODO** Make argument an object, destructure.
-        const FileError = Interrupt.create('FileError', ConfigError, function (codes, inherited) {
+        const FileError = Interrupt.create('FileError', ConfigError, function ({ codes, inherited }) {
             return new Map([[ inherited.IO_ERROR.code.symbol, 'unable to read file' ]])
         })
 

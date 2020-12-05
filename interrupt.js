@@ -128,6 +128,31 @@ class Collector {
     }
 }
 
+class Code {
+    constructor (code, symbol) {
+        Object.defineProperties(this, {
+            code: { value: code, enumerable: true },
+            symbol: { value: symbol, enumerable: false }
+        })
+    }
+}
+
+class DefaultDeclaration {
+    constructor (alias, properties) {
+        this._properties = properties
+    }
+}
+
+class Default {
+    constructor (properties) {
+        this.properties = properties
+    }
+
+    extend (properties) {
+        return [ Default, properties ]
+    }
+}
+
 // An assert internal to Interrupt that will not get audited.
 function assert (condition, ...vargs) {
     if (! condition) {
@@ -735,7 +760,7 @@ class Interrupt extends Error {
                                                     }))
                                                 }
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options['#errors'].value.push(combine(Interrupt.Error.code('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -936,7 +961,8 @@ class Interrupt extends Error {
             name: name,
             symbols: new Map,
             prototypes: {},
-            codes: {}
+            codes: {},
+            codes2: { coded: {}, is: new Set }
         }
         Prototypes.set(Class, Prototype)
 
@@ -958,16 +984,20 @@ class Interrupt extends Error {
                     ]]))
                     continue
                 }
+            // Define a code with no default properties.
             case 'string': {
                     const object = {}
                     object[codes] = null
                     vargs.unshift(object)
                     continue
                 }
+            // Invoke a function that will return further code definitions.
             case 'function': {
-                    vargs.unshift(codes(Prototype.codes, SuperPrototype.inherited.coded))
+                    vargs.unshift(codes({ codes: Prototype.codes, inherited: SuperPrototype.inherited.coded }))
                     continue
                 }
+            // If an array, unshift the definitions onto our argument list,
+            // otherwise fall through to object processing.
             case 'object': {
                     assert(codes != null, 'INVALID_ARGUMENT')
                     if (Array.isArray(codes)) {
@@ -980,7 +1010,8 @@ class Interrupt extends Error {
                 throw new Interrupt.Error('INVALID_ARGUMENT')
             }
             // **TODO** Aliases, code => symbol with multiple codes to same
-            // symbol would allow from renames.
+            // symbol would allow for renames. Seems like that is currently
+            // possible, though.
             if (codes instanceof Map) {
                 // In this pass of the code, this is symbol import which is
                 // separate from symbol inheritance. Inheritance rules have not
@@ -1024,10 +1055,10 @@ class Interrupt extends Error {
                     Prototype.symbols.set(symbol, code)
 
                     // Create an entry in our `codes` lookup.
-                    Prototype.codes[code] = Object.defineProperties({}, {
-                        code: { value: symbol, enumerable: true },
-                        symbol: { value: symbol, enumerable: false }
-                    })
+                    Prototype.codes2.is.add(Prototype.codes[code] = Object.defineProperties({}, {
+                        code: { value: code, enumerable: true },
+                        symbol: { value: symbol }
+                    }))
                 }
             } else {
                 for (const code in codes) {
@@ -1054,30 +1085,57 @@ class Interrupt extends Error {
                     case 'object':
                         // Goes here.
                         if (codes[code] == null) {
-                            Prototype.prototypes[code] = { code, message: null, properties: {}, symbol }
+                            // **TODO** Does `message: code` here make something
+                            // finalize easier.
+                            Prototype.prototypes[code] = { code, properties: {}, symbol }
                         } else {
                             const entry = Prototype.prototypes[code] = { code: code, properties: codes[code] }
-                            // **TODO** Assert that a code property is the same
-                            // as the code or if different, then raise an
-                            // exception.
-                            let merge = codes[code].code
-                            if ('symbol' in codes[code]) {
-                                assert(typeof codes[code].symbol == 'symbol', 'INVALID_CODE')
-                                const actual = Prototype.symbols.get(codes[code].symbol)
-                                assert(actual != null, 'INVALID_CODE')
-                                if ('code' in codes[code]) {
-                                    assert(codes[code].code === actual, 'INVALID_CODE')
-                                } else {
-                                    merge = actual
-                                }
+                            const aliased = {
+                                code: coalesce(entry.properties.code),
+                                symbol: coalesce(entry.properties.symbol)
                             }
-                            if (merge != null) {
-                                const previous = Prototype.prototypes[merge]
-                                entry.code = previous.code
-                                if (entry.message == null) {
-                                    entry.message = previous.message
+                            switch (typeof aliased.symbol) {
+                            case 'symbol': {
+                                    const code = Prototype.symbols.get(aliased.symbol)
+                                    assert(code != null, 'INVALID_CODE')
+                                    aliased.symbol = Prototype.prototypes[code]
                                 }
-                                entry.properties = Class.options(previous.properties, entry.properties)
+                                break
+                            case 'object': {
+                                    console.log(aliased.symbol)
+                                    assert(aliased.symbol == null, 'INVALID_CODE')
+                                }
+                                break
+                            }
+                            switch (typeof aliased.code) {
+                            case 'symbol': {
+                                    const code = Prototype.symbols.get(aliased.code)
+                                    assert(code != null, 'INVALID_CODE')
+                                    aliased.code = Prototype.prototypes[code]
+                                }
+                                break
+                            case 'string': {
+                                    if (aliased.code == code) {
+                                        aliased.code = null
+                                    } else {
+                                        aliased.code = Prototype.prototypes[aliased.code]
+                                        assert(aliased.code != null, 'INVALID_CODE')
+                                    }
+                                }
+                                break
+                            case 'object': {
+                                    if (aliased.code != null) {
+                                        assert(Prototype.codes2.is.has(aliased.code), 'INVALID_CODE')
+                                        aliased.code = Prototype.codes[aliased.code.code]
+                                    }
+                                }
+                                break
+                            }
+                            assert(aliased.code == null || aliased.symbol == null || aliased.code === aliased.symbol, 'INVALID_CODE')
+                            if (aliased.code != null || aliased.symbol != null) {
+                                const superPrototype = Prototype.prototypes[(aliased.code || aliased.symbol).code]
+                                entry.code = superPrototype.code
+                                entry.properties = Class.options(superPrototype.properties, entry.properties)
                                 continue
                             }
                         }
@@ -1090,10 +1148,10 @@ class Interrupt extends Error {
                     // Our internal tracking of symbols.
                     Prototype.symbols.set(symbol, code)
 
-                    Prototype.codes[code] = Object.defineProperties({}, {
-                        symbol: { value: symbol, enumerable: false },
-                        code: { value: code, enumerable: true }
-                    })
+                    Prototype.codes2.is.add(Prototype.codes[code] = Object.defineProperties({}, {
+                        code: { value: code, enumerable: true },
+                        symbol: { value: symbol }
+                    }))
                 }
             }
         }
