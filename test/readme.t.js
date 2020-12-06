@@ -2099,11 +2099,6 @@ require('proof')(133, async okay => {
                     code: codes.MISSING_PARAM.symbol,
                     message: 'the volume property is missing'
                 },
-                // _Use `symbol` property instead of code, value must be a `Symbol`._
-                'INVALID_SETTINGS_TYPE': {
-                    symbol: codes.INVALID_PARAM_TYPE.symbol,
-                    message: 'the settings must be an object, got type: %(_type)s'
-                },
                 // _Easiest to read, just the `code` object itself._
                 'INVALID_VOLUME_TYPE': {
                     code: codes.INVALID_PARAM_TYPE,

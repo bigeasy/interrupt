@@ -118,7 +118,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(13, async okay => {
+require('proof')(16, async okay => {
     const Interrupt = require('..')
 
     // ## Thoughts on inhertiance.
@@ -198,6 +198,45 @@ require('proof')(13, async okay => {
         try {
             throw new Config.Error('IO_ERROR')
         } catch (error) {
+            okay(error.symbol, Config.Error.IO_ERROR, 'use symbol')
+            okay(error.code, 'IO_ERROR', 'use symbol name as code')
+            okay(Interrupt.message(error), 'IO_ERROR', 'use symbol name as message')
+        }
+    }
+    //
+
+    // If you want to import symbols into your generated error class, you can
+    // specify a `Symbol` using the `symbol` property. The given `Symbol` will
+    // be used to generate the symbol constant on the class.
+
+    //
+    console.log(`\n--- use existing codes ---\n`)
+    {
+        debugger
+        const Constants = {
+            IO_ERROR: Symbol('IO_ERROR'),
+            INVALID_ARGUMENT: Symbol('INVALID_ARGUMENT'),
+            YET_ANOTHER_SYMBOL: Symbol('YET_ANOTHER_SYMBOL')
+        }
+
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: { symbol: Constants.IO_ERROR },
+                INVALID_ARGUMENT: {
+                    symbol: Constants.INVALID_ARGUMENT,
+                    message: 'invalid argument for: %(_name)s'
+                },
+                NULL_ARGUMENT: {
+                    symbol: Constants.YET_ANOTHER_SYMBOL,
+                    message: 'argument must not be null: %(_name)s'
+                }
+            })
+        }
+
+        try {
+            throw new Config.Error('IO_ERROR')
+        } catch (error) {
+            console.log(error.stack)
             okay(error.symbol, Config.Error.IO_ERROR, 'use symbol')
             okay(error.code, 'IO_ERROR', 'use symbol name as code')
             okay(Interrupt.message(error), 'IO_ERROR', 'use symbol name as message')

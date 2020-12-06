@@ -79,16 +79,7 @@ function combine (...vargs) {
     const properties = {}
     for (const object of vargs) {
         for (const property of Object.getOwnPropertyNames(object)) {
-            if (object[property] === undefined) {
-                properties[property] = {
-                    enumerable: object.propertyIsEnumerable(property)
-                }
-            } else {
-                properties[property] = {
-                    value: object[property],
-                    enumerable: object.propertyIsEnumerable(property)
-                }
-            }
+            properties[property] = Object.getOwnPropertyDescriptor(object, property)
         }
     }
     return Object.defineProperties({}, properties)
@@ -1068,9 +1059,11 @@ class Interrupt extends Error {
 
                     // Use an existing code symbol from the super class if one exists,
                     // otherwise create a new symbol.
+
+                    // **TODO** No, I don't think so.
                     const existing = SuperClass[code]
                     assert(existing == null || typeof existing == 'symbol', 'INVALID_CODE')
-                    const symbol = SuperClass[code] || Symbol(code)
+                    let symbol = SuperClass[code] || Symbol(code)
 
                     // Convert the defintion to a code prototype.
                     switch (typeof codes[code]) {
@@ -1090,20 +1083,21 @@ class Interrupt extends Error {
                             Prototype.prototypes[code] = { code, properties: {}, symbol }
                         } else {
                             const entry = Prototype.prototypes[code] = { code: code, properties: codes[code] }
-                            const aliased = {
-                                code: coalesce(entry.properties.code),
-                                symbol: coalesce(entry.properties.symbol)
-                            }
-                            switch (typeof aliased.symbol) {
+                            const aliased = { code: coalesce(entry.properties.code) }
+                            switch (typeof coalesce(entry.properties.symbol)) {
                             case 'symbol': {
-                                    const code = Prototype.symbols.get(aliased.symbol)
-                                    assert(code != null, 'INVALID_CODE')
-                                    aliased.symbol = Prototype.prototypes[code]
+                                    symbol = entry.symbol = entry.properties.symbol
+                                    entry.properties = combine(entry.properties)
+                                    delete entry.properties.symbol
                                 }
                                 break
                             case 'object': {
-                                    console.log(aliased.symbol)
                                     assert(aliased.symbol == null, 'INVALID_CODE')
+                                }
+                                break
+                            default: {
+                                    console.log(entry.properties.symbol)
+                                    throw new Interrupt.Error('INVALID_ARGUMENT')
                                 }
                                 break
                             }
@@ -1131,8 +1125,7 @@ class Interrupt extends Error {
                                 }
                                 break
                             }
-                            assert(aliased.code == null || aliased.symbol == null || aliased.code === aliased.symbol, 'INVALID_CODE')
-                            if (aliased.code != null || aliased.symbol != null) {
+                            if (aliased.code != null) {
                                 const superPrototype = Prototype.prototypes[(aliased.code || aliased.symbol).code]
                                 entry.code = superPrototype.code
                                 entry.properties = Class.options(superPrototype.properties, entry.properties)
