@@ -919,6 +919,7 @@ require('proof')(135, async okay => {
                     try {
                         await fs.mkdir(error.dirname, { recursive: true })
                     } catch (error) {
+                        console.log(error.stack)
                         throw new ReaderError('IO_ERROR', { dirname: error.dirname })
                     }
                     return await read(error.dirname)

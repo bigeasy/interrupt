@@ -569,7 +569,7 @@ class Interrupt extends Error {
         }
 
         for (const property of Object.getOwnPropertyNames(options)) {
-            if (property[0] != '_' && property[0] != '#' && !/^symbol|name|message|stack$/.test(property) && !(property in properties)) {
+            if (property[0] != '_' && property[0] != '#' && !/^(?:name|message|stack|symbol)$/.test(property) && !(property in properties)) {
                 properties[property] = Object.getOwnPropertyDescriptor(options, property)
             }
         }
