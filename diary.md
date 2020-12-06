@@ -1,3 +1,11 @@
+## Mon Dec  7 03:44:35 CST 2020
+
+Tempted to make all the reported properties children of `context` so that
+`context` can be non-enumerable and so that no one will emit it. Node.js is
+dumping enumerable properties on error and it's so ugly.
+
+Also, need to parse my way around this in the parser.
+
 ## Tue Dec  1 22:00:30 CST 2020
 
 Seems like we should use the parsed representation of an object to `dedup` so

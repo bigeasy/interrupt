@@ -68,7 +68,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(133, async okay => {
+require('proof')(135, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -919,6 +919,7 @@ require('proof')(133, async okay => {
                     try {
                         await fs.mkdir(error.dirname, { recursive: true })
                     } catch (error) {
+                        console.log(error.stack)
                         throw new ReaderError('IO_ERROR', { dirname: error.dirname })
                     }
                     return await read(error.dirname)
@@ -1262,15 +1263,15 @@ require('proof')(133, async okay => {
 
         const ConfigError = Interrupt.create('ConfigError', [
             'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG'
-        ], function ({ codes }) {
+        ], function ({ Codes }) {
             return {
                 'READ_FILE_ERROR': {
                     message: 'unable to read file',
-                    subsystem: codes['SUBSYSTEM_IO'].symbol
+                    subsystem: Codes['SUBSYSTEM_IO'].symbol
                 },
                 'PARSE_ERROR': {
                     message: 'unable to parse JSON',
-                    subsystem: codes['SUBSYSTEM_CONFIG'].symbol
+                    subsystem: Codes['SUBSYSTEM_CONFIG'].symbol
                 }
             }
         })
@@ -1329,15 +1330,15 @@ require('proof')(133, async okay => {
 
         const ConfigError = Interrupt.create('ConfigError', [
             'SUBSYSTEM_IO', 'SUBSYSTEM_CONFIG'
-        ], function ({ codes }) {
+        ], function ({ Codes }) {
             return {
                 'READ_FILE_ERROR': {
                     message: 'unable to read file',
-                    subsystem: codes['SUBSYSTEM_IO']
+                    subsystem: Interrupt.Code(Codes['SUBSYSTEM_IO'])
                 },
                 'PARSE_ERROR': {
                     message: 'unable to parse JSON',
-                    subsystem: codes['SUBSYSTEM_CONFIG']
+                    subsystem: Interrupt.Code(Codes['SUBSYSTEM_CONFIG'])
                 }
             }
         })
@@ -2087,7 +2088,7 @@ require('proof')(133, async okay => {
     {
         const ConfigError = Interrupt.create('ConfigError', [
             'MISSING_PARAM', 'INVALID_PARAM_TYPE'
-        ], function ({ codes }) {
+        ], function ({ Codes }) {
             return {
                 // _Specify by code name._
                 'SETTINGS_MISSING': {
@@ -2096,12 +2097,12 @@ require('proof')(133, async okay => {
                 },
                 // _Specify by code symbol._
                 'VOLUME_MISSING': {
-                    code: codes.MISSING_PARAM.symbol,
+                    code: Codes.MISSING_PARAM.symbol,
                     message: 'the volume property is missing'
                 },
                 // _Easiest to read, just the `code` object itself._
                 'INVALID_VOLUME_TYPE': {
-                    code: codes.INVALID_PARAM_TYPE,
+                    code: Codes.INVALID_PARAM_TYPE,
                     message: 'the volume must be integer, got type: %(_type)s'
                 }
             }
@@ -2131,6 +2132,8 @@ require('proof')(133, async okay => {
             assertConfig({ settings: { volume: 'loud' } })
         } catch (error) {
             console.log(`${error.stack}\n`)
+            okay(error.code, 'INVALID_PARAM_TYPE', 'aliased code set')
+            okay(error.symbol, ConfigError.INVALID_PARAM_TYPE, 'aliased code set')
         }
     }
     //
