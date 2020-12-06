@@ -88,7 +88,7 @@ function combine (...vargs) {
 function finalize (Class, Prototype, vargs) {
     const options = Class.options.apply(Class, vargs)
     const prototype = Prototype.Fixup.prototypes[options.code] || {}
-    if (!prototype.code && Prototype.prototypes[options.code]) throw new Error
+    if (!prototype.code && Prototype.Fixup.prototypes[options.code]) throw new Error
     const _options = Class.options(prototype, options, { code: prototype.code })
     if (_options['#errors'].length) throw new Error
     return _options
@@ -1028,10 +1028,15 @@ class Interrupt extends Error {
                     break
                 case 'object':
                     // Goes here.
-                    if (SuperPrototype.Fixup.is.has(codes[code])) {
-                        const entry = function () {
+                    const entry = function () {
+                        if (SuperPrototype.Fixup.is.has(codes[code])) {
                             return combine(codes[code], { code: code, symbol: codes[code].symbol })
-                        } ()
+                        } else if (codes[code] == null) {
+                            return { code, symbol }
+                        }
+                        return null
+                    } ()
+                    if (entry != null) {
                         if (entry.code == code) {
                             const symbol = entry.symbol
                             Prototype.Fixup.Super.Codes[entry.code] = entry
@@ -1083,14 +1088,14 @@ class Interrupt extends Error {
                         case 'symbol': {
                                 const code = Prototype.Fixup.symbols.get(aliased.code)
                                 assert(code != null, 'INVALID_CODE')
-                                aliased.code = Prototype.prototypes[code]
+                                aliased.code = Prototype.prototypes[code] || Prototype.Fixup.prototypes[code]
                             }
                             break
                         case 'string': {
                                 if (aliased.code == code) {
                                     aliased.code = null
                                 } else {
-                                    aliased.code = Prototype.prototypes[aliased.code]
+                                    aliased.code = Prototype.prototypes[aliased.code] || Prototype.Fixup.prototypes[aliased.code]
                                     assert(aliased.code != null, 'INVALID_CODE')
                                 }
                             }
@@ -1111,8 +1116,16 @@ class Interrupt extends Error {
                         }
                         if (aliased.code != null) {
                             const superPrototype = Prototype.prototypes[(aliased.code || aliased.symbol).code]
-                            entry.code = superPrototype.code
-                            entry.properties = combine(superPrototype.properties, entry.properties, { code: superPrototype.code, symbol: null })
+                            if (superPrototype == null) {
+                                const superPrototype = Prototype.Fixup.prototypes[(aliased.code || aliased.symbol).code]
+                                entry.properties = combine(superPrototype, entry.properties, { code: superPrototype.code, symbol: null })
+                                entry.code = superPrototype.code
+                                entry.symbol = superPrototype.symbol
+                            } else {
+
+                                entry.code = superPrototype.code
+                                entry.properties = combine(superPrototype.properties, entry.properties, { code: superPrototype.code, symbol: null })
+                            }
                             continue
                         }
                     }
