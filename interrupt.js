@@ -523,6 +523,14 @@ class Interrupt extends Error {
             return parsed[0]
         }
     }
+
+    static Code (object) {
+        return Object.defineProperties({}, {
+            code: { value: object.code, enumerable: true },
+            symbol: { value: object.symbol, enumerable: false }
+        })
+    }
+
     //
 
     // This constructor is only called by derived class and should not be called
@@ -983,7 +991,7 @@ class Interrupt extends Error {
                 }
             // Invoke a function that will return further code definitions.
             case 'function': {
-                    vargs.unshift(codes({ codes: Prototype.codes, Super: SuperPrototype.Fixup.Super }))
+                    vargs.unshift(codes({ codes: Prototype.Fixup.Super.Codes, Super: SuperPrototype.Fixup.Super }))
                     continue
                 }
             // If an array, unshift the definitions onto our argument list,
@@ -1016,8 +1024,28 @@ class Interrupt extends Error {
                 // **TODO** No, I don't think so.
                 let symbol = Symbol(code)
 
+                const object = function () {
+                    switch (typeof codes[code]) {
+                    case 'symbol': {
+                            // **TODO** This is new, what about it?
+                            return { code, symbol: codes[code] }
+                        }
+                    case 'string': {
+                            return { message: codes[code] }
+                        }
+                    case 'object': {
+                            if (codes[code] == null) {
+                                return {}
+                            }
+                            return codes[code]
+                        }
+                    default:
+                        throw new Error
+                    }
+                } ()
+
                 // Convert the defintion to a code prototype.
-                switch (typeof codes[code]) {
+                switch (typeof object) {
                 case 'symbol': {
 
                     }
@@ -1029,14 +1057,66 @@ class Interrupt extends Error {
                 case 'object':
                     // Goes here.
                     const entry = function () {
-                        if (SuperPrototype.Fixup.is.has(codes[code])) {
-                            return combine(codes[code], { code: code, symbol: codes[code].symbol })
-                        } else if (codes[code] == null) {
-                            return { code, symbol }
+                        if (SuperPrototype.Fixup.is.has(object)) {
+                            return combine(object, { code: code, symbol: object.symbol })
+                        } else if (object == null) {
+                            return { code, symbol: Symbol(code) }
+                        } else {
+                            const symbol = function () {
+                                switch (typeof coalesce(object.symbol)) {
+                                case 'symbol': {
+                                        return object.symbol
+                                    }
+                                case 'object': {
+                                        assert(object.symbol == null, 'INVALID_CODE')
+                                        return Symbol(code)
+                                    }
+                                default: {
+                                        throw new Interrupt.Error('INVALID_ARGUMENT')
+                                    }
+                                }
+                            } ()
+                            const alias = function () {
+                                const alias = object.code
+                                switch (typeof coalesce(alias)) {
+                                case 'symbol': {
+                                        const code = Prototype.Fixup.symbols.get(alias)
+                                        assert(code != null, 'INVALID_CODE')
+                                        return Prototype.Fixup.prototypes[code]
+                                    }
+                                case 'string': {
+                                        if (alias == code) {
+                                            return null
+                                        }
+                                        const prototype = Prototype.Fixup.prototypes[alias]
+                                        assert(prototype != null, 'INVALID_CODE')
+                                        return prototype
+                                    }
+                                case 'object': {
+                                        if (alias == null) {
+                                            return null
+                                        }
+                                        if (SuperPrototype.Fixup.is.has(alias)) {
+                                            return SuperPrototype.Fixup.prototypes[alias.code]
+                                        }
+                                        console.log(code, alias, Prototype.Fixup.Super.Codes, Prototype.Fixup.is)
+                                        assert(Prototype.Fixup.is.has(alias), 'INVALID_CODE')
+                                        return Prototype.Fixup.prototypes[alias.code]
+                                    }
+                                }
+                            } ()
+                            console.log('>>', code, alias)
+                            if (alias != null) {
+                                return combine(alias, object, { code: alias.code, symbol: alias.symbol })
+                            }
+                            return combine(object, { code, symbol })
                         }
                         return null
                     } ()
                     if (entry != null) {
+                        if (entry.message == null) {
+                            entry.message = entry.code
+                        }
                         if (entry.code == code) {
                             const symbol = entry.symbol
                             Prototype.Fixup.Super.Codes[entry.code] = entry
@@ -1055,15 +1135,11 @@ class Interrupt extends Error {
                                 symbol: { value: symbol }
                             })
                         } else {
-                            Prototype.Fixup.Super.Aliases[entry.code] = entry
+                            Prototype.Fixup.Super.Aliases[code] = entry
                         }
-                        Prototype.Fixup.prototypes[entry.code] = entry
+                        Prototype.Fixup.prototypes[code] = entry
                         Prototype.Fixup.is.add(entry)
                         continue
-                    } else if (codes[code] == null) {
-                        // **TODO** Does `message: code` here make something
-                        // finalize easier.
-                        Prototype.prototypes[code] = { code, properties: {}, symbol }
                     } else {
                         const entry = Prototype.prototypes[code] = { code: code, properties: codes[code] }
                         const aliased = { code: coalesce(entry.properties.code) }

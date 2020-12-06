@@ -1334,11 +1334,11 @@ require('proof')(135, async okay => {
             return {
                 'READ_FILE_ERROR': {
                     message: 'unable to read file',
-                    subsystem: codes['SUBSYSTEM_IO']
+                    subsystem: Interrupt.Code(codes['SUBSYSTEM_IO'])
                 },
                 'PARSE_ERROR': {
                     message: 'unable to parse JSON',
-                    subsystem: codes['SUBSYSTEM_CONFIG']
+                    subsystem: Interrupt.Code(codes['SUBSYSTEM_CONFIG'])
                 }
             }
         })
