@@ -161,7 +161,8 @@ class Interrupt extends Error {
             symbols: new Map,
             prototypes: {},
             inherited: { coded: {}, symbolized: new Map },
-            codes: {}
+            codes: {},
+            codes2: { is: new Set }
         })
     } ())
 
@@ -984,7 +985,7 @@ class Interrupt extends Error {
                 }
             // Invoke a function that will return further code definitions.
             case 'function': {
-                    vargs.unshift(codes({ codes: Prototype.codes, inherited: SuperPrototype.inherited.coded }))
+                    vargs.unshift(codes({ codes: Prototype.codes, Super: { Codes: SuperPrototype.codes } }))
                     continue
                 }
             // If an array, unshift the definitions onto our argument list,
@@ -1003,6 +1004,8 @@ class Interrupt extends Error {
             // **TODO** Aliases, code => symbol with multiple codes to same
             // symbol would allow for renames. Seems like that is currently
             // possible, though.
+
+            // **TODO** This is outgoing.
             if (codes instanceof Map) {
                 // In this pass of the code, this is symbol import which is
                 // separate from symbol inheritance. Inheritance rules have not
@@ -1052,6 +1055,24 @@ class Interrupt extends Error {
                     }))
                 }
             } else {
+                if (codes === SuperPrototype.codes) {
+                    const inheritance = Object.keys(codes).map(code => {
+                        const prototype = SuperPrototype.prototypes[code]
+                        console.log(prototype)
+                        const object = {}
+                        object[code] = combine(prototype.properties, { symbol: prototype.symbol })
+                        return object
+                    })
+                    console.log(inheritance)
+                    vargs.unshift.apply(vargs, inheritance)
+                    continue
+                } else if (SuperPrototype.codes2.is.has(codes)) {
+                    const prototype = SuperPrototype.prototypes[codes.code]
+                    const object = {}
+                    object[codes.code] = combine(prototype.properties, { symbol: prototype.symbol })
+                    vargs.unshift(object)
+                    continue
+                }
                 for (const code in codes) {
                     // Duplicate declaration detection. **TODO** Better error.
                     assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
@@ -1061,9 +1082,7 @@ class Interrupt extends Error {
                     // otherwise create a new symbol.
 
                     // **TODO** No, I don't think so.
-                    const existing = SuperClass[code]
-                    assert(existing == null || typeof existing == 'symbol', 'INVALID_CODE')
-                    let symbol = SuperClass[code] || Symbol(code)
+                    let symbol = Symbol(code)
 
                     // Convert the defintion to a code prototype.
                     switch (typeof codes[code]) {
@@ -1093,6 +1112,7 @@ class Interrupt extends Error {
                                 break
                             case 'object': {
                                     assert(aliased.symbol == null, 'INVALID_CODE')
+                                    entry.symbol = symbol
                                 }
                                 break
                             default: {
@@ -1118,7 +1138,12 @@ class Interrupt extends Error {
                                 }
                                 break
                             case 'object': {
-                                    if (aliased.code != null) {
+                                    if (aliased.code == null) {
+                                    } else if (SuperPrototype.codes2.is.has(aliased.code)) {
+                                        const prototype = SuperPrototype.prototypes[aliased.code.code]
+                                        entry.properties = combine(prototype.properties, entry.properties)
+                                        symbol = entry.symbol = aliased.code.symbol
+                                    } else {
                                         assert(Prototype.codes2.is.has(aliased.code), 'INVALID_CODE')
                                         aliased.code = Prototype.codes[aliased.code.code]
                                     }
@@ -1134,6 +1159,8 @@ class Interrupt extends Error {
                         }
                         break
                     }
+
+                    console.log('define', code)
 
                     // Create a property to hold the symbol in the class.
                     Object.defineProperty(Class, code, { value: symbol })

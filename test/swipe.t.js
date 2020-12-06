@@ -120,45 +120,6 @@
 //
 require('proof')(16, async okay => {
     const Interrupt = require('..')
-
-    // ## Thoughts on inhertiance.
-    {
-        // Declare a bunch of codes.
-
-        //
-        class Config {
-            static Error = Interrupt.create('Config.Error', [
-                'IO_ERROR',
-                [ 'PARSE_ERROR', 'INVALID_ARGUMENT' ],
-                function () {
-                    return 'RANGE_ERROR'
-                },
-                {
-                    'NULL_ARGUMENT': `argument must not be null: %(_name)s`
-                }
-            ])
-        }
-        //
-
-        // Inherit codes as is. Simply inherit them. With default properties.
-
-        //
-        class Descend {
-            static Error = Interrupt.create('Descend.Error', Config.Error, Config.Error.code('PARSE_ERROR').symbol, function ({ codes, inherited }) {
-                return [ inherited.NULL_ARGUMENT.code.symbol ]
-            })
-        }
-
-        okay(Descend.Error.IO_ERROR != null && Descend.Error.IO_ERROR === Config.Error.IO_ERROR, 'inherited code')
-        okay(Descend.Error.NULL_ARGUMENT != null && Descend.Error.NULL_ARGUMENT === Config.Error.NULL_ARGUMENT, 'inherited another code')
-        //
-
-        try {
-            throw new Descend.Error('NULL_ARGUMENT', { _name: 'count' })
-        } catch (error) {
-            console.log(`${error.stack}\n`)
-        }
-    }
     //
 
     // You can define symbols elsewhere and import them into the defintion of
@@ -212,7 +173,6 @@ require('proof')(16, async okay => {
     //
     console.log(`\n--- use existing codes ---\n`)
     {
-        debugger
         const Constants = {
             IO_ERROR: Symbol('IO_ERROR'),
             INVALID_ARGUMENT: Symbol('INVALID_ARGUMENT'),
@@ -246,9 +206,122 @@ require('proof')(16, async okay => {
 
     // To inherit a code from the parent... (Do simple.)
 
+    // To inherit a codes and aliases from the parent you must use a code
+    // function. The code function is given an object with a `Codes` property
+    // and a `Super` property that contains an object. The `Super` contains a
+    // `Codes` property containing the codes of super class indexed by the code
+    // name and an `Alaises` property containing the aliases of the super class
+    // indexed by code name.
+
+    //
+    console.log('\n--- inherit a code ---\n')
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: 'i/o error'
+            })
+        }
+
+        class Derived {
+            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
+                return Super.Codes.IO_ERROR
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, 'symbols inherited')
+
+        try {
+            throw new Derived.Error('IO_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), 'i/o error', 'inherit message format')
+            okay(error.code, 'IO_ERROR', 'inherit code name')
+            okay(error.symbol, Config.Error.IO_ERROR, 'inherit code symbol')
+        }
+    }
+    //
+
+    // You can import all the codes at once by returning the codes object.
+
     //
     {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                },
+                PARSE_ERROR: 'unable to parse'
+            })
+        }
+
+        class Derived {
+            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
+                return Super.Codes
+            })
+        }
+
+        okay(Derived.Error.codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'all codes inherited')
+        okay((
+            Config.Error.IO_ERROR === Derived.Error.IO_ERROR &&
+            Config.Error.PARSE_ERROR === Derived.Error.PARSE_ERROR
+        ), 'symbols inherited')
+
+        try {
+            throw new Derived.Error('IO_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), 'i/o error', 'inherit message format')
+            okay(error.code, 'IO_ERROR', 'inherit code name')
+            okay(error.symbol, Config.Error.IO_ERROR, 'inherit code symbol')
+            okay(error.recoverable,  'inherit default property')
+        }
     }
+    //
+
+    // If you want to inherit a code and extend it you use the Super's code
+    // object as the `code` property of a defintion. The properties of the
+    // parent's code will be merged with your definition preserving the property
+    // settings `enumerable`, `writable` and `configurable`.
+
+    //
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                },
+                PARSE_ERROR: 'unable to parse'
+            })
+        }
+
+        class Derived {
+            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
+                return {
+                    IO_ERROR: {
+                        code: Super.Codes.IO_ERROR,
+                        recoverable: false,
+                        type: 'directory'
+                    }
+                }
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, 'symbols inherited')
+
+        try {
+            throw new Derived.Error('IO_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), 'i/o error', 'inherit message format')
+            okay(error.code, 'IO_ERROR', 'inherit code name')
+            okay(error.symbol, Config.Error.IO_ERROR, 'inherit code symbol')
+            okay(error.recoverable, false, 'override default property')
+            okay(error.type, 'directory',  'add default property')
+        }
+    }
+    return
     //
 
     // ## Error Heirarchies
