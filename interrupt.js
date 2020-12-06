@@ -161,11 +161,7 @@ class Interrupt extends Error {
     // Private static initializer. We are committed to Node.js 12 or greater.
     static #initializer = (function () {
         Prototypes.set(Interrupt, {
-            symbols: new Map,
-            prototypes: {},
-            codes: {},
-            codes2: { is: new Set },
-            Fixup: { is: new Set, Super: {} }
+            Fixup: { is: new Set, Super: { Codes: {}, Aliases: {} } }
         })
     } ())
 
@@ -552,6 +548,7 @@ class Interrupt extends Error {
 
         const properties = {
             name: {
+                // **TODO** Class.name?
                 value: Prototype.name,
                 enumerable: false,
                 writable: false
@@ -964,10 +961,6 @@ class Interrupt extends Error {
         const SuperPrototype = Prototypes.get(SuperClass)
         const Prototype = {
             name: name,
-            symbols: new Map,
-            prototypes: {},
-            codes: {},
-            codes2: { coded: {}, is: new Set },
             Fixup: {
                 is: new Set,
                 symbols: new Map,
@@ -1106,10 +1099,6 @@ class Interrupt extends Error {
                             // Our internal tracking of symbols.
                             Prototype.Fixup.symbols.set(symbol, code)
 
-                            Prototype.codes2.is.add(Prototype.codes[code] = Object.defineProperties({}, {
-                                code: { value: code, enumerable: true },
-                                symbol: { value: symbol }
-                            }))
                             Prototype.Fixup.codes[code] = Object.defineProperties({}, {
                                 code: { value: code, enumerable: true },
                                 symbol: { value: symbol }
