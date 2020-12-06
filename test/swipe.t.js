@@ -321,6 +321,92 @@ require('proof')(16, async okay => {
             okay(error.type, 'directory',  'add default property')
         }
     }
+    //
+
+    // You're not able to remove properties when you override. You can however,
+    // just redeclare the inherited property as code with an imported symbol.
+
+    //
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                }
+            })
+        }
+
+        // **TODO** Expose properties, that is make it a part of the codes
+        // object.
+        class Derived {
+            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
+                return {
+                    IO_ERROR: {
+                        symbol: Super.Codes.IO_ERROR.symbol,
+                        message: 'i/o error', // Super.Codes.properties.message
+                        type: 'directory'
+                    }
+                }
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, 'symbols inherited')
+
+        try {
+            throw new Derived.Error('IO_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), 'i/o error', 'inherit message format')
+            okay(error.code, 'IO_ERROR', 'inherit code name')
+            okay(error.symbol, Config.Error.IO_ERROR, 'inherit code symbol')
+            okay(!('recoverable' in error), 'override default property')
+            okay(error.type, 'directory',  'add default property')
+        }
+    }
+    //
+
+    // You can import all of the codes, but override some of them using
+    // JavaScript destructuring.
+
+    //
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                },
+                PARSE_ERROR: 'unable to parse'
+            })
+        }
+
+        class Derived {
+            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
+                return {
+                    ...Super.Codes,
+                    IO_ERROR: {
+                        code: Super.Codes.IO_ERROR,
+                        type: 'directory'
+                    }
+                }
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, 'symbols inherited')
+
+        try {
+            throw new Derived.Error('IO_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), 'i/o error', 'inherit message format')
+            okay(error.code, 'IO_ERROR', 'inherit code name')
+            okay(error.symbol, Config.Error.IO_ERROR, 'inherit code symbol')
+            okay(error.recoverable, 'inherit default property')
+            okay(error.type, 'directory',  'add default property')
+        }
+    }
+
     return
     //
 

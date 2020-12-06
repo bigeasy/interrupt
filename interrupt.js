@@ -1096,7 +1096,14 @@ class Interrupt extends Error {
                         break
                     case 'object':
                         // Goes here.
-                        if (codes[code] == null) {
+                        if (SuperPrototype.codes2.is.has(codes[code])) {
+                            const prototype = SuperPrototype.prototypes[codes[code].code]
+                            Prototype.prototypes[code] = {
+                                code: code,
+                                properties: combine(prototype.properties),
+                                symbol: symbol = prototype.symbol
+                            }
+                        } else if (codes[code] == null) {
                             // **TODO** Does `message: code` here make something
                             // finalize easier.
                             Prototype.prototypes[code] = { code, properties: {}, symbol }
