@@ -68,7 +68,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(133, async okay => {
+require('proof')(135, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -2131,6 +2131,8 @@ require('proof')(133, async okay => {
             assertConfig({ settings: { volume: 'loud' } })
         } catch (error) {
             console.log(`${error.stack}\n`)
+            okay(error.code, 'INVALID_PARAM_TYPE', 'aliased code set')
+            okay(error.symbol, ConfigError.INVALID_PARAM_TYPE, 'aliased code set')
         }
     }
     //
