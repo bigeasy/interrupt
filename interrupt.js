@@ -954,6 +954,8 @@ class Interrupt extends Error {
             }
         }
 
+        Object.defineProperty(Class, 'name', { value: name })
+
         // We have an prototypical state of an exception that we do not want to
         // store in the class and we definitely do not want to expose it
         // publicly.
@@ -1002,118 +1004,96 @@ class Interrupt extends Error {
                         vargs.unshift.apply(vargs, codes)
                         continue
                     }
-                }
-                break
-            default:
-                throw new Interrupt.Error('INVALID_ARGUMENT')
-            }
-            if (SuperPrototype.Fixup.is.has(codes)) {
-                const object = {}
-                object[codes.code] = SuperPrototype.Fixup.prototypes[codes.code]
-                vargs.unshift(object)
-                continue
-            }
-            for (const code in codes) {
-                // Duplicate declaration detection. **TODO** Better error.
-                assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
-                duplicates.add(code)
-
-                // Use an existing code symbol from the super class if one exists,
-                // otherwise create a new symbol.
-
-                // **TODO** No, I don't think so.
-                let symbol = Symbol(code)
-
-                const object = function () {
-                    switch (typeof codes[code]) {
-                    case 'symbol': {
-                            // **TODO** This is new, what about it?
-                            return { code, symbol: codes[code] }
-                        }
-                    case 'string': {
-                            return { message: codes[code] }
-                        }
-                    case 'object': {
-                            if (codes[code] == null) {
-                                return {}
-                            }
-                            return codes[code]
-                        }
-                    default:
-                        throw new Error
+                    if (SuperPrototype.Fixup.is.has(codes)) {
+                        const object = {}
+                        object[codes.code] = SuperPrototype.Fixup.prototypes[codes.code]
+                        vargs.unshift(object)
+                        continue
                     }
-                } ()
+                    for (const code in codes) {
+                        // Duplicate declaration detection. **TODO** Better error.
+                        assert(!duplicates.has(code), 'DUPLICATE_CODE', { code })
+                        duplicates.add(code)
 
-                // Convert the defintion to a code prototype.
-                switch (typeof object) {
-                case 'symbol': {
+                        // Use an existing code symbol from the super class if one exists,
+                        // otherwise create a new symbol.
 
-                    }
-                    break
-                case 'string': {
-                        Prototype.prototypes[code] = { code, properties: { message: codes[code] }, symbol }
-                    }
-                    break
-                case 'object':
-                    // Goes here.
-                    const entry = function () {
-                        if (SuperPrototype.Fixup.is.has(object)) {
-                            return combine(object, { code: code, symbol: object.symbol })
-                        } else if (object == null) {
-                            return { code, symbol: Symbol(code) }
-                        } else {
-                            const symbol = function () {
-                                switch (typeof coalesce(object.symbol)) {
-                                case 'symbol': {
-                                        return object.symbol
-                                    }
-                                case 'object': {
-                                        assert(object.symbol == null, 'INVALID_CODE')
-                                        return Symbol(code)
-                                    }
-                                default: {
-                                        throw new Interrupt.Error('INVALID_ARGUMENT')
-                                    }
+                        const object = function () {
+                            switch (typeof codes[code]) {
+                            case 'symbol': {
+                                    // **TODO** This is new, what about it?
+                                    return { code, symbol: codes[code] }
                                 }
-                            } ()
-                            const alias = function () {
-                                const alias = object.code
-                                switch (typeof coalesce(alias)) {
-                                case 'symbol': {
-                                        const code = Prototype.Fixup.symbols.get(alias)
-                                        assert(code != null, 'INVALID_CODE')
-                                        return Prototype.Fixup.prototypes[code]
-                                    }
-                                case 'string': {
-                                        if (alias == code) {
-                                            return null
-                                        }
-                                        const prototype = Prototype.Fixup.prototypes[alias]
-                                        assert(prototype != null, 'INVALID_CODE')
-                                        return prototype
-                                    }
-                                case 'object': {
-                                        if (alias == null) {
-                                            return null
-                                        }
-                                        if (SuperPrototype.Fixup.is.has(alias)) {
-                                            return SuperPrototype.Fixup.prototypes[alias.code]
-                                        }
-                                        console.log(code, alias, Prototype.Fixup.Super.Codes, Prototype.Fixup.is)
-                                        assert(Prototype.Fixup.is.has(alias), 'INVALID_CODE')
-                                        return Prototype.Fixup.prototypes[alias.code]
-                                    }
+                            case 'string': {
+                                    return { message: codes[code] }
                                 }
-                            } ()
-                            console.log('>>', code, alias)
-                            if (alias != null) {
-                                return combine(alias, object, { code: alias.code, symbol: alias.symbol })
+                            case 'object': {
+                                    if (codes[code] == null) {
+                                        return {}
+                                    }
+                                    return codes[code]
+                                }
+                            default:
+                                throw new Error
                             }
-                            return combine(object, { code, symbol })
-                        }
-                        return null
-                    } ()
-                    if (entry != null) {
+                        } ()
+
+                        // Goes here.
+                        const entry = function () {
+                            if (SuperPrototype.Fixup.is.has(object)) {
+                                return combine(object, { code: code, symbol: object.symbol })
+                            } else if (object == null) {
+                                return { code, symbol: Symbol(code) }
+                            } else {
+                                const symbol = function () {
+                                    switch (typeof coalesce(object.symbol)) {
+                                    case 'symbol': {
+                                            return object.symbol
+                                        }
+                                    case 'object': {
+                                            assert(object.symbol == null, 'INVALID_CODE')
+                                            return Symbol(code)
+                                        }
+                                    default: {
+                                            throw new Interrupt.Error('INVALID_ARGUMENT')
+                                        }
+                                    }
+                                } ()
+                                const alias = function () {
+                                    const alias = object.code
+                                    switch (typeof coalesce(alias)) {
+                                    case 'symbol': {
+                                            const code = Prototype.Fixup.symbols.get(alias)
+                                            assert(code != null, 'INVALID_CODE')
+                                            return Prototype.Fixup.prototypes[code]
+                                        }
+                                    case 'string': {
+                                            if (alias == code) {
+                                                return null
+                                            }
+                                            const prototype = Prototype.Fixup.prototypes[alias]
+                                            assert(prototype != null, 'INVALID_CODE')
+                                            return prototype
+                                        }
+                                    case 'object': {
+                                            if (alias == null) {
+                                                return null
+                                            }
+                                            if (SuperPrototype.Fixup.is.has(alias)) {
+                                                return SuperPrototype.Fixup.prototypes[alias.code]
+                                            }
+                                            assert(Prototype.Fixup.is.has(alias), 'INVALID_CODE')
+                                            return Prototype.Fixup.prototypes[alias.code]
+                                        }
+                                    }
+                                } ()
+                                if (alias != null) {
+                                    return combine(alias, object, { code: alias.code, symbol: alias.symbol })
+                                }
+                                return combine(object, { code, symbol })
+                            }
+                            return null
+                        } ()
                         if (entry.message == null) {
                             entry.message = entry.code
                         }
@@ -1139,109 +1119,13 @@ class Interrupt extends Error {
                         }
                         Prototype.Fixup.prototypes[code] = entry
                         Prototype.Fixup.is.add(entry)
-                        continue
-                    } else {
-                        const entry = Prototype.prototypes[code] = { code: code, properties: codes[code] }
-                        const aliased = { code: coalesce(entry.properties.code) }
-                        switch (typeof coalesce(entry.properties.symbol)) {
-                        case 'symbol': {
-                                symbol = entry.symbol = entry.properties.symbol
-                                entry.properties = combine(entry.properties)
-                                delete entry.properties.symbol
-                            }
-                            break
-                        case 'object': {
-                                assert(aliased.symbol == null, 'INVALID_CODE')
-                                entry.symbol = symbol
-                            }
-                            break
-                        default: {
-                                throw new Interrupt.Error('INVALID_ARGUMENT')
-                            }
-                            break
-                        }
-                        switch (typeof aliased.code) {
-                        case 'symbol': {
-                                const code = Prototype.Fixup.symbols.get(aliased.code)
-                                assert(code != null, 'INVALID_CODE')
-                                aliased.code = Prototype.prototypes[code] || Prototype.Fixup.prototypes[code]
-                            }
-                            break
-                        case 'string': {
-                                if (aliased.code == code) {
-                                    aliased.code = null
-                                } else {
-                                    aliased.code = Prototype.prototypes[aliased.code] || Prototype.Fixup.prototypes[aliased.code]
-                                    assert(aliased.code != null, 'INVALID_CODE')
-                                }
-                            }
-                            break
-                        case 'object': {
-                                if (aliased.code == null) {
-                                } else if (SuperPrototype.Fixup.is.has(aliased.code)) {
-                                    const prototype = SuperPrototype.prototypes[aliased.code.code]
-                                    entry.properties = combine(prototype.properties, entry.properties, { code: code })
-                                    symbol = entry.symbol = aliased.code.symbol
-                                    aliased.code = null
-                                } else {
-                                    assert(Prototype.codes2.is.has(aliased.code), 'INVALID_CODE')
-                                    aliased.code = Prototype.codes[aliased.code.code]
-                                }
-                            }
-                            break
-                        }
-                        if (aliased.code != null) {
-                            const superPrototype = Prototype.prototypes[(aliased.code || aliased.symbol).code]
-                            if (superPrototype == null) {
-                                const superPrototype = Prototype.Fixup.prototypes[(aliased.code || aliased.symbol).code]
-                                entry.properties = combine(superPrototype, entry.properties, { code: superPrototype.code, symbol: null })
-                                entry.code = superPrototype.code
-                                entry.symbol = superPrototype.symbol
-                            } else {
-
-                                entry.code = superPrototype.code
-                                entry.properties = combine(superPrototype.properties, entry.properties, { code: superPrototype.code, symbol: null })
-                            }
-                            continue
-                        }
                     }
-                    break
                 }
-
-                // Create a property to hold the symbol in the class.
-                Object.defineProperty(Class, code, { value: symbol })
-
-                // Our internal tracking of symbols.
-                Prototype.Fixup.symbols.set(symbol, code)
-
-                Prototype.codes2.is.add(Prototype.codes[code] = Object.defineProperties({}, {
-                    code: { value: code, enumerable: true },
-                    symbol: { value: symbol }
-                }))
-                Prototype.Fixup.codes[code] = Object.defineProperties({}, {
-                    code: { value: code, enumerable: true },
-                    symbol: { value: symbol }
-                })
+                break
+            default:
+                throw new Interrupt.Error('INVALID_ARGUMENT')
             }
         }
-
-        for (const name in Prototype.prototypes) {
-            const prototype = Prototype.prototypes[name]
-            if (prototype.code == null) throw new Error
-            if (prototype.properties.message == null) {
-                prototype.properties.message = prototype.code
-            }
-            const flattened = combine(prototype.properties, { symbol: prototype.symbol, code: prototype.code })
-            Prototype.Fixup.prototypes[name] = flattened
-            if (flattened.code == name) {
-                Prototype.Fixup.Super.Codes[name] = flattened
-            } else {
-                Prototype.Fixup.prototypes[name] = Prototype.Fixup.Super.Aliases[name] = combine(flattened, { symbol: null })
-            }
-            Prototype.Fixup.is.add(Prototype.Fixup.prototypes[name])
-        }
-
-        Object.defineProperty(Class, 'name', { value: name })
 
         return Class
     }
