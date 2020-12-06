@@ -257,6 +257,7 @@ require('proof')(31, async okay => {
 
         class Derived {
             static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
+                console.log(Super.Codes)
                 return Super.Codes
             })
         }
