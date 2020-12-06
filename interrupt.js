@@ -87,8 +87,8 @@ function combine (...vargs) {
 
 function finalize (Class, Prototype, vargs) {
     const options = Class.options.apply(Class, vargs)
-    const prototype = Prototype.Fixup.prototypes[options.code] || {}
-    if (!prototype.code && Prototype.Fixup.prototypes[options.code]) throw new Error
+    const prototype = Prototype.prototypes[options.code] || {}
+    if (!prototype.code && Prototype.prototypes[options.code]) throw new Error
     const _options = Class.options(prototype, options, { code: prototype.code })
     if (_options['#errors'].length) throw new Error
     return _options
@@ -161,7 +161,7 @@ class Interrupt extends Error {
     // Private static initializer. We are committed to Node.js 12 or greater.
     static #initializer = (function () {
         Prototypes.set(Interrupt, {
-            Fixup: { is: new Set, Super: { Codes: {}, Aliases: {} } }
+            is: new Set, Super: { Codes: {}, Aliases: {} }
         })
     } ())
 
@@ -567,7 +567,7 @@ class Interrupt extends Error {
                 writable: false
             }
             properties.symbol = {
-                value: Prototype.Fixup.prototypes[options.code].symbol,
+                value: Prototype.prototypes[options.code].symbol,
                 enumerable: false,
                 writable: false
             }
@@ -661,11 +661,11 @@ class Interrupt extends Error {
             }
 
             static get codes () {
-                return Object.keys(Prototype.Fixup.codes)
+                return Object.keys(Prototype.codes)
             }
 
             static code (code) {
-                return Prototype.Fixup.codes[code]
+                return Prototype.codes[code]
             }
 
             static options (...vargs) {
@@ -681,7 +681,7 @@ class Interrupt extends Error {
                 for (const argument of vargs) {
                     switch (typeof argument) {
                     case 'string': {
-                            if (Prototype.Fixup.prototypes[argument] != null) {
+                            if (Prototype.prototypes[argument] != null) {
                                 options.code = attr(argument)
                             } else {
                                 options.message = attr(argument)
@@ -689,7 +689,7 @@ class Interrupt extends Error {
                         }
                         break
                     case 'symbol': {
-                            const code = Prototype.Fixup.symbols.get(argument)
+                            const code = Prototype.symbols.get(argument)
                             if (code != null) {
                                 options.code = attr(code)
                             }
@@ -751,7 +751,7 @@ class Interrupt extends Error {
                                             // **TODO** Convert `symbol` to `string`.
                                             if (argument[property] == null) {
                                             } else if (typeof argument[property] === 'string') {
-                                                if (Prototype.Fixup.prototypes[argument[property]]) {
+                                                if (Prototype.prototypes[argument[property]]) {
                                                     options.code = attr(argument[property])
                                                 } else {
                                                     options['#errors'].value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
@@ -767,7 +767,7 @@ class Interrupt extends Error {
                                     case 'symbol': {
                                             if (argument[property] == null) {
                                             } else if (typeof argument[property] == 'symbol') {
-                                                const code = Prototype.Fixup.symbols.get(argument[property])
+                                                const code = Prototype.symbols.get(argument[property])
                                                 if (code != null) {
                                                     options.code = attr(code)
                                                 } else {
@@ -961,13 +961,11 @@ class Interrupt extends Error {
         const SuperPrototype = Prototypes.get(SuperClass)
         const Prototype = {
             name: name,
-            Fixup: {
-                is: new Set,
-                symbols: new Map,
-                codes: {},
-                prototypes: {},
-                Super: { Codes: {}, Aliases: {} }
-            }
+            is: new Set,
+            symbols: new Map,
+            codes: {},
+            prototypes: {},
+            Super: { Codes: {}, Aliases: {} }
         }
         Prototypes.set(Class, Prototype)
 
@@ -986,7 +984,7 @@ class Interrupt extends Error {
                 }
             // Invoke a function that will return further code definitions.
             case 'function': {
-                    vargs.unshift(codes({ codes: Prototype.Fixup.Super.Codes, Super: SuperPrototype.Fixup.Super }))
+                    vargs.unshift(codes({ codes: Prototype.Super.Codes, Super: SuperPrototype.Super }))
                     continue
                 }
             // If an array, unshift the definitions onto our argument list,
@@ -997,9 +995,9 @@ class Interrupt extends Error {
                         vargs.unshift.apply(vargs, codes)
                         continue
                     }
-                    if (SuperPrototype.Fixup.is.has(codes)) {
+                    if (SuperPrototype.is.has(codes)) {
                         const object = {}
-                        object[codes.code] = SuperPrototype.Fixup.prototypes[codes.code]
+                        object[codes.code] = SuperPrototype.prototypes[codes.code]
                         vargs.unshift(object)
                         continue
                     }
@@ -1033,7 +1031,7 @@ class Interrupt extends Error {
 
                         // Goes here.
                         const entry = function () {
-                            if (SuperPrototype.Fixup.is.has(object)) {
+                            if (SuperPrototype.is.has(object)) {
                                 return combine(object, { code: code, symbol: object.symbol })
                             } else if (object == null) {
                                 return { code, symbol: Symbol(code) }
@@ -1056,15 +1054,15 @@ class Interrupt extends Error {
                                     const alias = object.code
                                     switch (typeof coalesce(alias)) {
                                     case 'symbol': {
-                                            const code = Prototype.Fixup.symbols.get(alias)
+                                            const code = Prototype.symbols.get(alias)
                                             assert(code != null, 'INVALID_CODE')
-                                            return Prototype.Fixup.prototypes[code]
+                                            return Prototype.prototypes[code]
                                         }
                                     case 'string': {
                                             if (alias == code) {
                                                 return null
                                             }
-                                            const prototype = Prototype.Fixup.prototypes[alias]
+                                            const prototype = Prototype.prototypes[alias]
                                             assert(prototype != null, 'INVALID_CODE')
                                             return prototype
                                         }
@@ -1072,11 +1070,11 @@ class Interrupt extends Error {
                                             if (alias == null) {
                                                 return null
                                             }
-                                            if (SuperPrototype.Fixup.is.has(alias)) {
-                                                return SuperPrototype.Fixup.prototypes[alias.code]
+                                            if (SuperPrototype.is.has(alias)) {
+                                                return SuperPrototype.prototypes[alias.code]
                                             }
-                                            assert(Prototype.Fixup.is.has(alias), 'INVALID_CODE')
-                                            return Prototype.Fixup.prototypes[alias.code]
+                                            assert(Prototype.is.has(alias), 'INVALID_CODE')
+                                            return Prototype.prototypes[alias.code]
                                         }
                                     }
                                 } ()
@@ -1092,22 +1090,22 @@ class Interrupt extends Error {
                         }
                         if (entry.code == code) {
                             const symbol = entry.symbol
-                            Prototype.Fixup.Super.Codes[entry.code] = entry
+                            Prototype.Super.Codes[entry.code] = entry
                             // Create a property to hold the symbol in the class.
                             Object.defineProperty(Class, code, { value: symbol })
 
                             // Our internal tracking of symbols.
-                            Prototype.Fixup.symbols.set(symbol, code)
+                            Prototype.symbols.set(symbol, code)
 
-                            Prototype.Fixup.codes[code] = Object.defineProperties({}, {
+                            Prototype.codes[code] = Object.defineProperties({}, {
                                 code: { value: code, enumerable: true },
                                 symbol: { value: symbol }
                             })
                         } else {
-                            Prototype.Fixup.Super.Aliases[code] = entry
+                            Prototype.Super.Aliases[code] = entry
                         }
-                        Prototype.Fixup.prototypes[code] = entry
-                        Prototype.Fixup.is.add(entry)
+                        Prototype.prototypes[code] = entry
+                        Prototype.is.add(entry)
                     }
                 }
                 break
