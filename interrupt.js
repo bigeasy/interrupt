@@ -1029,10 +1029,32 @@ class Interrupt extends Error {
                 case 'object':
                     // Goes here.
                     if (SuperPrototype.Fixup.is.has(codes[code])) {
-                        const entry = combine(codes[code], { code: code, symbol: codes[code].symbol })
-                        Prototype.Fixup.Super.Codes[entry.code] = Prototype.Fixup.prototypes[entry.code] = entry
+                        const entry = function () {
+                            return combine(codes[code], { code: code, symbol: codes[code].symbol })
+                        } ()
+                        if (entry.code == code) {
+                            const symbol = entry.symbol
+                            Prototype.Fixup.Super.Codes[entry.code] = entry
+                            // Create a property to hold the symbol in the class.
+                            Object.defineProperty(Class, code, { value: symbol })
+
+                            // Our internal tracking of symbols.
+                            Prototype.Fixup.symbols.set(symbol, code)
+
+                            Prototype.codes2.is.add(Prototype.codes[code] = Object.defineProperties({}, {
+                                code: { value: code, enumerable: true },
+                                symbol: { value: symbol }
+                            }))
+                            Prototype.Fixup.codes[code] = Object.defineProperties({}, {
+                                code: { value: code, enumerable: true },
+                                symbol: { value: symbol }
+                            })
+                        } else {
+                            Prototype.Fixup.Super.Aliases[entry.code] = entry
+                        }
+                        Prototype.Fixup.prototypes[entry.code] = entry
                         Prototype.Fixup.is.add(entry)
-                        symbol = entry.symbol
+                        continue
                     } else if (codes[code] == null) {
                         // **TODO** Does `message: code` here make something
                         // finalize easier.
