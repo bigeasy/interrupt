@@ -118,7 +118,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(16, async okay => {
+require('proof')(31, async okay => {
     const Interrupt = require('..')
     //
 
@@ -135,7 +135,7 @@ require('proof')(16, async okay => {
 
     //
     console.log(`\n--- use existing codes ---\n`)
-    {
+    if (false) {
         const Constants = {
             IO_ERROR: Symbol('IO_ERROR'),
             INVALID_ARGUMENT: Symbol('INVALID_ARGUMENT'),

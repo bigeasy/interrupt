@@ -85,10 +85,12 @@ function combine (...vargs) {
     return Object.defineProperties({}, properties)
 }
 
-function merge2 (Class, Prototype, vargs) {
+function finalize (Class, Prototype, vargs) {
     const options = Class.options.apply(Class, vargs)
-    const prototype = Prototype.prototypes[options.code] || { message: null, properties: {}, code: null }
-    return Class.options({ message: prototype.code }, prototype.properties, options, { code: prototype.code })
+    const prototype = Prototype.Fixup.prototypes[options.code] || {}
+    console.log(Prototype.Fixup.prototypes, prototype)
+    if (!prototype.code && Prototype.prototypes[options.code]) throw new Error
+    return Class.options(prototype, options)
 }
 
 // Get an object from a tree of objects `object` using the given array of
@@ -537,7 +539,7 @@ class Interrupt extends Error {
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
-        const options = merge2(Class, Prototype, vargs)
+        const options = finalize(Class, Prototype, vargs)
 
         const properties = {
             name: {
@@ -630,7 +632,7 @@ class Interrupt extends Error {
         const Class = class extends SuperClass {
             static Context = class {
                 constructor (...vargs) {
-                    const options = merge2(Class, Prototype, vargs)
+                    const options = finalize(Class, Prototype, vargs)
                     // **TODO** Common population of displayed.
                     const instance = { errors: [], displayed: {} }
                     this._dump = `${name}.Context: ${context(options, instance, false)}`
@@ -763,6 +765,7 @@ class Interrupt extends Error {
                                                 if (code != null) {
                                                     options.code = attr(code)
                                                 } else {
+                                                    console.log(argument)
                                                     options['#errors'].value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
                                                         property: property,
                                                         value: argument[property]
@@ -964,18 +967,6 @@ class Interrupt extends Error {
         while (vargs.length != 0) {
             const codes = vargs.shift()
             switch (typeof codes) {
-            // Straight symbol means to inherit symbol from parent.
-            case 'symbol': {
-                    const entry = SuperPrototype.inherited.symbolized.get(codes)
-                    assert(entry != null, 'INVALID_ARGUMENT')
-                    // We already have this code defined.
-                    assert(!(entry.code.code in Prototype.codes), 'DUPLICATE_CODE')
-                    // **TODO** Ensure that code is not already defined?
-                    vargs.unshift(new Map([[
-                        entry.code.symbol,  combine(entry.properties, { code: entry.code.code })
-                    ]]))
-                    continue
-                }
             // Define a code with no default properties.
             case 'string': {
                     const object = {}
@@ -1007,6 +998,7 @@ class Interrupt extends Error {
 
             // **TODO** This is outgoing.
             if (codes instanceof Map) {
+                throw new Error
                 // In this pass of the code, this is symbol import which is
                 // separate from symbol inheritance. Inheritance rules have not
                 // yet been settled. Wait...
@@ -1058,12 +1050,10 @@ class Interrupt extends Error {
                 if (codes === SuperPrototype.codes) {
                     const inheritance = Object.keys(codes).map(code => {
                         const prototype = SuperPrototype.prototypes[code]
-                        console.log(prototype)
                         const object = {}
                         object[code] = combine(prototype.properties, { symbol: prototype.symbol })
                         return object
                     })
-                    console.log(inheritance)
                     vargs.unshift.apply(vargs, inheritance)
                     continue
                 } else if (SuperPrototype.codes2.is.has(codes)) {
@@ -1123,7 +1113,6 @@ class Interrupt extends Error {
                                 }
                                 break
                             default: {
-                                    console.log(entry.properties.symbol)
                                     throw new Interrupt.Error('INVALID_ARGUMENT')
                                 }
                                 break
@@ -1148,8 +1137,9 @@ class Interrupt extends Error {
                                     if (aliased.code == null) {
                                     } else if (SuperPrototype.codes2.is.has(aliased.code)) {
                                         const prototype = SuperPrototype.prototypes[aliased.code.code]
-                                        entry.properties = combine(prototype.properties, entry.properties)
+                                        entry.properties = combine(prototype.properties, entry.properties, { code: code })
                                         symbol = entry.symbol = aliased.code.symbol
+                                        aliased.code = null
                                     } else {
                                         assert(Prototype.codes2.is.has(aliased.code), 'INVALID_CODE')
                                         aliased.code = Prototype.codes[aliased.code.code]
@@ -1167,8 +1157,6 @@ class Interrupt extends Error {
                         break
                     }
 
-                    console.log('define', code)
-
                     // Create a property to hold the symbol in the class.
                     Object.defineProperty(Class, code, { value: symbol })
 
@@ -1180,6 +1168,25 @@ class Interrupt extends Error {
                         symbol: { value: symbol }
                     }))
                 }
+            }
+        }
+
+        Prototype.Fixup = {
+            prototypes: {},
+            Super: { Codes: {}, Aliases: {} }
+        }
+        for (const name in Prototype.prototypes) {
+            const prototype = Prototype.prototypes[name]
+            if (prototype.code == null) throw new Error
+            if (prototype.properties.message == null) {
+                prototype.properties.message = prototype.code
+            }
+            const flattened = combine(prototype.properties, { symbol: prototype.symbol, code: prototype.code })
+            Prototype.Fixup.prototypes[name] = flattened
+            if (flattened.code == name) {
+                Prototype.Fixup.Super.Codes[name] = flattened
+            } else {
+                Prototype.Fixup.prototypes[name] = Prototype.Fixup.Super.Aliases[name] = combine(flattened, { symbol: null })
             }
         }
 
