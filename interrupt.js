@@ -684,7 +684,7 @@ class Interrupt extends Error {
                         }
                         break
                     case 'symbol': {
-                            const code = Prototype.symbols.get(argument)
+                            const code = Prototype.Fixup.symbols.get(argument)
                             if (code != null) {
                                 options.code = attr(code)
                             }
@@ -762,7 +762,7 @@ class Interrupt extends Error {
                                     case 'symbol': {
                                             if (argument[property] == null) {
                                             } else if (typeof argument[property] == 'symbol') {
-                                                const code = Prototype.symbols.get(argument[property])
+                                                const code = Prototype.Fixup.symbols.get(argument[property])
                                                 if (code != null) {
                                                     options.code = attr(code)
                                                 } else {
@@ -1059,7 +1059,7 @@ class Interrupt extends Error {
                         }
                         switch (typeof aliased.code) {
                         case 'symbol': {
-                                const code = Prototype.symbols.get(aliased.code)
+                                const code = Prototype.Fixup.symbols.get(aliased.code)
                                 assert(code != null, 'INVALID_CODE')
                                 aliased.code = Prototype.prototypes[code]
                             }
@@ -1101,7 +1101,6 @@ class Interrupt extends Error {
                 Object.defineProperty(Class, code, { value: symbol })
 
                 // Our internal tracking of symbols.
-                Prototype.symbols.set(symbol, code)
                 Prototype.Fixup.symbols.set(symbol, code)
 
                 Prototype.codes2.is.add(Prototype.codes[code] = Object.defineProperties({}, {
