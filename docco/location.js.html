@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>location.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+
+
+                <a class="source" href="interrupt.js.html">
+                  interrupt.js
+                </a>
+
+
+                <a class="source" href="location.js.html">
+                  location.js
+                </a>
+
+
+                <a class="source" href="readme.t.js.html">
+                  readme.t.js
+                </a>
+
+            </div>
+          </div>
+        </li>
+      </ul>
+
+    <ul class="sections">
+
+          <li id="title">
+              <div class="annotation">
+                  <h1>location.js</h1>
+              </div>
+          </li>
+
+
+
+        <li id="section-1">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> RE_FILE_LINE = <span class="hljs-regexp">/[\s\S]*?^    at (?:(.*):(\d+):\d+|.* \((.*):(\d+):\d+\))$/m</span>
+
+<span class="hljs-built_in">module</span>.exports = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">stack</span>) </span>{
+    <span class="hljs-keyword">const</span> match = RE_FILE_LINE.exec(stack)
+    <span class="hljs-keyword">if</span> (match == <span class="hljs-literal">null</span>) {
+        <span class="hljs-keyword">return</span> [ <span class="hljs-literal">null</span>, <span class="hljs-literal">null</span> ]
+    }
+    match.shift()
+    <span class="hljs-keyword">while</span> (match[<span class="hljs-number">0</span>] == <span class="hljs-literal">null</span>) {
+        match.shift()
+    }
+    <span class="hljs-keyword">return</span> [ match[<span class="hljs-number">0</span>], +match[<span class="hljs-number">1</span>] ]
+}</pre></div></div>
+
+        </li>
+
+    </ul>
+  </div>
+</body>
+</html>

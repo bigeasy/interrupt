@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>parse.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+
+
+                <a class="source" href="interrupt.js.html">
+                  interrupt.js
+                </a>
+
+
+                <a class="source" href="location.js.html">
+                  location.js
+                </a>
+
+
+                <a class="source" href="parse.js.html">
+                  parse.js
+                </a>
+
+
+                <a class="source" href="readme.t.js.html">
+                  readme.t.js
+                </a>
+
+            </div>
+          </div>
+        </li>
+      </ul>
+
+    <ul class="sections">
+
+          <li id="title">
+              <div class="annotation">
+                  <h1>parse.js</h1>
+              </div>
+          </li>
+
+
+
+        <li id="section-1">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-built_in">module</span>.exports = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">stack</span>) </span>{
+    <span class="hljs-keyword">return</span> parse(stack, <span class="hljs-literal">true</span>)
+}
+
+<span class="hljs-keyword">var</span> unstacker = <span class="hljs-built_in">require</span>(<span class="hljs-string">'stacktrace-parser'</span>)
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parse</span> (<span class="hljs-params">stack, isRoot</span>) </span>{
+    <span class="hljs-keyword">var</span> $
+    <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^(?:Interrupt: )[\w\d.]+#[\w\d.]+\n[\S\s]+\nstack:\n/m</span>.test(stack)) {
+        stack = stack.replace(<span class="hljs-regexp">/^[\S\s]*\n(Interrupt: [\w\d.]+#[\w\d.]+\n)/</span>, <span class="hljs-string">'$1'</span>)
+        stack = stack.replace(<span class="hljs-regexp">/^Interrupt: /</span>, <span class="hljs-string">''</span>)
+        $ = <span class="hljs-regexp">/^([\w\d.]+)#([\w\d.]+)\n/</span>.exec(stack)
+        <span class="hljs-keyword">var</span> object = {
+            <span class="hljs-attr">type</span>: <span class="hljs-string">'Interrupt'</span>,
+            <span class="hljs-attr">qualifier</span>: $[<span class="hljs-number">1</span>],
+            <span class="hljs-attr">name</span>: $[<span class="hljs-number">2</span>],
+            <span class="hljs-attr">stack</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">context</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">errors</span>: [],
+            <span class="hljs-attr">contexts</span>: []
+        }
+        stack = stack.replace(<span class="hljs-regexp">/.*?\n+(?=[^\n])/</span>, <span class="hljs-string">''</span>)
+        <span class="hljs-keyword">var</span> chunks = stack.split(<span class="hljs-regexp">/^(?:cause|stack):$/gm</span>)
+        <span class="hljs-keyword">var</span> context = chunks.shift()
+        <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/\S/</span>.test(context)) {
+            object.context = <span class="hljs-built_in">JSON</span>.parse(context)
+        }
+        object.stack = unstacker.parse(chunks.pop())
+        <span class="hljs-keyword">while</span> (chunks.length) {
+            <span class="hljs-keyword">var</span> dedented = chunks.shift().replace(<span class="hljs-regexp">/^    /gm</span>, <span class="hljs-string">''</span>)
+            <span class="hljs-keyword">var</span> $ = <span class="hljs-regexp">/(\n\{[\S\s]*?\n\})([\S\s]*)/m</span>.exec(dedented)
+            <span class="hljs-keyword">if</span> ($) {
+                object.contexts.push(<span class="hljs-built_in">JSON</span>.parse($[<span class="hljs-number">1</span>]))
+                object.errors.push(parse($[<span class="hljs-number">2</span>], <span class="hljs-literal">false</span>))
+            } <span class="hljs-keyword">else</span> {
+                object.contexts.push(<span class="hljs-literal">null</span>)
+                object.errors.push(parse(dedented, <span class="hljs-literal">false</span>))
+            }
+        }
+        <span class="hljs-keyword">return</span> object
+    }
+    <span class="hljs-keyword">if</span> (isRoot) {
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>
+    }
+    stack = stack.replace(<span class="hljs-regexp">/^\s+|\s+$/g</span>, <span class="hljs-string">''</span>)
+    <span class="hljs-keyword">var</span> notStack = stack.replace(<span class="hljs-regexp">/(?:\n    at [^\n]+)+/</span>, <span class="hljs-string">''</span>)
+    <span class="hljs-keyword">if</span> (notStack == stack) {
+        <span class="hljs-keyword">return</span> stack
+    }
+    <span class="hljs-keyword">var</span> $ = <span class="hljs-regexp">/^([^:]+):(.*)/</span>.exec(notStack)
+    <span class="hljs-keyword">return</span> {
+        <span class="hljs-attr">type</span>: $[<span class="hljs-number">1</span>],
+        <span class="hljs-attr">message</span>: $[<span class="hljs-number">2</span>],
+        <span class="hljs-attr">stack</span>: unstacker.parse(stack.replace(notStack, <span class="hljs-string">''</span>))
+    }
+}</pre></div></div>
+
+        </li>
+
+    </ul>
+  </div>
+</body>
+</html>
