@@ -118,7 +118,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(45, async okay => {
+require('proof')(44, async okay => {
     const Interrupt = require('..')
     //
 
@@ -263,24 +263,25 @@ require('proof')(45, async okay => {
 
         class Derived {
             static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
-                return Super.Codes
+                return Object.keys(Super.Codes)
+                             .filter(code => ! Super.Codes[code].recoverable)
+                             .map(code => Super.Codes[code])
             })
         }
 
-        okay(Derived.Error.codes.sort(), [ 'IO_ERROR', 'NULL_ARGUMENT', 'PARSE_ERROR' ], 'all codes inherited')
+        okay(Derived.Error.codes.sort(), [ 'NULL_ARGUMENT', 'PARSE_ERROR' ], 'all codes inherited')
         okay((
             Config.Error.IO_ERROR === Derived.Error.IO_ERROR &&
             Config.Error.PARSE_ERROR === Derived.Error.PARSE_ERROR
         ), 'symbols inherited')
 
         try {
-            throw new Derived.Error('IO_ERROR')
+            throw new Derived.Error('NULL_ARGUMENT')
         } catch (error) {
             console.log(`${error.stack}\n`)
-            okay(Interrupt.message(error), 'i/o error', 'inherit message format')
-            okay(error.code, 'IO_ERROR', 'inherit code name')
-            okay(error.symbol, Config.Error.IO_ERROR, 'inherit code symbol')
-            okay(error.recoverable,  'inherit default property')
+            okay(Interrupt.message(error), 'must not be null', 'inherit message format')
+            okay(error.code, 'NULL_ARGUMENT', 'inherit code name')
+            okay(error.symbol, Config.Error.NULL_ARGUMENT, 'inherit code symbol')
         }
     }
 
@@ -371,8 +372,12 @@ require('proof')(45, async okay => {
     }
     //
 
-    // You can import all of the codes, but override some of them using
-    // JavaScript destructuring.
+    // You can import all of the codes, but override or replace some of them
+    // using JavaScript destructuring.
+
+    // In this example we destructure the entire `Super.Codes` object into a new
+    // object, which will import them as is, while at the same time extending
+    // a specific code.
 
     //
     {
