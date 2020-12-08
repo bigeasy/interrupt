@@ -68,7 +68,7 @@ function context (options, instance, stack = true) {
         }
     }
 
-    if (stack) {
+    if (stack && (options['#stack'] == null || options['#stack'] != 0)) {
         message += '\n\nstack:\n'
     }
 
@@ -581,6 +581,12 @@ class Interrupt extends Error {
             }
         }
 
+        const stackTraceLimit = Error.stackTraceLimit
+        console.log(options['#stack'])
+        if (options['#stack'] != null) {
+            Error.stackTraceLimit = options['#stack']
+        }
+
         // **TODO** Display internal errors.
         if (
             options.code == null &&
@@ -607,6 +613,8 @@ class Interrupt extends Error {
         if (options['#callee'] != null) {
             Error.captureStackTrace(this, options['#callee'])
         }
+
+        Error.stackTraceLimit = stackTraceLimit
     }
 
     // We ignore the depth and options. We're not going to limit the output nor
@@ -687,6 +695,7 @@ class Interrupt extends Error {
                     '#type': attr(OPTIONS),
                     '#errors': attr([]),
                     errors: attr([]),
+                    '#stack': attr(null),
                     '#callee': attr(null)
                 }
                 for (const argument of vargs) {
@@ -707,6 +716,14 @@ class Interrupt extends Error {
                             const code = Prototype.symbols.get(argument)
                             if (code != null) {
                                 options.code = attr(code)
+                            }
+                        }
+                        break
+                    case 'number': {
+                            if ((Number.isInteger(argument) || argument == Infinity) && argument >= 0) {
+                                options['#stack'] = attr(argument)
+                            } else {
+                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE')))
                             }
                         }
                         break
@@ -735,6 +752,16 @@ class Interrupt extends Error {
                                                 })
                                             ) {
                                                 options['#errors'].value.push.apply(options['#errors'].value, argument[property])
+                                            } else {
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case '#stack': {
+                                            const stack = argument[property]
+                                            if (stack == null) {
+                                            } else if ((Number.isInteger(stack) || stack == Infinity) && stack >= 0) {
+                                                options['#stack'] = attr(stack)
                                             } else {
                                                 options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
@@ -806,7 +833,7 @@ class Interrupt extends Error {
                                         }
                                         break
                                     default: {
-                                            if (!RE.identifier.test(property)) {
+                                            if (!RE.identifier.test(property) && property != '#stack') {
                                                 options['#errors'].value.push(combine(Interrupt.Error.code('INVALID_PROPERTY_NAME'), { property }))
                                             } else {
                                                 options[property] = Object.getOwnPropertyDescriptor(argument, property)

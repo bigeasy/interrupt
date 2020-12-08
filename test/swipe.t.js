@@ -118,57 +118,15 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(39, async okay => {
+require('proof')(45, async okay => {
     const Interrupt = require('..')
     //
 
     // You can define symbols elsewhere and import them into the defintion of
     // your expcetion.
 
-    // To do so you use a `Map` where the key is the symbol and the definition
-    // either the message or the default properties for the code. The code name
-    // will be extracted from the `toString()` value of the `Symbol`. This is
-    // fine because the `toString()` value is defined in the specification, so
-    // we can get it out across platforms with a regular expression. If you want
-    // to override the name used to create the `Symbol` you can specify a new
-    // name as the `code` property of a default properties object.
-
-    //
-    console.log(`\n--- use existing codes ---\n`)
-    if (false) {
-        const Constants = {
-            IO_ERROR: Symbol('IO_ERROR'),
-            INVALID_ARGUMENT: Symbol('INVALID_ARGUMENT'),
-            YET_ANOTHER_SYMBOL: Symbol('YET_ANOTHER_SYMBOL')
-        }
-
-        class Config {
-            static Error = Interrupt.create('Config.Error', new Map([
-                [ Constants.IO_ERROR, null ],
-                [ Constants.INVALID_ARGUMENT, 'invalid argument for: %(_name)s' ],
-                [
-                    Constants.YET_ANOTHER_SYMBOL,
-                    {
-                        code: 'NULL_ARGUMENT',
-                        message: 'argument must not be null: %(_name)s'
-                    }
-                ]
-            ]))
-        }
-
-        try {
-            throw new Config.Error('IO_ERROR')
-        } catch (error) {
-            okay(error.symbol, Config.Error.IO_ERROR, 'use symbol')
-            okay(error.code, 'IO_ERROR', 'use symbol name as code')
-            okay(Interrupt.message(error), 'IO_ERROR', 'use symbol name as message')
-        }
-    }
-    //
-
-    // You can define symbols elsewhere and import them into the definition of
-    // your exception. Specify the imported symbol as `symbol` property in the
-    // prototype object.
+    // To do so you specify a `symbol` property in your prototype definition.
+    // The symbol will be used instead of generating a symbol for the code.
 
     //
     console.log(`\n--- use existing external symbols ---\n`)
@@ -204,21 +162,28 @@ require('proof')(39, async okay => {
     }
     //
 
-    // To inherit a code from the parent... (Do simple.)
-
     // To inherit a codes and aliases from the parent you must use a code
-    // function. The code function is given an object with a `Codes` property
-    // and a `Super` property that contains an object. The `Super` contains a
-    // `Codes` property containing the codes of super class indexed by the code
-    // name and an `Alaises` property containing the aliases of the super class
-    // indexed by code name.
+    // function.
+
+    // The code function is with a `Super` property that contains an object. The
+    // `Super` contains a `Codes` property containing the codes of super class
+    // indexed by the code name and an `Alaises` property containing the aliases
+    // of the super class indexed by code name.
+
+    // You can import code from the parent by returning one of the code objects
+    // from the `Super.Codes` object.
 
     //
     console.log('\n--- inherit a code ---\n')
     {
         class Config {
             static Error = Interrupt.create('Config.Error', {
-                IO_ERROR: 'i/o error'
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                },
+                PARSE_ERROR: 'unable to parse',
+                NULL_ARGUMENT: 'must not be null'
             })
         }
 
@@ -241,7 +206,7 @@ require('proof')(39, async okay => {
     }
     //
 
-    // You can import all the codes at once by returning the codes object.
+    // You can import all the codes at once by returning the `Super.Codes` object.
 
     //
     {
@@ -251,18 +216,18 @@ require('proof')(39, async okay => {
                     message: 'i/o error',
                     recoverable: true
                 },
-                PARSE_ERROR: 'unable to parse'
+                PARSE_ERROR: 'unable to parse',
+                NULL_ARGUMENT: 'must not be null'
             })
         }
 
         class Derived {
             static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
-                console.log(Super.Codes)
                 return Super.Codes
             })
         }
 
-        okay(Derived.Error.codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'all codes inherited')
+        okay(Derived.Error.codes.sort(), [ 'IO_ERROR', 'NULL_ARGUMENT', 'PARSE_ERROR' ], 'all codes inherited')
         okay((
             Config.Error.IO_ERROR === Derived.Error.IO_ERROR &&
             Config.Error.PARSE_ERROR === Derived.Error.PARSE_ERROR
@@ -279,6 +244,45 @@ require('proof')(39, async okay => {
         }
     }
     //
+
+    // You can always return an code array, code object or another code function
+    // so you can use one of these to return a subset of codes to import.
+
+    //
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                },
+                PARSE_ERROR: 'unable to parse',
+                NULL_ARGUMENT: 'must not be null'
+            })
+        }
+
+        class Derived {
+            static Error = Interrupt.create('Derived.Error', Config.Error, function ({ Super }) {
+                return Super.Codes
+            })
+        }
+
+        okay(Derived.Error.codes.sort(), [ 'IO_ERROR', 'NULL_ARGUMENT', 'PARSE_ERROR' ], 'all codes inherited')
+        okay((
+            Config.Error.IO_ERROR === Derived.Error.IO_ERROR &&
+            Config.Error.PARSE_ERROR === Derived.Error.PARSE_ERROR
+        ), 'symbols inherited')
+
+        try {
+            throw new Derived.Error('IO_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), 'i/o error', 'inherit message format')
+            okay(error.code, 'IO_ERROR', 'inherit code name')
+            okay(error.symbol, Config.Error.IO_ERROR, 'inherit code symbol')
+            okay(error.recoverable,  'inherit default property')
+        }
+    }
 
     // If you want to inherit a code and extend it you use the Super's code
     // object as the `code` property of a defintion. The properties of the
@@ -465,8 +469,21 @@ require('proof')(39, async okay => {
         okay(new Config.Error().toString(), 'Config.Error', 'no message to string')
         okay(new Config.Error('IO_ERROR').toString(), 'Config.Error: i/o error', 'with message to string')
     }
-    return
 
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                }
+            })
+        }
+
+        // **TODO** `Context` object is offically outgoing.
+        console.log(new Config.Error('IO_ERROR', [ new Config.Error(1, 'IO_ERROR', new Error('hello'), { hello: 'world' }) ]))
+    }
+    return
     //
 
     // ## Error Heirarchies
