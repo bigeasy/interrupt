@@ -582,7 +582,6 @@ class Interrupt extends Error {
         }
 
         const stackTraceLimit = Error.stackTraceLimit
-        console.log(options['#stack'])
         if (options['#stack'] != null) {
             Error.stackTraceLimit = options['#stack']
         }
