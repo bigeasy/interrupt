@@ -89,22 +89,6 @@ function combine (...vargs) {
     return Object.defineProperties({}, properties)
 }
 
-function finalize (Class, Prototype, vargs) {
-    const options = Class.options.apply(Class, vargs)
-    const prototypes = [ Prototype.prototypes[options.code] || { code: null } ]
-    const code = prototypes[0].code
-    if (prototypes[0].code != null && prototypes[0].code != options.code) {
-        let superPrototype = prototypes[0], superCode
-        do {
-            superCode = superPrototype.code
-            superPrototype = Prototype.prototypes[superCode]
-            prototypes.unshift(superPrototype)
-        } while (superPrototype.code != superCode)
-    }
-    prototypes.push(options, { code: prototypes[prototypes.length - 1].code })
-    return Class.options.apply(Class, prototypes)
-}
-
 // Get an object from a tree of objects `object` using the given array of
 // indexes in the given `path`. Used by our specialized JSON to generate and
 // resolve references.
@@ -541,7 +525,19 @@ class Interrupt extends Error {
         // When called with no arguments we call our super constructor with no
         // arguments to eventually call `Error` with no argments to create an
         // empty error.
-        const options = finalize(Class, Prototype, vargs)
+        const args = Class.options.apply(Class, vargs)
+        const prototypes = [ Prototype.prototypes[args.code] || { code: null } ]
+        const code = prototypes[0].code
+        if (prototypes[0].code != null && prototypes[0].code != args.code) {
+            let superPrototype = prototypes[0], superCode
+            do {
+                superCode = superPrototype.code
+                superPrototype = Prototype.prototypes[superCode]
+                prototypes.unshift(superPrototype)
+            } while (superPrototype.code != superCode)
+        }
+        prototypes.push(args, { code: prototypes[prototypes.length - 1].code })
+        const options = Class.options.apply(Class, prototypes)
 
         const properties = {
             name: {
@@ -658,22 +654,6 @@ class Interrupt extends Error {
         }
 
         const Class = class extends SuperClass {
-            static Context = class {
-                constructor (...vargs) {
-                    const options = finalize(Class, Prototype, vargs)
-                    // **TODO** Common population of displayed.
-                    const instance = { errors: [], displayed: {} }
-                    this._dump = `${name}.Context: ${context(options, instance, false)}`
-                    for (const property in options.properties) {
-                        this[property] = options.properties[property]
-                    }
-                }
-
-                toString () {
-                    return this._dump
-                }
-            }
-
             constructor (...vargs) {
                 if (vargs[0] === PROTECTED) {
                     super(...vargs)

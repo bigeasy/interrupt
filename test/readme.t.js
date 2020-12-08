@@ -2203,15 +2203,42 @@ require('proof')(136, async okay => {
 
     //
 
-    // When you create an aggregate exception you may want to provide context
-    // for the errors. You'll have context for the aggregate error itself in the
-    // form of properties, but you won't have context for each individual error
-    // unless you provide a parallel array of context information. That is, you
-    // may want to provide an application code and application specific
-    // properties.
+    // ## Stack Trace Limit
 
-    // You can wrap each exception in an Interrupt derived exception, but
-    // sometimes you don't really need the additional stack trace.
+    // An integer greater than or equal to zero, or Infinity is interpreted as a
+    // stack trace limit. It is used to temporarily set `Error.stackTraceLimit`
+    // for during the construction of the exception. `Error.stackTraceLimit` is
+    // restored to its original value after the exception is constructed.
+
+    //
+    {
+    }
+    //
+
+    // In our nested error examples so far we've always specified a single
+    // nested error so we've added context to wrapper error. When you create an
+    // aggregate exception, you don't have a good way to associate properties in
+    // the wrapper error with an error at a specific index in the nested errors
+    // array.
+
+    // To provide context for each nested error, you can create a wrapper error
+    // for each nested error. Now you have an aggregate error with an array of
+    // context wrapper errors containing the actual errors. Yes, you can do
+    // this, and yes it's a bit much. This is where the stack trace limit can
+    // help.
+
+    // The stack trace can start to get too verbose. Each wrapper error will add
+    // a stack trace and that stack trace is often superflous. If the aggregate
+    // error provides a stack trace that points to the right function in your
+    // application and the context wrapper errors merely repeat that stack
+    // trace plus a frame, go ahead and get rid of it by setting a stack trace
+    // limit of zero. The context wrapper exceptions will appear without a stack
+    // trace or stack trace header merely providing some context.
+
+    // **TODO** Do we want to maybe make the code a part of the exception name?
+    // No. No way to distinquish the class name from the code without
+    // introducing some additional funny character. What's the big deal about a
+    // funny character? `#` and you encourage codes.
 
     //
     console.log('\n--- nested error context wrapper ---\n')
@@ -2238,7 +2265,7 @@ require('proof')(136, async okay => {
                     try {
                         await files.push(await fs.readFile(filename))
                     } catch (error) {
-                        errors.push(new ConfigError.Context('UNABLE_TO_READ_FILE', error, { filename }))
+                        errors.push(new ConfigError.Error(0, 'UNABLE_TO_READ_FILE', error, { filename }))
                     }
                 } ())
             }
@@ -2259,6 +2286,16 @@ require('proof')(136, async okay => {
             console.log(`${error.stack}\n`)
         }
     }
+    //
+
+    // Alternatively, you could set the stack trace to `1` to get just a
+    // filename and line number on the nested wrapper exception.
+
+    // Trimming stack traces is worthwhile. We know that JavaScript won't give
+    // us a continguous stack trace, so we become accustomed to using what we
+    // get to poke around, so we learn to trim the cruft down to just what we
+    // need to navigate the source post mortem.
+
     //
 
     // Why don't you need the additional stack trace? Okay, I'm going to add
