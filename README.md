@@ -18,9 +18,3 @@ Nested exceptions with elaborate stack traces for Node.js.
 ```
 npm install interrupt
 ```
-
-## Overview
-
-
-```javascript
-```
