@@ -118,7 +118,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(37, async okay => {
+require('proof')(39, async okay => {
     const Interrupt = require('..')
     //
 
@@ -413,7 +413,6 @@ require('proof')(37, async okay => {
 
     //
     {
-        debugger
         class Config {
             static Error = Interrupt.create('Config.Error', {
                 IO_ERROR: {
@@ -451,6 +450,20 @@ require('proof')(37, async okay => {
             okay(error.recoverable, 'inherit default property')
             okay(error.type, 'file',  'add default property')
         }
+    }
+
+    {
+        class Config {
+            static Error = Interrupt.create('Config.Error', {
+                IO_ERROR: {
+                    message: 'i/o error',
+                    recoverable: true
+                }
+            })
+        }
+
+        okay(new Config.Error().toString(), 'Config.Error', 'no message to string')
+        okay(new Config.Error('IO_ERROR').toString(), 'Config.Error: i/o error', 'with message to string')
     }
     return
 

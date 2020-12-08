@@ -89,7 +89,6 @@ function finalize (Class, Prototype, vargs) {
     const options = Class.options.apply(Class, vargs)
     const prototypes = [ Prototype.prototypes[options.code] || { code: null } ]
     const code = prototypes[0].code
-    console.log('>>>>', prototypes[0], options.code, vargs)
     if (prototypes[0].code != null && prototypes[0].code != options.code) {
         let superPrototype = prototypes[0], superCode
         do {
@@ -587,7 +586,7 @@ class Interrupt extends Error {
             options.code == null &&
             options.message == null &&
             options.errors.length == 0 &&
-            Object.keys(options).length == 0
+            Object.keys(options).filter(name => !/^#|^errors$/.test(name)).length == 0
         ) {
             super()
         } else {
@@ -608,6 +607,24 @@ class Interrupt extends Error {
         if (options['#callee'] != null) {
             Error.captureStackTrace(this, options['#callee'])
         }
+    }
+
+    // We ignore the depth and options. We're not going to limit the output nor
+    // sprinkle it with colors, not now and probably not ever. This was the
+    // output we got before `util.inspect` added the enumberable `Error`
+    // properties to its output.
+    [util.inspect.custom](depth, options) {
+        return this.stack
+    }
+
+    // Our `toString` representation mirrors that of Node.js. We remove the
+    // context and headings from the `message` used to generate `stack`.
+    toString () {
+        const instance = Instances.get(this)
+        if (instance.message == null) {
+            return this.name
+        }
+        return `${this.name}: ${instance.message}`
     }
 
     static get OPTIONS () {
@@ -1033,7 +1050,6 @@ class Interrupt extends Error {
                             // the existing code? Turn `is` into map and use the existing code,
                             // I guess.
                             if (SuperPrototype.is.has(object)) {
-                                console.log(code, object.code, object)
                                 return object
                             }
                             if (object == null) {
@@ -1065,7 +1081,6 @@ class Interrupt extends Error {
                                     // Define an alias extending on the given code or alias.
                                     const superSuperCode = SuperPrototype.is.get(object.code)
                                     if (superSuperCode != null) {
-                                    console.log('--- here ---', superSuperCode, object.code.code)
                                         if (superSuperCode === object.code.code) {
                                             assert(superSuperCode == code, 'INVALID_CODE')
                                             return combine(object.code, object, { code: code })
