@@ -68,7 +68,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(135, async okay => {
+require('proof')(136, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1950,14 +1950,42 @@ require('proof')(135, async okay => {
             await read(filename)
         } catch (error) {
             console.log(`${error.stack}\n`)
-            okay(error.code, 'FILE_READ_ERROR', 'code set')
-            okay(error.filename, filename, 'filename property set')
+            okay(Interrupt.message(error), `unable to read file: ${filename}`, 'sprintf message formatted')
+            okay(error.filename, filename, 'sprintf example filename property set')
         }
     }
     //
 
-    // If a parameter is missing, `sprintf` will fail and the format will be
-    // used as is.
+    // If `sprintf` is unable to format the message due to an error in the
+    // message format, the message format will be used as is.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            FILE_READ_ERROR: 'unable to read file: %(filename)'
+        })
+
+        async function read (filename) {
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR')
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename)
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), `unable to read file: %(filename)`, 'format was missing a sprintf type specifier')
+        }
+    }
+    //
 
     // To use a parameter in the format you **must** put it in the properties
     // object and it will become a property of the exception. If you really want

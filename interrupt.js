@@ -39,7 +39,9 @@ const AUDIT = new Error('example')
 // formatted to appear integrated with the stack trace from `error.stack` which
 // includes the message in the stack trace.
 function context (options, instance, stack = true) {
-    let message = instance.message
+    // Attempt to use the options message as a `sprintf` format. Use the message
+    // as is if `sprintf` fails.
+    let message = instance.message = options.message
     try {
         message = instance.message = sprintf(options.message, options)
     } catch (error) {
@@ -50,7 +52,7 @@ function context (options, instance, stack = true) {
             error: error
         })
     }
-    const properties = {}
+    // The enumerable properties, if any, of the object using our special JSON.
     if (Object.keys(instance.displayed).length != 0) {
         message += '\n\n' + Interrupt.JSON.stringify(instance.displayed)
     }
@@ -68,6 +70,7 @@ function context (options, instance, stack = true) {
         }
     }
 
+    // A header for the stack trace unless the stack trace has been suppressed.
     if (stack && (options['#stack'] == null || options['#stack'] != 0)) {
         message += '\n\nstack:\n'
     }
@@ -75,6 +78,7 @@ function context (options, instance, stack = true) {
     return message
 }
 
+// A utility to merge two or more objects preserving their descriptor traits.
 function combine (...vargs) {
     const properties = {}
     for (const object of vargs) {
