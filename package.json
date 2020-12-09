@@ -22,12 +22,12 @@
     {
                             "extant":                       "^1.0.15",
                             "keyify":                       "2.0.5",
+                            "stacktrace-parser":            "0.1.10",
                             "sprintf-js":                   "1.1.2"
     },
     "devDependencies":
     {
-                            "proof":                        "^9.0.0",
-                            "stacktrace-parser":            "0.1.10"
+                            "proof":                        "^9.0.0"
     },
     "main":                 "interrupt",
     "scripts":
