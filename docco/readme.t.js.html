@@ -269,7 +269,7 @@ in this readme you need to be running Node.js 14.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-built_in">require</span>(<span class="hljs-string">'proof'</span>)(<span class="hljs-number">135</span>, <span class="hljs-keyword">async</span> okay =&gt; {</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-built_in">require</span>(<span class="hljs-string">'proof'</span>)(<span class="hljs-number">180</span>, <span class="hljs-keyword">async</span> okay =&gt; {</pre></div></div>
 
         </li>
 
@@ -4470,8 +4470,8 @@ syntax so we can use our properties object as our <code>sprintf</code> parameter
             <span class="hljs-keyword">await</span> read(filename)
         } <span class="hljs-keyword">catch</span> (error) {
             <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
-            okay(error.code, <span class="hljs-string">'FILE_READ_ERROR'</span>, <span class="hljs-string">'code set'</span>)
-            okay(error.filename, filename, <span class="hljs-string">'filename property set'</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">`unable to read file: <span class="hljs-subst">${filename}</span>`</span>, <span class="hljs-string">'sprintf message formatted'</span>)
+            okay(error.filename, filename, <span class="hljs-string">'sprintf example filename property set'</span>)
         }
     }</pre></div></div>
 
@@ -4496,8 +4496,8 @@ syntax so we can use our properties object as our <code>sprintf</code> parameter
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-226">&#182;</a>
               </div>
-              <p>If a parameter is missing, <code>sprintf</code> will fail and the format will be
-used as is.</p>
+              <p>If <code>sprintf</code> is unable to format the message due to an error in the
+message format, the message format will be used as is.</p>
 
             </div>
 
@@ -4510,6 +4510,56 @@ used as is.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-227">&#182;</a>
               </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+        <span class="hljs-keyword">const</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">'path'</span>)
+        <span class="hljs-keyword">const</span> fs = <span class="hljs-built_in">require</span>(<span class="hljs-string">'fs'</span>).promises
+
+        <span class="hljs-keyword">const</span> ReaderError = Interrupt.create(<span class="hljs-string">'ConfigError'</span>, {
+            <span class="hljs-attr">FILE_READ_ERROR</span>: <span class="hljs-string">'unable to read file: %(filename)'</span>
+        })
+
+        <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">read</span> (<span class="hljs-params">filename</span>) </span>{
+            <span class="hljs-keyword">try</span> {
+                <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> fs.readFile(filename)
+            } <span class="hljs-keyword">catch</span> (error) {
+                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> ReaderError(<span class="hljs-string">'FILE_READ_ERROR'</span>)
+            }
+        }
+
+        <span class="hljs-keyword">const</span> filename = path.join(__dirname, <span class="hljs-string">'missing.txt'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">await</span> read(filename)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">`unable to read file: %(filename)`</span>, <span class="hljs-string">'format was missing a sprintf type specifier'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-228">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-228">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-229">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-229">&#182;</a>
+              </div>
               <p>To use a parameter in the format you <strong>must</strong> put it in the properties
 object and it will become a property of the exception. If you really want
 to use a parameter but not have it become a property of the exception
@@ -4521,11 +4571,11 @@ the <code>sprintf</code> format.</p>
         </li>
 
 
-        <li id="section-228">
+        <li id="section-230">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-228">&#182;</a>
+                <a class="pilcrow" href="#section-230">&#182;</a>
               </div>
 
             </div>
@@ -4560,42 +4610,12 @@ the <code>sprintf</code> format.</p>
         </li>
 
 
-        <li id="section-229">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-229">&#182;</a>
-              </div>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-230">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-230">&#182;</a>
-              </div>
-              <p>In the above example we decided add the incorrect type to the error
-message, but decided against making it a property of the exception. For
-an assertion that should be raised by unit testing, the message ought to
-be enough.</p>
-
-            </div>
-
-        </li>
-
-
         <li id="section-231">
             <div class="annotation">
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-231">&#182;</a>
               </div>
-              <p>Because underbars make properties disappear you should be careful not to
-dump arbitrary objects into your properties with destructuring.</p>
 
             </div>
 
@@ -4607,6 +4627,36 @@ dump arbitrary objects into your properties with destructuring.</p>
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-232">&#182;</a>
+              </div>
+              <p>In the above example we decided add the incorrect type to the error
+message, but decided against making it a property of the exception. For
+an assertion that should be raised by unit testing, the message ought to
+be enough.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-233">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-233">&#182;</a>
+              </div>
+              <p>Because underbars make properties disappear you should be careful not to
+dump arbitrary objects into your properties with destructuring.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-234">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-234">&#182;</a>
               </div>
 
             </div>
@@ -4638,40 +4688,12 @@ dump arbitrary objects into your properties with destructuring.</p>
         </li>
 
 
-        <li id="section-233">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-233">&#182;</a>
-              </div>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-234">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-234">&#182;</a>
-              </div>
-              <p>This is not a good thing to do in any case.</p>
-
-            </div>
-
-        </li>
-
-
         <li id="section-235">
             <div class="annotation">
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-235">&#182;</a>
               </div>
-              <p>Only properties with underbar’d names at the top level of the properties
-object are removed. We do not recursively search for underbar’d
-properties to remove.</p>
 
             </div>
 
@@ -4684,7 +4706,7 @@ properties to remove.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-236">&#182;</a>
               </div>
-              <p>We can fix the above by removing the destructuring.</p>
+              <p>This is not a good thing to do in any case.</p>
 
             </div>
 
@@ -4696,6 +4718,34 @@ properties to remove.</p>
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-237">&#182;</a>
+              </div>
+              <p>Only properties with underbar’d names at the top level of the properties
+object are removed. We do not recursively search for underbar’d
+properties to remove.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-238">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-238">&#182;</a>
+              </div>
+              <p>We can fix the above by removing the destructuring.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-239">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-239">&#182;</a>
               </div>
 
             </div>
@@ -4730,40 +4780,12 @@ properties to remove.</p>
         </li>
 
 
-        <li id="section-238">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-238">&#182;</a>
-              </div>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-239">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-239">&#182;</a>
-              </div>
-              <h2 id="message-tables">Message Tables</h2>
-
-            </div>
-
-        </li>
-
-
         <li id="section-240">
             <div class="annotation">
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-240">&#182;</a>
               </div>
-              <p>You might not be able to create a message generic enough for a particular
-code, or you might want to use generialized codes with customized
-messages.</p>
 
             </div>
 
@@ -4776,7 +4798,7 @@ messages.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-241">&#182;</a>
               </div>
-              <p><strong>TODO</strong> Stabbing at how to say this. Rewrite.</p>
+              <h2 id="message-tables">Message Tables</h2>
 
             </div>
 
@@ -4789,10 +4811,9 @@ messages.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-242">&#182;</a>
               </div>
-              <p>Codes and messages are a matter of taste. You might want to have a small
-set of generic codes but a lot of detailed messages and error properties
-for context. If this is the case, you’ll have to litter the specialized
-messages throughout your program.</p>
+              <p>You might not be able to create a message generic enough for a particular
+code, or you might want to use generialized codes with customized
+messages.</p>
 
             </div>
 
@@ -4805,7 +4826,7 @@ messages throughout your program.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-243">&#182;</a>
               </div>
-              <p>You can instead define a message table.</p>
+              <p><strong>TODO</strong> Stabbing at how to say this. Rewrite.</p>
 
             </div>
 
@@ -4818,9 +4839,10 @@ messages throughout your program.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-244">&#182;</a>
               </div>
-              <p>A default defines a <code>code</code> property that is either the string name of an
-existing code, the symbol for an existing code or one of the code objects
-in the code object map passed into a code definition function.</p>
+              <p>Codes and messages are a matter of taste. You might want to have a small
+set of generic codes but a lot of detailed messages and error properties
+for context. If this is the case, you’ll have to litter the specialized
+messages throughout your program.</p>
 
             </div>
 
@@ -4832,6 +4854,34 @@ in the code object map passed into a code definition function.</p>
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-245">&#182;</a>
+              </div>
+              <p>You can instead define a message table.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-246">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-246">&#182;</a>
+              </div>
+              <p>A default defines a <code>code</code> property that is either the string name of an
+existing code, the symbol for an existing code or one of the code objects
+in the code object map passed into a code definition function.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-247">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-247">&#182;</a>
               </div>
 
             </div>
@@ -4845,11 +4895,11 @@ in the code object map passed into a code definition function.</p>
         </li>
 
 
-        <li id="section-246">
+        <li id="section-248">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-246">&#182;</a>
+                <a class="pilcrow" href="#section-248">&#182;</a>
               </div>
               <p><em>Specify by code name.</em></p>
 
@@ -4863,11 +4913,11 @@ in the code object map passed into a code definition function.</p>
         </li>
 
 
-        <li id="section-247">
+        <li id="section-249">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-247">&#182;</a>
+                <a class="pilcrow" href="#section-249">&#182;</a>
               </div>
               <p><em>Specify by code symbol.</em></p>
 
@@ -4881,11 +4931,11 @@ in the code object map passed into a code definition function.</p>
         </li>
 
 
-        <li id="section-248">
+        <li id="section-250">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-248">&#182;</a>
+                <a class="pilcrow" href="#section-250">&#182;</a>
               </div>
               <p><em>Easiest to read, just the <code>code</code> object itself.</em></p>
 
@@ -4930,41 +4980,12 @@ in the code object map passed into a code definition function.</p>
         </li>
 
 
-        <li id="section-249">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-249">&#182;</a>
-              </div>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-250">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-250">&#182;</a>
-              </div>
-              <p><strong>TODO</strong> Getting poorly written here abouts.</p>
-
-            </div>
-
-        </li>
-
-
         <li id="section-251">
             <div class="annotation">
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-251">&#182;</a>
               </div>
-              <p>When you specify a symbol or a code in your definition it is used as an
-alias for that code. The properties and format for that code are used but
-they are overwritten by the alias. The referenced code is used for
-exceptions code. Aliases can reference aliases.</p>
 
             </div>
 
@@ -4977,9 +4998,7 @@ exceptions code. Aliases can reference aliases.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-252">&#182;</a>
               </div>
-              <p>You cannot declare an alias or code more than once in <code>create()</code>. You
-will inherit the aliases of the super class and they can be overridden in
-the sub class.</p>
+              <p><strong>TODO</strong> Getting poorly written here abouts.</p>
 
             </div>
 
@@ -4992,7 +5011,10 @@ the sub class.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-253">&#182;</a>
               </div>
-              <p>You can specify both a symbol and a code, but they must agree.</p>
+              <p>When you specify a symbol or a code in your definition it is used as an
+alias for that code. The properties and format for that code are used but
+they are overwritten by the alias. The referenced code is used for
+exceptions code. Aliases can reference aliases.</p>
 
             </div>
 
@@ -5005,7 +5027,9 @@ the sub class.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-254">&#182;</a>
               </div>
-              <h2 id="nested-exceptions">Nested Exceptions</h2>
+              <p>You cannot declare an alias or code more than once in <code>create()</code>. You
+will inherit the aliases of the super class and they can be overridden in
+the sub class.</p>
 
             </div>
 
@@ -5018,10 +5042,7 @@ the sub class.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-255">&#182;</a>
               </div>
-              <p>When you want to throw an exception based on a exception you caught you
-can pass that exception’s error into the constructor. The <code>errors</code>
-property of the exception will contain the cause. Any argument that is an
-object that is <code>instance Error</code> will be added to the <code>errors</code>.</p>
+              <p>You can specify both a symbol and a code, but they must agree.</p>
 
             </div>
 
@@ -5034,10 +5055,7 @@ object that is <code>instance Error</code> will be added to the <code>errors</co
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-256">&#182;</a>
               </div>
-              <p>If you pass in more than one error they will both be added to the errors
-array. (<strong>TODO</strong> An example with a primary attempt and a fallback and
-they both fail. Hmm… Now I have an aggregate but that is for the
-context example, this example is still good.)</p>
+              <h2 id="nested-exceptions">Nested Exceptions</h2>
 
             </div>
 
@@ -5050,8 +5068,10 @@ context example, this example is still good.)</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-257">&#182;</a>
               </div>
-              <p>Any <code>Array</code> argument to the constructor is treated as an array of nested
-errors and added to the error array.</p>
+              <p>When you want to throw an exception based on a exception you caught you
+can pass that exception’s error into the constructor. The <code>errors</code>
+property of the exception will contain the cause. Any argument that is an
+object that is <code>instance Error</code> will be added to the <code>errors</code>.</p>
 
             </div>
 
@@ -5064,7 +5084,10 @@ errors and added to the error array.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-258">&#182;</a>
               </div>
-              <p>You can mix adding both arrays and errors directly.</p>
+              <p>If you pass in more than one error they will both be added to the errors
+array. (<strong>TODO</strong> An example with a primary attempt and a fallback and
+they both fail. Hmm… Now I have an aggregate but that is for the
+context example, this example is still good.)</p>
 
             </div>
 
@@ -5077,8 +5100,8 @@ errors and added to the error array.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-259">&#182;</a>
               </div>
-              <p>Any type can be thrown from JavaScript. If can’t be certain that the
-error you caught is <code>instanceof Error</code>, simply wrap it in an array.</p>
+              <p>Any <code>Array</code> argument to the constructor is treated as an array of nested
+errors and added to the error array.</p>
 
             </div>
 
@@ -5091,7 +5114,7 @@ error you caught is <code>instanceof Error</code>, simply wrap it in an array.</
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-260">&#182;</a>
               </div>
-              <p><strong>TODO</strong> Example of any type of error.</p>
+              <p>You can mix adding both arrays and errors directly.</p>
 
             </div>
 
@@ -5104,6 +5127,8 @@ error you caught is <code>instanceof Error</code>, simply wrap it in an array.</
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-261">&#182;</a>
               </div>
+              <p>Any type can be thrown from JavaScript. If can’t be certain that the
+error you caught is <code>instanceof Error</code>, simply wrap it in an array.</p>
 
             </div>
 
@@ -5116,12 +5141,7 @@ error you caught is <code>instanceof Error</code>, simply wrap it in an array.</
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-262">&#182;</a>
               </div>
-              <p>When you create an aggregate exception you may want to provide context
-for the errors. You’ll have context for the aggregate error itself in the
-form of properties, but you won’t have context for each individual error
-unless you provide a parallel array of context information. That is, you
-may want to provide an application code and application specific
-properties.</p>
+              <p><strong>TODO</strong> Example of any type of error.</p>
 
             </div>
 
@@ -5134,8 +5154,6 @@ properties.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-263">&#182;</a>
               </div>
-              <p>You can wrap each exception in an Interrupt derived exception, but
-sometimes you don’t really need the additional stack trace.</p>
 
             </div>
 
@@ -5147,6 +5165,131 @@ sometimes you don’t really need the additional stack trace.</p>
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-264">&#182;</a>
+              </div>
+              <h2 id="stack-trace-limit">Stack Trace Limit</h2>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-265">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-265">&#182;</a>
+              </div>
+              <p>An integer greater than or equal to zero, or Infinity is interpreted as a
+stack trace limit. It is used to temporarily set <code>Error.stackTraceLimit</code>
+for during the construction of the exception. <code>Error.stackTraceLimit</code> is
+restored to its original value after the exception is constructed.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-266">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-266">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-267">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-267">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-268">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-268">&#182;</a>
+              </div>
+              <p>In our nested error examples so far we’ve always specified a single
+nested error so we’ve added context to wrapper error. When you create an
+aggregate exception, you don’t have a good way to associate properties in
+the wrapper error with an error at a specific index in the nested errors
+array.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-269">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-269">&#182;</a>
+              </div>
+              <p>To provide context for each nested error, you can create a wrapper error
+for each nested error. Now you have an aggregate error with an array of
+context wrapper errors containing the actual errors. Yes, you can do
+this, and yes it’s a bit much. This is where the stack trace limit can
+help.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-270">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-270">&#182;</a>
+              </div>
+              <p>The stack trace can start to get too verbose. Each wrapper error will add
+a stack trace and that stack trace is often superflous. If the aggregate
+error provides a stack trace that points to the right function in your
+application and the context wrapper errors merely repeat that stack
+trace plus a frame, go ahead and get rid of it by setting a stack trace
+limit of zero. The context wrapper exceptions will appear without a stack
+trace or stack trace header merely providing some context.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-271">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-271">&#182;</a>
+              </div>
+              <p><strong>TODO</strong> Do we want to maybe make the code a part of the exception name?
+No. No way to distinquish the class name from the code without
+introducing some additional funny character. What’s the big deal about a
+funny character? <code>#</code> and you encourage codes.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-272">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-272">&#182;</a>
               </div>
 
             </div>
@@ -5175,7 +5318,7 @@ sometimes you don’t really need the additional stack trace.</p>
                     <span class="hljs-keyword">try</span> {
                         <span class="hljs-keyword">await</span> files.push(<span class="hljs-keyword">await</span> fs.readFile(filename))
                     } <span class="hljs-keyword">catch</span> (error) {
-                        errors.push(<span class="hljs-keyword">new</span> ConfigError.Context(<span class="hljs-string">'UNABLE_TO_READ_FILE'</span>, error, { filename }))
+                        errors.push(<span class="hljs-keyword">new</span> ConfigError.Error(<span class="hljs-number">0</span>, <span class="hljs-string">'UNABLE_TO_READ_FILE'</span>, error, { filename }))
                     }
                 } ())
             }
@@ -5200,11 +5343,11 @@ sometimes you don’t really need the additional stack trace.</p>
         </li>
 
 
-        <li id="section-265">
+        <li id="section-273">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-265">&#182;</a>
+                <a class="pilcrow" href="#section-273">&#182;</a>
               </div>
 
             </div>
@@ -5212,11 +5355,53 @@ sometimes you don’t really need the additional stack trace.</p>
         </li>
 
 
-        <li id="section-266">
+        <li id="section-274">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-266">&#182;</a>
+                <a class="pilcrow" href="#section-274">&#182;</a>
+              </div>
+              <p>Alternatively, you could set the stack trace to <code>1</code> to get just a
+filename and line number on the nested wrapper exception.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-275">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-275">&#182;</a>
+              </div>
+              <p>Trimming stack traces is worthwhile. We know that JavaScript won’t give
+us a continguous stack trace, so we become accustomed to using what we
+get to poke around, so we learn to trim the cruft down to just what we
+need to navigate the source post mortem.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-276">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-276">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-277">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-277">&#182;</a>
               </div>
               <p>Why don’t you need the additional stack trace? Okay, I’m going to add
 this facility because it exists currently, but the new stack trace
@@ -5230,11 +5415,11 @@ module function.</p>
         </li>
 
 
-        <li id="section-267">
+        <li id="section-278">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-267">&#182;</a>
+                <a class="pilcrow" href="#section-278">&#182;</a>
               </div>
               <p><strong>TODO</strong> In Destructable, see if there is space for a launch marker. A <code>$
 =&gt; ()</code> function that can encase the launch point of the strand.</p>
@@ -5244,11 +5429,11 @@ module function.</p>
         </li>
 
 
-        <li id="section-268">
+        <li id="section-279">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-268">&#182;</a>
+                <a class="pilcrow" href="#section-279">&#182;</a>
               </div>
               <h2 id="callee">Callee</h2>
 
@@ -5257,11 +5442,11 @@ module function.</p>
         </li>
 
 
-        <li id="section-269">
+        <li id="section-280">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-269">&#182;</a>
+                <a class="pilcrow" href="#section-280">&#182;</a>
               </div>
               <p>Sometime you want the stack trace to exclude the upper most stack frames.
 This is useful when creating assertion functions where the top of the
@@ -5273,11 +5458,11 @@ point where the assertion function created the exception.</p>
         </li>
 
 
-        <li id="section-270">
+        <li id="section-281">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-270">&#182;</a>
+                <a class="pilcrow" href="#section-281">&#182;</a>
               </div>
               <p>To specify a callee you pass in an options object as the first argument
 to the constructor.</p>
@@ -5287,11 +5472,11 @@ to the constructor.</p>
         </li>
 
 
-        <li id="section-271">
+        <li id="section-282">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-271">&#182;</a>
+                <a class="pilcrow" href="#section-282">&#182;</a>
               </div>
               <p><strong>TODO</strong> The code or message format is always required, but somtimes it
 is not desired. If you want to specify that you do not want to use a code
@@ -5303,11 +5488,11 @@ when you are overriding properties</p>
         </li>
 
 
-        <li id="section-272">
+        <li id="section-283">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-272">&#182;</a>
+                <a class="pilcrow" href="#section-283">&#182;</a>
               </div>
               <h2 id="named-arguments">Named Arguments</h2>
 
@@ -5316,11 +5501,11 @@ when you are overriding properties</p>
         </li>
 
 
-        <li id="section-273">
+        <li id="section-284">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-273">&#182;</a>
+                <a class="pilcrow" href="#section-284">&#182;</a>
               </div>
               <p>Sometimes a one-liner gets too hard to read. Breaking up the declaration
 across multiple lines helps, and while you’re at it, you may as well give
@@ -5331,11 +5516,11 @@ a name to what you’re trying to do.</p>
         </li>
 
 
-        <li id="section-274">
+        <li id="section-285">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-274">&#182;</a>
+                <a class="pilcrow" href="#section-285">&#182;</a>
               </div>
               <h2 id="constructor-argument-order">Constructor Argument Order</h2>
 
@@ -5344,11 +5529,11 @@ a name to what you’re trying to do.</p>
         </li>
 
 
-        <li id="section-275">
+        <li id="section-286">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-275">&#182;</a>
+                <a class="pilcrow" href="#section-286">&#182;</a>
               </div>
               <p>We have an ambiguity in the way we call our constructor. We have both an
 options object and a properties object. If you want to use an options
@@ -5359,11 +5544,11 @@ object but then override it with custom properties you have to …</p>
         </li>
 
 
-        <li id="section-276">
+        <li id="section-287">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-276">&#182;</a>
+                <a class="pilcrow" href="#section-287">&#182;</a>
               </div>
               <p>All of the above parameters can be specified with an <code>options</code> object as
 the first parameter to the constructor.</p>
@@ -5373,11 +5558,11 @@ the first parameter to the constructor.</p>
         </li>
 
 
-        <li id="section-277">
+        <li id="section-288">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-277">&#182;</a>
+                <a class="pilcrow" href="#section-288">&#182;</a>
               </div>
 
             </div>
@@ -5413,11 +5598,11 @@ the first parameter to the constructor.</p>
         </li>
 
 
-        <li id="section-278">
+        <li id="section-289">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-278">&#182;</a>
+                <a class="pilcrow" href="#section-289">&#182;</a>
               </div>
               <p>At times you might want to construct exceptions programmatically, merging
 context that is common to a scope with specific context for a particular
@@ -5428,11 +5613,11 @@ exception. You can create an options object that is common to a scope.</p>
         </li>
 
 
-        <li id="section-279">
+        <li id="section-290">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-279">&#182;</a>
+                <a class="pilcrow" href="#section-290">&#182;</a>
               </div>
               <p>You can then call the exception constructor with the <code>options</code> object
 followed by any positional parameters. The positional parameters will be
@@ -5443,11 +5628,11 @@ merged into the <code>options</code> object before constructing the object.</p>
         </li>
 
 
-        <li id="section-280">
+        <li id="section-291">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-280">&#182;</a>
+                <a class="pilcrow" href="#section-291">&#182;</a>
               </div>
               <p>We said that you can’t override the <code>code</code> property of an exception with
 a <code>code</code> property in the <code>context</code> object, but you can override the
@@ -5459,11 +5644,11 @@ in the constructor.</p>
         </li>
 
 
-        <li id="section-281">
+        <li id="section-292">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-281">&#182;</a>
+                <a class="pilcrow" href="#section-292">&#182;</a>
               </div>
 
             </div>
@@ -5473,11 +5658,11 @@ in the constructor.</p>
         </li>
 
 
-        <li id="section-282">
+        <li id="section-293">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-282">&#182;</a>
+                <a class="pilcrow" href="#section-293">&#182;</a>
               </div>
               <p><strong>TODO</strong> Example.</p>
 
@@ -5488,11 +5673,11 @@ in the constructor.</p>
         </li>
 
 
-        <li id="section-283">
+        <li id="section-294">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-283">&#182;</a>
+                <a class="pilcrow" href="#section-294">&#182;</a>
               </div>
 
             </div>
@@ -5500,11 +5685,11 @@ in the constructor.</p>
         </li>
 
 
-        <li id="section-284">
+        <li id="section-295">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-284">&#182;</a>
+                <a class="pilcrow" href="#section-295">&#182;</a>
               </div>
               <p>Construction has no assertions. If you create <code>new Interrupt</code> with
 incorrect parameters the constructor will do it’s best to create
@@ -5519,11 +5704,11 @@ participle that ought to be apparent in stack trace message.</p>
         </li>
 
 
-        <li id="section-285">
+        <li id="section-296">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-285">&#182;</a>
+                <a class="pilcrow" href="#section-296">&#182;</a>
               </div>
 
             </div>
@@ -5531,11 +5716,11 @@ participle that ought to be apparent in stack trace message.</p>
         </li>
 
 
-        <li id="section-286">
+        <li id="section-297">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-286">&#182;</a>
+                <a class="pilcrow" href="#section-297">&#182;</a>
               </div>
               <p>If you specify a message for which there is no error code, it is used as
 the <code>message</code> property and the <code>code</code> property is not set.</p>
@@ -5545,11 +5730,11 @@ the <code>message</code> property and the <code>code</code> property is not set.
         </li>
 
 
-        <li id="section-287">
+        <li id="section-298">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-287">&#182;</a>
+                <a class="pilcrow" href="#section-298">&#182;</a>
               </div>
 
             </div>
@@ -5557,11 +5742,11 @@ the <code>message</code> property and the <code>code</code> property is not set.
         </li>
 
 
-        <li id="section-288">
+        <li id="section-299">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-288">&#182;</a>
+                <a class="pilcrow" href="#section-299">&#182;</a>
               </div>
 
             </div>
@@ -5569,11 +5754,11 @@ the <code>message</code> property and the <code>code</code> property is not set.
         </li>
 
 
-        <li id="section-289">
+        <li id="section-300">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-289">&#182;</a>
+                <a class="pilcrow" href="#section-300">&#182;</a>
               </div>
               <p><strong>TODO</strong>: No more catching by type claims. Point people at <code>rescue</code> for
 that, since that is where that happens.</p>
@@ -5590,11 +5775,11 @@ that, since that is where that happens.</p>
         </li>
 
 
-        <li id="section-290">
+        <li id="section-301">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-290">&#182;</a>
+                <a class="pilcrow" href="#section-301">&#182;</a>
               </div>
 
             </div>
@@ -5605,11 +5790,11 @@ that, since that is where that happens.</p>
         </li>
 
 
-        <li id="section-291">
+        <li id="section-302">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-291">&#182;</a>
+                <a class="pilcrow" href="#section-302">&#182;</a>
               </div>
 
             </div>
@@ -5617,11 +5802,11 @@ that, since that is where that happens.</p>
         </li>
 
 
-        <li id="section-292">
+        <li id="section-303">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-292">&#182;</a>
+                <a class="pilcrow" href="#section-303">&#182;</a>
               </div>
               <h2 id="class-member-errors">Class Member Errors</h2>
 <p>When creating an error class using Interrupt, if you want to avoid name
@@ -5634,11 +5819,11 @@ and give it a dot qualified name.</p>
         </li>
 
 
-        <li id="section-293">
+        <li id="section-304">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-293">&#182;</a>
+                <a class="pilcrow" href="#section-304">&#182;</a>
               </div>
               <p>For example, imagine we have a <code>Synax</code> class in our module. We’d like to
 have <code>SyntaxError</code> specific to our module but <code>SyntaxError</code> a
@@ -5651,11 +5836,11 @@ and is a static member of our <code>Syntax</code> class.</p>
         </li>
 
 
-        <li id="section-294">
+        <li id="section-305">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-294">&#182;</a>
+                <a class="pilcrow" href="#section-305">&#182;</a>
               </div>
               <p><strong>TODO</strong> Terrible example. Just rewrite any of your existing file opening
 examples. You’re talking about <code>assert</code> before you’ve introduced it. The
@@ -5666,11 +5851,11 @@ example is more contrived than any you’re written before.</p>
         </li>
 
 
-        <li id="section-295">
+        <li id="section-306">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-295">&#182;</a>
+                <a class="pilcrow" href="#section-306">&#182;</a>
               </div>
               <p>Also, any test of the file to see if it contains hippopotus will succeed
 without having to write hippopotus anywhere except in the test.</p>
@@ -5680,11 +5865,11 @@ without having to write hippopotus anywhere except in the test.</p>
         </li>
 
 
-        <li id="section-296">
+        <li id="section-307">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-296">&#182;</a>
+                <a class="pilcrow" href="#section-307">&#182;</a>
               </div>
 
             </div>
@@ -5715,11 +5900,11 @@ without having to write hippopotus anywhere except in the test.</p>
         </li>
 
 
-        <li id="section-297">
+        <li id="section-308">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-297">&#182;</a>
+                <a class="pilcrow" href="#section-308">&#182;</a>
               </div>
 
             </div>
@@ -5727,11 +5912,11 @@ without having to write hippopotus anywhere except in the test.</p>
         </li>
 
 
-        <li id="section-298">
+        <li id="section-309">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-298">&#182;</a>
+                <a class="pilcrow" href="#section-309">&#182;</a>
               </div>
               <p>These days I’m targeting Node.js 12 or greater, which has a <code>static</code>
 keyword that makes declaration easier.</p>
@@ -5741,11 +5926,11 @@ keyword that makes declaration easier.</p>
         </li>
 
 
-        <li id="section-299">
+        <li id="section-310">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-299">&#182;</a>
+                <a class="pilcrow" href="#section-310">&#182;</a>
               </div>
               <p><strong>TODO</strong> Who cares about these days? Interrupt targets Node.js 12.
 Enough!</p>
@@ -5755,11 +5940,11 @@ Enough!</p>
         </li>
 
 
-        <li id="section-300">
+        <li id="section-311">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-300">&#182;</a>
+                <a class="pilcrow" href="#section-311">&#182;</a>
               </div>
 
             </div>
@@ -5789,11 +5974,11 @@ Enough!</p>
         </li>
 
 
-        <li id="section-301">
+        <li id="section-312">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-301">&#182;</a>
+                <a class="pilcrow" href="#section-312">&#182;</a>
               </div>
 
             </div>
@@ -5801,11 +5986,11 @@ Enough!</p>
         </li>
 
 
-        <li id="section-302">
+        <li id="section-313">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-302">&#182;</a>
+                <a class="pilcrow" href="#section-313">&#182;</a>
               </div>
               <p><strong>TODO</strong> Maybe parsing goes here so we can us it to ensure that assert
 and the rest set the correct file and line in the stack. That is,
@@ -5816,11 +6001,11 @@ introduce parsing and then use it to get the top of the stack.</p>
         </li>
 
 
-        <li id="section-303">
+        <li id="section-314">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-303">&#182;</a>
+                <a class="pilcrow" href="#section-314">&#182;</a>
               </div>
 
             </div>
@@ -5828,11 +6013,11 @@ introduce parsing and then use it to get the top of the stack.</p>
         </li>
 
 
-        <li id="section-304">
+        <li id="section-315">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-304">&#182;</a>
+                <a class="pilcrow" href="#section-315">&#182;</a>
               </div>
               <h2 id="assertions">Assertions</h2>
 
@@ -5841,11 +6026,11 @@ introduce parsing and then use it to get the top of the stack.</p>
         </li>
 
 
-        <li id="section-305">
+        <li id="section-316">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-305">&#182;</a>
+                <a class="pilcrow" href="#section-316">&#182;</a>
               </div>
               <p>If you’re using Interrupt in your code would probably like to raise
 assertions that are derived from <code>Interrupt</code> instead of using <code>assert</code>
@@ -5856,11 +6041,11 @@ and raising errors that are of type <code>AssertionError</code>.</p>
         </li>
 
 
-        <li id="section-306">
+        <li id="section-317">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-306">&#182;</a>
+                <a class="pilcrow" href="#section-317">&#182;</a>
               </div>
               <p>Interrupt adds a simple boolean assertion function as a static class
 member of the generated <code>Interrupt</code> derived exception class. You can use
@@ -5874,11 +6059,11 @@ assertion exceptions.</p>
         </li>
 
 
-        <li id="section-307">
+        <li id="section-318">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-307">&#182;</a>
+                <a class="pilcrow" href="#section-318">&#182;</a>
               </div>
 
             </div>
@@ -5919,11 +6104,11 @@ assertion exceptions.</p>
         </li>
 
 
-        <li id="section-308">
+        <li id="section-319">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-308">&#182;</a>
+                <a class="pilcrow" href="#section-319">&#182;</a>
               </div>
 
             </div>
@@ -5931,11 +6116,11 @@ assertion exceptions.</p>
         </li>
 
 
-        <li id="section-309">
+        <li id="section-320">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-309">&#182;</a>
+                <a class="pilcrow" href="#section-320">&#182;</a>
               </div>
               <p>Thie first argument to <code>.assert()</code> is a condition that must be truthy.
 After the condition argument the assertion accepts all the of the same
@@ -5946,11 +6131,11 @@ arguments that the exception constructor accepts.</p>
         </li>
 
 
-        <li id="section-310">
+        <li id="section-321">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-310">&#182;</a>
+                <a class="pilcrow" href="#section-321">&#182;</a>
               </div>
               <p>If the only argument after the assertion is a function it is interpreted
 as a <code>callee</code>. It is used as an exception constructor function.</p>
@@ -5960,11 +6145,11 @@ as a <code>callee</code>. It is used as an exception constructor function.</p>
         </li>
 
 
-        <li id="section-311">
+        <li id="section-322">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-311">&#182;</a>
+                <a class="pilcrow" href="#section-322">&#182;</a>
               </div>
               <p>Sometimes propeties require some calculation so building the properties
 argument takes effort, effort that we throw away immediately if the
@@ -5975,11 +6160,11 @@ assertion doesn’t fail.</p>
         </li>
 
 
-        <li id="section-312">
+        <li id="section-323">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-312">&#182;</a>
+                <a class="pilcrow" href="#section-323">&#182;</a>
               </div>
               <p>This exception constructor function of which we speak can defer that
 calculation. It will only be run if the condition fails.</p>
@@ -5989,11 +6174,11 @@ calculation. It will only be run if the condition fails.</p>
         </li>
 
 
-        <li id="section-313">
+        <li id="section-324">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-313">&#182;</a>
+                <a class="pilcrow" href="#section-324">&#182;</a>
               </div>
               <p>We can rewrite our contrived example eliminating our contrived
 calculations.</p>
@@ -6003,11 +6188,11 @@ calculations.</p>
         </li>
 
 
-        <li id="section-314">
+        <li id="section-325">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-314">&#182;</a>
+                <a class="pilcrow" href="#section-325">&#182;</a>
               </div>
 
             </div>
@@ -6051,11 +6236,11 @@ calculations.</p>
         </li>
 
 
-        <li id="section-315">
+        <li id="section-326">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-315">&#182;</a>
+                <a class="pilcrow" href="#section-326">&#182;</a>
               </div>
 
             </div>
@@ -6063,11 +6248,11 @@ calculations.</p>
         </li>
 
 
-        <li id="section-316">
+        <li id="section-327">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-316">&#182;</a>
+                <a class="pilcrow" href="#section-327">&#182;</a>
               </div>
               <h2 id="synchronous-trycatch-wrappers">Synchronous <code>try</code>/<code>catch</code> Wrappers</h2>
 
@@ -6076,11 +6261,11 @@ calculations.</p>
         </li>
 
 
-        <li id="section-317">
+        <li id="section-328">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-317">&#182;</a>
+                <a class="pilcrow" href="#section-328">&#182;</a>
               </div>
               <p>There are times when I don’t want to go to the trouble of unit testing
 catch blocks that merely wrap an exception, but I don’t want to forgo the
@@ -6091,11 +6276,11 @@ unit test coverage.</p>
         </li>
 
 
-        <li id="section-318">
+        <li id="section-329">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-318">&#182;</a>
+                <a class="pilcrow" href="#section-329">&#182;</a>
               </div>
               <p>When all a catch block does is wrap and rethrow, you can use the static
 <code>invoke()</code> method specifying a guarded function to run and the parameters
@@ -6109,11 +6294,11 @@ the given constructor parameters.</p>
         </li>
 
 
-        <li id="section-319">
+        <li id="section-330">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-319">&#182;</a>
+                <a class="pilcrow" href="#section-330">&#182;</a>
               </div>
 
             </div>
@@ -6139,11 +6324,11 @@ the given constructor parameters.</p>
         </li>
 
 
-        <li id="section-320">
+        <li id="section-331">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-320">&#182;</a>
+                <a class="pilcrow" href="#section-331">&#182;</a>
               </div>
 
             </div>
@@ -6151,11 +6336,11 @@ the given constructor parameters.</p>
         </li>
 
 
-        <li id="section-321">
+        <li id="section-332">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-321">&#182;</a>
+                <a class="pilcrow" href="#section-332">&#182;</a>
               </div>
               <p>You cannot use invoke to call <code>async</code> functions or resolve <code>Promise</code>s.
 For that you use the static <code>resolve()</code>. See below.</p>
@@ -6165,11 +6350,11 @@ For that you use the static <code>resolve()</code>. See below.</p>
         </li>
 
 
-        <li id="section-322">
+        <li id="section-333">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-322">&#182;</a>
+                <a class="pilcrow" href="#section-333">&#182;</a>
               </div>
               <p>For consistencies sake, you can defer calculation of the constructor
 parameters. If you pass a function as the only argument after the guarded
@@ -6180,11 +6365,11 @@ function is a function it is used as an exception constructor.</p>
         </li>
 
 
-        <li id="section-323">
+        <li id="section-334">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-323">&#182;</a>
+                <a class="pilcrow" href="#section-334">&#182;</a>
               </div>
 
             </div>
@@ -6211,11 +6396,11 @@ function is a function it is used as an exception constructor.</p>
         </li>
 
 
-        <li id="section-324">
+        <li id="section-335">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-324">&#182;</a>
+                <a class="pilcrow" href="#section-335">&#182;</a>
               </div>
 
             </div>
@@ -6223,11 +6408,11 @@ function is a function it is used as an exception constructor.</p>
         </li>
 
 
-        <li id="section-325">
+        <li id="section-336">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-325">&#182;</a>
+                <a class="pilcrow" href="#section-336">&#182;</a>
               </div>
               <p><strong>TODO</strong> Didn’t I write about this at length? Is it in the swipe?</p>
 
@@ -6236,11 +6421,11 @@ function is a function it is used as an exception constructor.</p>
         </li>
 
 
-        <li id="section-326">
+        <li id="section-337">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-326">&#182;</a>
+                <a class="pilcrow" href="#section-337">&#182;</a>
               </div>
               <p><strong>TODO</strong> Okay, look in swipe, but it is not above. This is the beginnning
 of the discussion of stack trace preservation. Needs more preamble.</p>
@@ -6250,11 +6435,11 @@ of the discussion of stack trace preservation. Needs more preamble.</p>
         </li>
 
 
-        <li id="section-327">
+        <li id="section-338">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-327">&#182;</a>
+                <a class="pilcrow" href="#section-338">&#182;</a>
               </div>
               <p><strong>TODO</strong> Needs to be introduced with callbacks which have no caveats.
 Promises are fixed in Node.js 14, so, no wait. Isn’t it broken regardless
@@ -6266,11 +6451,11 @@ callbacks first for some reason.</p>
         </li>
 
 
-        <li id="section-328">
+        <li id="section-339">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-328">&#182;</a>
+                <a class="pilcrow" href="#section-339">&#182;</a>
               </div>
               <p>Often times you invoke system functions that produce stubby contextless
 errors like <code>EBADFD</code> stack trace at all. This is an <a href="https://github.com/nodejs/node/issues/30944">known issue in
@@ -6281,11 +6466,11 @@ Node.js</a>.</p>
         </li>
 
 
-        <li id="section-329">
+        <li id="section-340">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-329">&#182;</a>
+                <a class="pilcrow" href="#section-340">&#182;</a>
               </div>
 
             </div>
@@ -6312,11 +6497,11 @@ Node.js</a>.</p>
         </li>
 
 
-        <li id="section-330">
+        <li id="section-341">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-330">&#182;</a>
+                <a class="pilcrow" href="#section-341">&#182;</a>
               </div>
 
             </div>
@@ -6324,11 +6509,11 @@ Node.js</a>.</p>
         </li>
 
 
-        <li id="section-331">
+        <li id="section-342">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-331">&#182;</a>
+                <a class="pilcrow" href="#section-342">&#182;</a>
               </div>
               <p>If you see this error in your production error logs, how are you supposed
 to know where in your code it orginates?</p>
@@ -6338,11 +6523,11 @@ to know where in your code it orginates?</p>
         </li>
 
 
-        <li id="section-332">
+        <li id="section-343">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-332">&#182;</a>
+                <a class="pilcrow" href="#section-343">&#182;</a>
               </div>
               <p>Well, you can wrap the file system call in an application exception.
 That’s what we’re here for.</p>
@@ -6352,11 +6537,11 @@ That’s what we’re here for.</p>
         </li>
 
 
-        <li id="section-333">
+        <li id="section-344">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-333">&#182;</a>
+                <a class="pilcrow" href="#section-344">&#182;</a>
               </div>
 
             </div>
@@ -6392,11 +6577,11 @@ That’s what we’re here for.</p>
         </li>
 
 
-        <li id="section-334">
+        <li id="section-345">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-334">&#182;</a>
+                <a class="pilcrow" href="#section-345">&#182;</a>
               </div>
 
             </div>
@@ -6404,11 +6589,11 @@ That’s what we’re here for.</p>
         </li>
 
 
-        <li id="section-335">
+        <li id="section-346">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-335">&#182;</a>
+                <a class="pilcrow" href="#section-346">&#182;</a>
               </div>
               <p>However, now you have a catch block you need to unit test. I am fond of
 unit test coverage and really don’t trust uncovered catch blocks. I don’t
@@ -6420,11 +6605,11 @@ sideways.</p>
         </li>
 
 
-        <li id="section-336">
+        <li id="section-347">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-336">&#182;</a>
+                <a class="pilcrow" href="#section-347">&#182;</a>
               </div>
               <p>If you’re doing work with the file system you’re going to want to wrap a
 lot of calls in this fashion, but you’re going to generate a lot of these
@@ -6438,11 +6623,11 @@ the file, but how do you test close?</p>
         </li>
 
 
-        <li id="section-337">
+        <li id="section-348">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-337">&#182;</a>
+                <a class="pilcrow" href="#section-348">&#182;</a>
               </div>
 
             </div>
@@ -6465,11 +6650,11 @@ the file, but how do you test close?</p>
         </li>
 
 
-        <li id="section-338">
+        <li id="section-349">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-338">&#182;</a>
+                <a class="pilcrow" href="#section-349">&#182;</a>
               </div>
               <p><em>It is not difficult to test this catch block.</em></p>
 
@@ -6485,11 +6670,11 @@ the file, but how do you test close?</p>
         </li>
 
 
-        <li id="section-339">
+        <li id="section-350">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-339">&#182;</a>
+                <a class="pilcrow" href="#section-350">&#182;</a>
               </div>
               <p><em>But how would you test this one? What sort of file
 permission trickery do you have to set up in your unit test
@@ -6509,11 +6694,11 @@ have to run your tests as root to to do it?</em></p>
         </li>
 
 
-        <li id="section-340">
+        <li id="section-351">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-340">&#182;</a>
+                <a class="pilcrow" href="#section-351">&#182;</a>
               </div>
               <p><em>How about a file you’ve been allowed to open for reading
 that you’re not actually allowed to read?</em></p>
@@ -6529,11 +6714,11 @@ that you’re not actually allowed to read?</em></p>
         </li>
 
 
-        <li id="section-341">
+        <li id="section-352">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-341">&#182;</a>
+                <a class="pilcrow" href="#section-352">&#182;</a>
               </div>
               <p><em>How about a file you’ve been allowed to open for reading
 that you’ve stat’d and read that you’re not allowed to
@@ -6567,11 +6752,11 @@ close?</em></p>
         </li>
 
 
-        <li id="section-342">
+        <li id="section-353">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-342">&#182;</a>
+                <a class="pilcrow" href="#section-353">&#182;</a>
               </div>
 
             </div>
@@ -6579,11 +6764,11 @@ close?</em></p>
         </li>
 
 
-        <li id="section-343">
+        <li id="section-354">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-343">&#182;</a>
+                <a class="pilcrow" href="#section-354">&#182;</a>
               </div>
               <p>Of course, dear reader you’re now screaming at your screen. Why not wrap
 all four operations in a single catch block? That’s what exceptions are
@@ -6594,11 +6779,11 @@ for! That’s how exceptions work!</p>
         </li>
 
 
-        <li id="section-344">
+        <li id="section-355">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-344">&#182;</a>
+                <a class="pilcrow" href="#section-355">&#182;</a>
               </div>
 
             </div>
@@ -6644,11 +6829,11 @@ for! That’s how exceptions work!</p>
         </li>
 
 
-        <li id="section-345">
+        <li id="section-356">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-345">&#182;</a>
+                <a class="pilcrow" href="#section-356">&#182;</a>
               </div>
 
             </div>
@@ -6656,11 +6841,11 @@ for! That’s how exceptions work!</p>
         </li>
 
 
-        <li id="section-346">
+        <li id="section-357">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-346">&#182;</a>
+                <a class="pilcrow" href="#section-357">&#182;</a>
               </div>
               <p>Well, dear reader, yes, that’s how exceptions are <em>supposed</em> to work, and
 in other languages like Java where stack traces are maintained you’d know
@@ -6679,11 +6864,11 @@ call that generated it, a line number sure is nice.</p>
         </li>
 
 
-        <li id="section-347">
+        <li id="section-358">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-347">&#182;</a>
+                <a class="pilcrow" href="#section-358">&#182;</a>
               </div>
               <p>And for that we have <code>Interrupt.resolve</code> which resolves a <code>Promise</code> and
 wraps the exception if it rejects.</p>
@@ -6693,11 +6878,11 @@ wraps the exception if it rejects.</p>
         </li>
 
 
-        <li id="section-348">
+        <li id="section-359">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-348">&#182;</a>
+                <a class="pilcrow" href="#section-359">&#182;</a>
               </div>
               <p><strong>TODO</strong> Somewhere I should just write a blog post about my coding style,
 not to bless the world with my genius (◔_◔) but to just point out that
@@ -6709,11 +6894,11 @@ else…</p>
         </li>
 
 
-        <li id="section-349">
+        <li id="section-360">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-349">&#182;</a>
+                <a class="pilcrow" href="#section-360">&#182;</a>
               </div>
 
             </div>
@@ -6758,11 +6943,11 @@ else…</p>
         </li>
 
 
-        <li id="section-350">
+        <li id="section-361">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-350">&#182;</a>
+                <a class="pilcrow" href="#section-361">&#182;</a>
               </div>
 
             </div>
@@ -6770,11 +6955,11 @@ else…</p>
         </li>
 
 
-        <li id="section-351">
+        <li id="section-362">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-351">&#182;</a>
+                <a class="pilcrow" href="#section-362">&#182;</a>
               </div>
               <p>These function invocations will always be verbose, but they don’t have to
 be repetitive. If you use some of the same parameters in each call, you
@@ -6789,11 +6974,11 @@ with the arguments of the specific invocation.</p>
         </li>
 
 
-        <li id="section-352">
+        <li id="section-363">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-352">&#182;</a>
+                <a class="pilcrow" href="#section-363">&#182;</a>
               </div>
               <p><strong>TODO</strong> Tour of <code>options</code> and <code>voptions</code>.</p>
 
@@ -6802,11 +6987,11 @@ with the arguments of the specific invocation.</p>
         </li>
 
 
-        <li id="section-353">
+        <li id="section-364">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-353">&#182;</a>
+                <a class="pilcrow" href="#section-364">&#182;</a>
               </div>
 
             </div>
@@ -6852,11 +7037,11 @@ with the arguments of the specific invocation.</p>
         </li>
 
 
-        <li id="section-354">
+        <li id="section-365">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-354">&#182;</a>
+                <a class="pilcrow" href="#section-365">&#182;</a>
               </div>
 
             </div>
@@ -6864,11 +7049,11 @@ with the arguments of the specific invocation.</p>
         </li>
 
 
-        <li id="section-355">
+        <li id="section-366">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-355">&#182;</a>
+                <a class="pilcrow" href="#section-366">&#182;</a>
               </div>
               <p>Since Node.js 14 there stack traces are traced across <code>Promise</code>
 resolutions (the microtask queue) but are still lost when entering the
@@ -6882,11 +7067,11 @@ application file and line.</p>
         </li>
 
 
-        <li id="section-356">
+        <li id="section-367">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-356">&#182;</a>
+                <a class="pilcrow" href="#section-367">&#182;</a>
               </div>
               <p><strong>TODO</strong> No, talk about Node.js 12 versus 14 with the existing examples,
 do not repeat them or refer back to them.</p>
@@ -6896,11 +7081,11 @@ do not repeat them or refer back to them.</p>
         </li>
 
 
-        <li id="section-357">
+        <li id="section-368">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-357">&#182;</a>
+                <a class="pilcrow" href="#section-368">&#182;</a>
               </div>
 
             </div>
@@ -6912,11 +7097,11 @@ do not repeat them or refer back to them.</p>
         </li>
 
 
-        <li id="section-358">
+        <li id="section-369">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-358">&#182;</a>
+                <a class="pilcrow" href="#section-369">&#182;</a>
               </div>
 
             </div>
@@ -6924,11 +7109,11 @@ do not repeat them or refer back to them.</p>
         </li>
 
 
-        <li id="section-359">
+        <li id="section-370">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-359">&#182;</a>
+                <a class="pilcrow" href="#section-370">&#182;</a>
               </div>
               <p>Error-first callback style programming continues to lose stack traces
 even in the latest versions of Node.js. The call stack originates from
@@ -6942,11 +7127,11 @@ can usually figure out the asynchronous call resulted in the error.</p>
         </li>
 
 
-        <li id="section-360">
+        <li id="section-371">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-360">&#182;</a>
+                <a class="pilcrow" href="#section-371">&#182;</a>
               </div>
               <p>You can use one of the many long stack trace modules on NPM to get a full
 stack trace but these are monkey patched modules that break frequently.
@@ -6959,11 +7144,11 @@ discourage their own use in production. <strong>TODO</strong> Out of order.</p>
         </li>
 
 
-        <li id="section-361">
+        <li id="section-372">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-361">&#182;</a>
+                <a class="pilcrow" href="#section-372">&#182;</a>
               </div>
 
             </div>
@@ -6977,11 +7162,11 @@ discourage their own use in production. <strong>TODO</strong> Out of order.</p>
         </li>
 
 
-        <li id="section-362">
+        <li id="section-373">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-362">&#182;</a>
+                <a class="pilcrow" href="#section-373">&#182;</a>
               </div>
               <p><strong>TODO</strong> <code>sprintf</code> is rasing exceptions ‘%{‘ makes it angry,
 catch any exception it might throw and just use the string.</p>
@@ -7018,11 +7203,11 @@ catch any exception it might throw and just use the string.</p>
         </li>
 
 
-        <li id="section-363">
+        <li id="section-374">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-363">&#182;</a>
+                <a class="pilcrow" href="#section-374">&#182;</a>
               </div>
 
             </div>
@@ -7030,11 +7215,11 @@ catch any exception it might throw and just use the string.</p>
         </li>
 
 
-        <li id="section-364">
+        <li id="section-375">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-364">&#182;</a>
+                <a class="pilcrow" href="#section-375">&#182;</a>
               </div>
               <p>Wrapping exceptions in this mannor can create a lot of additional
 anonymous callbacks that exist only to wrap the callback. These become
@@ -7047,11 +7232,11 @@ eliminating these little branches throughout our code.</p>
         </li>
 
 
-        <li id="section-365">
+        <li id="section-376">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-365">&#182;</a>
+                <a class="pilcrow" href="#section-376">&#182;</a>
               </div>
 
             </div>
@@ -7096,11 +7281,11 @@ eliminating these little branches throughout our code.</p>
         </li>
 
 
-        <li id="section-366">
+        <li id="section-377">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-366">&#182;</a>
+                <a class="pilcrow" href="#section-377">&#182;</a>
               </div>
 
             </div>
@@ -7108,11 +7293,11 @@ eliminating these little branches throughout our code.</p>
         </li>
 
 
-        <li id="section-367">
+        <li id="section-378">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-367">&#182;</a>
+                <a class="pilcrow" href="#section-378">&#182;</a>
               </div>
               <p>But now the originating application file and line number are missing from
 our stack trace. Our stack trace will pass through our wrapper function,
@@ -7127,11 +7312,11 @@ and line (but not the character position) where the wrapper was called.</p>
         </li>
 
 
-        <li id="section-368">
+        <li id="section-379">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-368">&#182;</a>
+                <a class="pilcrow" href="#section-379">&#182;</a>
               </div>
 
             </div>
@@ -7177,11 +7362,11 @@ and line (but not the character position) where the wrapper was called.</p>
         </li>
 
 
-        <li id="section-369">
+        <li id="section-380">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-369">&#182;</a>
+                <a class="pilcrow" href="#section-380">&#182;</a>
               </div>
 
             </div>
@@ -7189,11 +7374,11 @@ and line (but not the character position) where the wrapper was called.</p>
         </li>
 
 
-        <li id="section-370">
+        <li id="section-381">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-370">&#182;</a>
+                <a class="pilcrow" href="#section-381">&#182;</a>
               </div>
               <p>This is how we get an useful stack trace without using long stack traces
 modules. It is useful because it contains a file and line number from our
@@ -7205,11 +7390,11 @@ originated.</p>
         </li>
 
 
-        <li id="section-371">
+        <li id="section-382">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-371">&#182;</a>
+                <a class="pilcrow" href="#section-382">&#182;</a>
               </div>
 
             </div>
@@ -7245,11 +7430,11 @@ originated.</p>
         </li>
 
 
-        <li id="section-372">
+        <li id="section-383">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-372">&#182;</a>
+                <a class="pilcrow" href="#section-383">&#182;</a>
               </div>
 
             </div>
@@ -7257,11 +7442,11 @@ originated.</p>
         </li>
 
 
-        <li id="section-373">
+        <li id="section-384">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-373">&#182;</a>
+                <a class="pilcrow" href="#section-384">&#182;</a>
               </div>
               <p>The stack trace is useful but incomplete, it is not a full stack trace.
 If we repeat the wrapper process for each asynchronous call, however, it
@@ -7272,11 +7457,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-374">
+        <li id="section-385">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-374">&#182;</a>
+                <a class="pilcrow" href="#section-385">&#182;</a>
               </div>
 
             </div>
@@ -7320,11 +7505,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-375">
+        <li id="section-386">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-375">&#182;</a>
+                <a class="pilcrow" href="#section-386">&#182;</a>
               </div>
 
             </div>
@@ -7332,11 +7517,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-376">
+        <li id="section-387">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-376">&#182;</a>
+                <a class="pilcrow" href="#section-387">&#182;</a>
               </div>
               <h2 id="currying">Currying</h2>
 
@@ -7345,11 +7530,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-377">
+        <li id="section-388">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-377">&#182;</a>
+                <a class="pilcrow" href="#section-388">&#182;</a>
               </div>
               <ul>
 <li>Start with resolve, callback, invoke, then assert.</li>
@@ -7360,11 +7545,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-378">
+        <li id="section-389">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-378">&#182;</a>
+                <a class="pilcrow" href="#section-389">&#182;</a>
               </div>
 
             </div>
@@ -7432,11 +7617,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-379">
+        <li id="section-390">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-379">&#182;</a>
+                <a class="pilcrow" href="#section-390">&#182;</a>
               </div>
 
             </div>
@@ -7444,11 +7629,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-380">
+        <li id="section-391">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-380">&#182;</a>
+                <a class="pilcrow" href="#section-391">&#182;</a>
               </div>
 
             </div>
@@ -7487,11 +7672,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-381">
+        <li id="section-392">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-381">&#182;</a>
+                <a class="pilcrow" href="#section-392">&#182;</a>
               </div>
 
             </div>
@@ -7499,11 +7684,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-382">
+        <li id="section-393">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-382">&#182;</a>
+                <a class="pilcrow" href="#section-393">&#182;</a>
               </div>
 
             </div>
@@ -7543,11 +7728,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-383">
+        <li id="section-394">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-383">&#182;</a>
+                <a class="pilcrow" href="#section-394">&#182;</a>
               </div>
 
             </div>
@@ -7555,11 +7740,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-384">
+        <li id="section-395">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-384">&#182;</a>
+                <a class="pilcrow" href="#section-395">&#182;</a>
               </div>
               <h2 id="auditing-deferred-construction">Auditing Deferred Construction</h2>
 
@@ -7568,11 +7753,11 @@ gets to be more complete, but not contiguous.</p>
         </li>
 
 
-        <li id="section-385">
+        <li id="section-396">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-385">&#182;</a>
+                <a class="pilcrow" href="#section-396">&#182;</a>
               </div>
               <p>Deferred construction is cute when working with asssertions and necessary
 for meaninful stack traces when working with callbacks. However, it
@@ -7584,11 +7769,11 @@ is raised. These are essentially our catch blocks.</p>
         </li>
 
 
-        <li id="section-386">
+        <li id="section-397">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-386">&#182;</a>
+                <a class="pilcrow" href="#section-397">&#182;</a>
               </div>
               <p>Even without deferred construction we won’t know if we’ve correctly
 created the exception without raising it. Perhaps a property using in the
@@ -7602,11 +7787,11 @@ production bug.</p>
         </li>
 
 
-        <li id="section-387">
+        <li id="section-398">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-387">&#182;</a>
+                <a class="pilcrow" href="#section-398">&#182;</a>
               </div>
               <p>To determine if our exceptions are going to be correctly constructed we
 can using the deferred construction audit mechanism. Simply assign a
@@ -7622,11 +7807,11 @@ ensure that it’s properties and format are correct.</p>
         </li>
 
 
-        <li id="section-388">
+        <li id="section-399">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-388">&#182;</a>
+                <a class="pilcrow" href="#section-399">&#182;</a>
               </div>
               <p>Additionally, an <code>errors</code> array is provided. This contains an array of
 errors or potential errors encountered while constructing the exception.
@@ -7638,11 +7823,11 @@ contain a stack trace.</p>
         </li>
 
 
-        <li id="section-389">
+        <li id="section-400">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-389">&#182;</a>
+                <a class="pilcrow" href="#section-400">&#182;</a>
               </div>
               <p>The <code>invoke</code>, <code>callback</code> and <code>resolve</code> functions wrap an exception.
 Exceptions creates soely for the purpose of auditing that are not the
@@ -7655,11 +7840,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-390">
+        <li id="section-401">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-390">&#182;</a>
+                <a class="pilcrow" href="#section-401">&#182;</a>
               </div>
               <p>You should only use the audit function in your unit testing.</p>
 
@@ -7668,11 +7853,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-391">
+        <li id="section-402">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-391">&#182;</a>
+                <a class="pilcrow" href="#section-402">&#182;</a>
               </div>
 
             </div>
@@ -7751,11 +7936,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-392">
+        <li id="section-403">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-392">&#182;</a>
+                <a class="pilcrow" href="#section-403">&#182;</a>
               </div>
               <p><em>Reset our logging mechamism.</em></p>
 
@@ -7766,11 +7951,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-393">
+        <li id="section-404">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-393">&#182;</a>
+                <a class="pilcrow" href="#section-404">&#182;</a>
               </div>
               <p><em>Turn audit off.</em></p>
 
@@ -7786,11 +7971,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-394">
+        <li id="section-405">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-394">&#182;</a>
+                <a class="pilcrow" href="#section-405">&#182;</a>
               </div>
 
             </div>
@@ -7798,11 +7983,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-395">
+        <li id="section-406">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-395">&#182;</a>
+                <a class="pilcrow" href="#section-406">&#182;</a>
               </div>
               <h2 id="reducing-the-verbosity-of-stack-traces">Reducing the Verbosity of Stack Traces</h2>
 
@@ -7811,11 +7996,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-396">
+        <li id="section-407">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-396">&#182;</a>
+                <a class="pilcrow" href="#section-407">&#182;</a>
               </div>
               <p><strong>TODO</strong> Dedup goes here.</p>
 
@@ -7824,11 +8009,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-397">
+        <li id="section-408">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-397">&#182;</a>
+                <a class="pilcrow" href="#section-408">&#182;</a>
               </div>
 
             </div>
@@ -7864,11 +8049,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-398">
+        <li id="section-409">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-398">&#182;</a>
+                <a class="pilcrow" href="#section-409">&#182;</a>
               </div>
 
             </div>
@@ -7876,11 +8061,11 @@ meaningless.</p>
         </li>
 
 
-        <li id="section-399">
+        <li id="section-410">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-399">&#182;</a>
+                <a class="pilcrow" href="#section-410">&#182;</a>
               </div>
               <p>Putting this here for test coverage. What needs to be covered? Where is
 the dead code? <strong>TODO</strong> Move to <code>swipe.t.js</code>.</p>
@@ -7890,11 +8075,11 @@ the dead code? <strong>TODO</strong> Move to <code>swipe.t.js</code>.</p>
         </li>
 
 
-        <li id="section-400">
+        <li id="section-411">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-400">&#182;</a>
+                <a class="pilcrow" href="#section-411">&#182;</a>
               </div>
 
             </div>
@@ -7928,11 +8113,11 @@ the dead code? <strong>TODO</strong> Move to <code>swipe.t.js</code>.</p>
         </li>
 
 
-        <li id="section-401">
+        <li id="section-412">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-401">&#182;</a>
+                <a class="pilcrow" href="#section-412">&#182;</a>
               </div>
 
             </div>
@@ -7940,11 +8125,11 @@ the dead code? <strong>TODO</strong> Move to <code>swipe.t.js</code>.</p>
         </li>
 
 
-        <li id="section-402">
+        <li id="section-413">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-402">&#182;</a>
+                <a class="pilcrow" href="#section-413">&#182;</a>
               </div>
               <p><strong>TODO</strong> Multi-line messages. We can still parse them if we indent.
 The indent escapes a lot of stuff. If you don’t like our formatting,
@@ -7955,11 +8140,11 @@ that’s fine, your stuff can look bad, we don’t care.</p>
         </li>
 
 
-        <li id="section-403">
+        <li id="section-414">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-403">&#182;</a>
+                <a class="pilcrow" href="#section-414">&#182;</a>
               </div>
               <p><strong>TODO</strong> We really need to bring parse into <code>readme.t.js</code>. We should
 probably be using it through out, we should probably have an error
@@ -7970,11 +8155,11 @@ extraction stream, or at least a buffer parser.</p>
         </li>
 
 
-        <li id="section-404">
+        <li id="section-415">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-404">&#182;</a>
+                <a class="pilcrow" href="#section-415">&#182;</a>
               </div>
               <p>But, yes, if something is an Error, you can format a message such
 that it cannot be parsed. The only thing we could do is check the
@@ -7989,11 +8174,11 @@ as JSON.</p>
         </li>
 
 
-        <li id="section-405">
+        <li id="section-416">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-405">&#182;</a>
+                <a class="pilcrow" href="#section-416">&#182;</a>
               </div>
               <p>We are always going to have <code>cause:</code> and we can put a type specifier
 right after that colon, no type specifier means parsable error.</p>
@@ -8003,11 +8188,11 @@ right after that colon, no type specifier means parsable error.</p>
         </li>
 
 
-        <li id="section-406">
+        <li id="section-417">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-406">&#182;</a>
+                <a class="pilcrow" href="#section-417">&#182;</a>
               </div>
               <p>Still no good place to put the internal errors, except maybe an
 <code>errors</code> section, we might have to say <code>constructor:</code> or something
@@ -8018,11 +8203,11 @@ because the word error can be in all the error codes.</p>
         </li>
 
 
-        <li id="section-407">
+        <li id="section-418">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-407">&#182;</a>
+                <a class="pilcrow" href="#section-418">&#182;</a>
               </div>
 
             </div>
@@ -8043,11 +8228,11 @@ because the word error can be in all the error codes.</p>
         </li>
 
 
-        <li id="section-408">
+        <li id="section-419">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-408">&#182;</a>
+                <a class="pilcrow" href="#section-419">&#182;</a>
               </div>
               <p><strong>TODO</strong> Wondering if you get an unresolved exception of promise 0
 does a <code>setTimeout</code> and promise 1 throws an exception synchronously.</p>
@@ -8067,11 +8252,11 @@ does a <code>setTimeout</code> and promise 1 throws an exception synchronously.<
         </li>
 
 
-        <li id="section-409">
+        <li id="section-420">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-409">&#182;</a>
+                <a class="pilcrow" href="#section-420">&#182;</a>
               </div>
               <p><strong>TODO</strong> Some reason why you’d want to allow properties before
 the constructor occurred to me but I forgot it.</p>
@@ -8102,11 +8287,11 @@ the constructor occurred to me but I forgot it.</p>
         </li>
 
 
-        <li id="section-410">
+        <li id="section-421">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-410">&#182;</a>
+                <a class="pilcrow" href="#section-421">&#182;</a>
               </div>
               <p><strong>TODO</strong> An <code>assertEqual</code> function would be a good tour of the
 currying issues.</p>
@@ -8141,11 +8326,11 @@ currying issues.</p>
         </li>
 
 
-        <li id="section-411">
+        <li id="section-422">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-411">&#182;</a>
+                <a class="pilcrow" href="#section-422">&#182;</a>
               </div>
               <h2 id="parsing-stack-traces">Parsing Stack Traces</h2>
 
@@ -8154,11 +8339,11 @@ currying issues.</p>
         </li>
 
 
-        <li id="section-412">
+        <li id="section-423">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-412">&#182;</a>
+                <a class="pilcrow" href="#section-423">&#182;</a>
               </div>
               <p>The stack trace emitted from an Interrupt generated error is both human
 readable and machine readable. Using the <code>Interrupt.parse()</code> method you
@@ -8169,11 +8354,11 @@ can parse the stack trace of an <code>Interrupt</code> error.</p>
         </li>
 
 
-        <li id="section-413">
+        <li id="section-424">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-413">&#182;</a>
+                <a class="pilcrow" href="#section-424">&#182;</a>
               </div>
 
             </div>
@@ -8244,11 +8429,11 @@ can parse the stack trace of an <code>Interrupt</code> error.</p>
         </li>
 
 
-        <li id="section-414">
+        <li id="section-425">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-414">&#182;</a>
+                <a class="pilcrow" href="#section-425">&#182;</a>
               </div>
 
             </div>
@@ -8256,11 +8441,11 @@ can parse the stack trace of an <code>Interrupt</code> error.</p>
         </li>
 
 
-        <li id="section-415">
+        <li id="section-426">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-415">&#182;</a>
+                <a class="pilcrow" href="#section-426">&#182;</a>
               </div>
               <p>Errors that are not objects are serialized as JSON. There is an ambiguity
 where someone could create an exception whose name is <code>null</code> has no stack
@@ -8271,11 +8456,11 @@ trace or properties, which would be valid JSON.</p>
         </li>
 
 
-        <li id="section-416">
+        <li id="section-427">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-416">&#182;</a>
+                <a class="pilcrow" href="#section-427">&#182;</a>
               </div>
               <p>As you can see from Interrupt itself, you can override the default
 <code>Error</code> properties and hack the stack to create custom messages. Too much
@@ -8288,11 +8473,11 @@ not, it will serialize that <code>Error</code> as JSON.</p>
         </li>
 
 
-        <li id="section-417">
+        <li id="section-428">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-417">&#182;</a>
+                <a class="pilcrow" href="#section-428">&#182;</a>
               </div>
 
             </div>
@@ -8323,11 +8508,11 @@ not, it will serialize that <code>Error</code> as JSON.</p>
         </li>
 
 
-        <li id="section-418">
+        <li id="section-429">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-418">&#182;</a>
+                <a class="pilcrow" href="#section-429">&#182;</a>
               </div>
               <p>_We now have an error whose <code>error.stack</code> is <code>&#39;null&#39;</code>.</p>
 
@@ -8358,7 +8543,684 @@ not, it will serialize that <code>Error</code> as JSON.</p>
 
         <span class="hljs-keyword">const</span> interrupt = <span class="hljs-keyword">new</span> Config.Error(<span class="hljs-string">'FILE_READ_ERROR'</span>, [ evil ])
         <span class="hljs-built_in">console</span>.log(Interrupt.parse(interrupt.stack))
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-430">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-430">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-431">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-431">&#182;</a>
+              </div>
+              <h2 id="error-heirarchies">Error Heirarchies</h2>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-432">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-432">&#182;</a>
+              </div>
+              <p>You can define symbols elsewhere and import them into the defintion of
+your expcetion.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-433">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-433">&#182;</a>
+              </div>
+              <p>To do so you specify a <code>symbol</code> property in your prototype definition.
+The symbol will be used instead of generating a symbol for the code.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-434">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-434">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`\n--- use existing external symbols ---\n`</span>)
+    {
+        <span class="hljs-keyword">const</span> Constants = {
+            <span class="hljs-attr">IO_ERROR</span>: <span class="hljs-built_in">Symbol</span>(<span class="hljs-string">'IO_ERROR'</span>),
+            <span class="hljs-attr">INVALID_ARGUMENT</span>: <span class="hljs-built_in">Symbol</span>(<span class="hljs-string">'INVALID_ARGUMENT'</span>),
+            <span class="hljs-attr">ANONYMOUS_SYMBOL</span>: <span class="hljs-built_in">Symbol</span>(<span class="hljs-string">'ANONYMOUS_SYMBOL'</span>)
+        }
+
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: { <span class="hljs-attr">symbol</span>: Constants.IO_ERROR },
+                <span class="hljs-attr">INVALID_ARGUMENT</span>: {
+                    <span class="hljs-attr">symbol</span>: Constants.INVALID_ARGUMENT,
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'invalid argument for: %(_name)s'</span>
+                },
+                <span class="hljs-attr">NULL_ARGUMENT</span>: {
+                    <span class="hljs-attr">symbol</span>: Constants.ANONYMOUS_SYMBOL,
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'argument must not be null: %(_name)s'</span>
+                }
+            })
+        }
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Config.Error(<span class="hljs-string">'IO_ERROR'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>`</span>)
+            okay(error.symbol, Config.Error.IO_ERROR, <span class="hljs-string">'use symbol'</span>)
+            okay(error.code, <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'use symbol name as code'</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'use symbol name as message'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-435">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-435">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-436">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-436">&#182;</a>
+              </div>
+              <p>To inherit a codes and aliases from the parent you must use a code
+function.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-437">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-437">&#182;</a>
+              </div>
+              <p>The code function is with a <code>Super</code> property that contains an object. The
+<code>Super</code> contains a <code>Codes</code> property containing the codes of super class
+indexed by the code name and an <code>Alaises</code> property containing the aliases
+of the super class indexed by code name.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-438">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-438">&#182;</a>
+              </div>
+              <p>You can import code from the parent by returning one of the code objects
+from the <code>Super.Codes</code> object.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-439">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-439">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'\n--- inherit a code ---\n'</span>)
+    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                },
+                <span class="hljs-attr">PARSE_ERROR</span>: <span class="hljs-string">'unable to parse'</span>,
+                <span class="hljs-attr">NULL_ARGUMENT</span>: <span class="hljs-string">'must not be null'</span>
+            })
+        }
+
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Derived</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Derived.Error'</span>, Config.Error, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Super }</span>) </span>{
+                <span class="hljs-keyword">return</span> Super.Codes.IO_ERROR
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, <span class="hljs-string">'symbols inherited'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Derived.Error(<span class="hljs-string">'IO_ERROR'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'i/o error'</span>, <span class="hljs-string">'inherit message format'</span>)
+            okay(error.code, <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'inherit code name'</span>)
+            okay(error.symbol, Config.Error.IO_ERROR, <span class="hljs-string">'inherit code symbol'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-440">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-440">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-441">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-441">&#182;</a>
+              </div>
+              <p>You can import all the codes at once by returning the <code>Super.Codes</code> object.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-442">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-442">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                },
+                <span class="hljs-attr">PARSE_ERROR</span>: <span class="hljs-string">'unable to parse'</span>,
+                <span class="hljs-attr">NULL_ARGUMENT</span>: <span class="hljs-string">'must not be null'</span>
+            })
+        }
+
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Derived</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Derived.Error'</span>, Config.Error, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Super }</span>) </span>{
+                <span class="hljs-keyword">return</span> Super.Codes
+            })
+        }
+
+        okay(Derived.Error.codes.sort(), [ <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'NULL_ARGUMENT'</span>, <span class="hljs-string">'PARSE_ERROR'</span> ], <span class="hljs-string">'all codes inherited'</span>)
+        okay((
+            Config.Error.IO_ERROR === Derived.Error.IO_ERROR &amp;&amp;
+            Config.Error.PARSE_ERROR === Derived.Error.PARSE_ERROR
+        ), <span class="hljs-string">'symbols inherited'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Derived.Error(<span class="hljs-string">'IO_ERROR'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'i/o error'</span>, <span class="hljs-string">'inherit message format'</span>)
+            okay(error.code, <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'inherit code name'</span>)
+            okay(error.symbol, Config.Error.IO_ERROR, <span class="hljs-string">'inherit code symbol'</span>)
+            okay(error.recoverable,  <span class="hljs-string">'inherit default property'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-443">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-443">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-444">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-444">&#182;</a>
+              </div>
+              <p>You can always return an code array, code object or another code function
+so you can use one of these to return a subset of codes to import.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-445">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-445">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                },
+                <span class="hljs-attr">PARSE_ERROR</span>: <span class="hljs-string">'unable to parse'</span>,
+                <span class="hljs-attr">NULL_ARGUMENT</span>: <span class="hljs-string">'must not be null'</span>
+            })
+        }
+
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Derived</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Derived.Error'</span>, Config.Error, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Super }</span>) </span>{
+                <span class="hljs-keyword">return</span> <span class="hljs-built_in">Object</span>.keys(Super.Codes)
+                             .filter(<span class="hljs-function"><span class="hljs-params">code</span> =&gt;</span> ! Super.Codes[code].recoverable)
+                             .map(<span class="hljs-function"><span class="hljs-params">code</span> =&gt;</span> Super.Codes[code])
+            })
+        }
+
+        okay(Derived.Error.codes.sort(), [ <span class="hljs-string">'NULL_ARGUMENT'</span>, <span class="hljs-string">'PARSE_ERROR'</span> ], <span class="hljs-string">'all codes inherited'</span>)
+        okay((
+            Config.Error.IO_ERROR === Derived.Error.IO_ERROR &amp;&amp;
+            Config.Error.PARSE_ERROR === Derived.Error.PARSE_ERROR
+        ), <span class="hljs-string">'symbols inherited'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Derived.Error(<span class="hljs-string">'NULL_ARGUMENT'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'must not be null'</span>, <span class="hljs-string">'inherit message format'</span>)
+            okay(error.code, <span class="hljs-string">'NULL_ARGUMENT'</span>, <span class="hljs-string">'inherit code name'</span>)
+            okay(error.symbol, Config.Error.NULL_ARGUMENT, <span class="hljs-string">'inherit code symbol'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-446">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-446">&#182;</a>
+              </div>
+              <p>If you want to inherit a code and extend it you use the Super’s code
+object as the <code>code</code> property of a defintion. The properties of the
+parent’s code will be merged with your definition preserving the property
+settings <code>enumerable</code>, <code>writable</code> and <code>configurable</code>.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-447">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-447">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                },
+                <span class="hljs-attr">PARSE_ERROR</span>: <span class="hljs-string">'unable to parse'</span>
+            })
+        }
+
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Derived</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Derived.Error'</span>, Config.Error, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Super }</span>) </span>{
+                <span class="hljs-keyword">return</span> {
+                    <span class="hljs-attr">IO_ERROR</span>: {
+                        <span class="hljs-attr">code</span>: Super.Codes.IO_ERROR,
+                        <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">false</span>,
+                        <span class="hljs-attr">type</span>: <span class="hljs-string">'directory'</span>
+                    }
+                }
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, <span class="hljs-string">'symbols inherited'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Derived.Error(<span class="hljs-string">'IO_ERROR'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'i/o error'</span>, <span class="hljs-string">'inherit message format'</span>)
+            okay(error.code, <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'inherit code name'</span>)
+            okay(error.symbol, Config.Error.IO_ERROR, <span class="hljs-string">'inherit code symbol'</span>)
+            okay(error.recoverable, <span class="hljs-literal">false</span>, <span class="hljs-string">'override default property'</span>)
+            okay(error.type, <span class="hljs-string">'directory'</span>,  <span class="hljs-string">'add default property'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-448">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-448">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-449">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-449">&#182;</a>
+              </div>
+              <p>You’re not able to remove properties when you override. You can however,
+just redeclare the inherited property as code with an imported symbol.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-450">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-450">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                }
+            })
+        }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-451">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-451">&#182;</a>
+              </div>
+              <p><strong>TODO</strong> Expose properties, that is make it a part of the codes
+object.</p>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Derived</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Derived.Error'</span>, Config.Error, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Super }</span>) </span>{
+                <span class="hljs-keyword">return</span> {
+                    <span class="hljs-attr">IO_ERROR</span>: {
+                        <span class="hljs-attr">symbol</span>: Super.Codes.IO_ERROR.symbol,
+                        <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>, <span class="hljs-comment">// Super.Codes.properties.message</span>
+                        type: <span class="hljs-string">'directory'</span>
+                    }
+                }
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, <span class="hljs-string">'symbols inherited'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Derived.Error(<span class="hljs-string">'IO_ERROR'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'i/o error'</span>, <span class="hljs-string">'inherit message format'</span>)
+            okay(error.code, <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'inherit code name'</span>)
+            okay(error.symbol, Config.Error.IO_ERROR, <span class="hljs-string">'inherit code symbol'</span>)
+            okay(!(<span class="hljs-string">'recoverable'</span> <span class="hljs-keyword">in</span> error), <span class="hljs-string">'override default property'</span>)
+            okay(error.type, <span class="hljs-string">'directory'</span>,  <span class="hljs-string">'add default property'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-452">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-452">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-453">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-453">&#182;</a>
+              </div>
+              <p>You can import all of the codes, but override or replace some of them
+using JavaScript destructuring.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-454">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-454">&#182;</a>
+              </div>
+              <p>In this example we destructure the entire <code>Super.Codes</code> object into a new
+object, which will import them as is, while at the same time extending
+a specific code.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-455">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-455">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                },
+                <span class="hljs-attr">PARSE_ERROR</span>: <span class="hljs-string">'unable to parse'</span>
+            })
+        }
+
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Derived</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Derived.Error'</span>, Config.Error, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Super }</span>) </span>{
+                <span class="hljs-keyword">return</span> {
+                    ...Super.Codes,
+                    <span class="hljs-attr">IO_ERROR</span>: {
+                        <span class="hljs-attr">code</span>: Super.Codes.IO_ERROR,
+                        <span class="hljs-attr">type</span>: <span class="hljs-string">'directory'</span>
+                    }
+                }
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, <span class="hljs-string">'symbols inherited'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Derived.Error(<span class="hljs-string">'IO_ERROR'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'i/o error'</span>, <span class="hljs-string">'inherit message format'</span>)
+            okay(error.code, <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'inherit code name'</span>)
+            okay(error.symbol, Config.Error.IO_ERROR, <span class="hljs-string">'inherit code symbol'</span>)
+            okay(error.recoverable, <span class="hljs-string">'inherit default property'</span>)
+            okay(error.type, <span class="hljs-string">'directory'</span>,  <span class="hljs-string">'add default property'</span>)
+        }
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-456">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-456">&#182;</a>
+              </div>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-457">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-457">&#182;</a>
+              </div>
+              <p>You can also import aliases.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-458">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-458">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                },
+                <span class="hljs-attr">PARSE_ERROR</span>: <span class="hljs-string">'unable to parse'</span>,
+                <span class="hljs-attr">FILE_ERROR</span>: {
+                    <span class="hljs-attr">code</span>: <span class="hljs-string">'IO_ERROR'</span>,
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'the file cannot be read'</span>,
+                    <span class="hljs-attr">type</span>: <span class="hljs-string">'file'</span>
+                }
+            })
+        }
+
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Derived</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Derived.Error'</span>, Config.Error, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Super }</span>) </span>{
+                <span class="hljs-built_in">console</span>.log(Super.Aliases)
+                <span class="hljs-keyword">return</span> {
+                    <span class="hljs-attr">IO_ERROR</span>: Super.Codes.IO_ERROR,
+                    ...Super.Aliases
+                }
+            })
+        }
+
+        okay(Config.Error.IO_ERROR === Derived.Error.IO_ERROR, <span class="hljs-string">'symbols inherited'</span>)
+
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Derived.Error(<span class="hljs-string">'FILE_ERROR'</span>)
+        } <span class="hljs-keyword">catch</span> (error) {
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${error.stack}</span>\n`</span>)
+            okay(Interrupt.message(error), <span class="hljs-string">'the file cannot be read'</span>, <span class="hljs-string">'inherit message format'</span>)
+            okay(error.code, <span class="hljs-string">'IO_ERROR'</span>, <span class="hljs-string">'inherit code name'</span>)
+            okay(error.symbol, Config.Error.IO_ERROR, <span class="hljs-string">'inherit code symbol'</span>)
+            okay(error.recoverable, <span class="hljs-string">'inherit default property'</span>)
+            okay(error.type, <span class="hljs-string">'file'</span>,  <span class="hljs-string">'add default property'</span>)
+        }
     }
+
+    {
+        <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Config</span> </span>{
+            <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Config.Error'</span>, {
+                <span class="hljs-attr">IO_ERROR</span>: {
+                    <span class="hljs-attr">message</span>: <span class="hljs-string">'i/o error'</span>,
+                    <span class="hljs-attr">recoverable</span>: <span class="hljs-literal">true</span>
+                }
+            })
+        }
+
+        okay(<span class="hljs-keyword">new</span> Config.Error().toString(), <span class="hljs-string">'Config.Error'</span>, <span class="hljs-string">'no message to string'</span>)
+        okay(<span class="hljs-keyword">new</span> Config.Error(<span class="hljs-string">'IO_ERROR'</span>).toString(), <span class="hljs-string">'Config.Error: i/o error'</span>, <span class="hljs-string">'with message to string'</span>)
+    }
+
 })</pre></div></div>
 
         </li>

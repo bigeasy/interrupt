@@ -206,22 +206,7 @@ includes the message in the stack trace.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">context</span> (<span class="hljs-params">options, instance, stack = true</span>) </span>{
-    <span class="hljs-keyword">let</span> message = instance.message
-    <span class="hljs-keyword">try</span> {
-        message = instance.message = sprintf(options.message, options)
-    } <span class="hljs-keyword">catch</span> (error) {
-        instance.errors.push({
-            <span class="hljs-attr">code</span>: Interrupt.Error.SPRINTF_ERROR,
-            <span class="hljs-attr">format</span>: options.format,
-            <span class="hljs-attr">properties</span>: options.properties,
-            <span class="hljs-attr">error</span>: error
-        })
-    }
-    <span class="hljs-keyword">const</span> properties = {}
-    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Object</span>.keys(instance.displayed).length != <span class="hljs-number">0</span>) {
-        message += <span class="hljs-string">'\n\n'</span> + Interrupt.JSON.stringify(instance.displayed)
-    }</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">context</span> (<span class="hljs-params">options, instance, stack = true</span>) </span>{</pre></div></div>
 
         </li>
 
@@ -231,6 +216,49 @@ includes the message in the stack trace.</p>
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Attempt to use the options message as a <code>sprintf</code> format. Use the message
+as is if <code>sprintf</code> fails.</p>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">let</span> message = instance.message = options.message
+    <span class="hljs-keyword">try</span> {
+        message = instance.message = sprintf(options.message, options)
+    } <span class="hljs-keyword">catch</span> (error) {
+        instance.errors.push({
+            <span class="hljs-attr">code</span>: Interrupt.Error.SPRINTF_ERROR,
+            <span class="hljs-attr">format</span>: options.format,
+            <span class="hljs-attr">properties</span>: options.properties,
+            <span class="hljs-attr">error</span>: error
+        })
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-12">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>The enumerable properties, if any, of the object using our special JSON.</p>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Object</span>.keys(instance.displayed).length != <span class="hljs-number">0</span>) {
+        message += <span class="hljs-string">'\n\n'</span> + Interrupt.JSON.stringify(instance.displayed)
+    }</pre></div></div>
+
+        </li>
+
+
+        <li id="section-13">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
               <p><strong>TODO</strong> Without context messages we have more space. We could, if the
 type is not an Error, serialize the cause as JSON. Parsing would be a
@@ -247,16 +275,42 @@ confusing, but I doubt it.</p>
             <span class="hljs-keyword">const</span> indented = text.replace(<span class="hljs-regexp">/^/gm</span>, <span class="hljs-string">'    '</span>)
             message += <span class="hljs-string">'\n\ncause:\n\n'</span> + indented
         }
-    }
+    }</pre></div></div>
 
-    <span class="hljs-keyword">if</span> (stack &amp;&amp; (options[<span class="hljs-string">'#stack'</span>] == <span class="hljs-literal">null</span> || options[<span class="hljs-string">'#stack'</span>] != <span class="hljs-number">0</span>)) {
+        </li>
+
+
+        <li id="section-14">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>A header for the stack trace unless the stack trace has been suppressed.</p>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (stack &amp;&amp; (options[<span class="hljs-string">'#stack'</span>] == <span class="hljs-literal">null</span> || options[<span class="hljs-string">'#stack'</span>] != <span class="hljs-number">0</span>)) {
         message += <span class="hljs-string">'\n\nstack:\n'</span>
     }
 
     <span class="hljs-keyword">return</span> message
-}
+}</pre></div></div>
 
-<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">combine</span> (<span class="hljs-params">...vargs</span>) </span>{
+        </li>
+
+
+        <li id="section-15">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>A utility to merge two or more objects preserving their descriptor traits.</p>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">combine</span> (<span class="hljs-params">...vargs</span>) </span>{
     <span class="hljs-keyword">const</span> properties = {}
     <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> object <span class="hljs-keyword">of</span> vargs) {
         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> property <span class="hljs-keyword">of</span> <span class="hljs-built_in">Object</span>.getOwnPropertyNames(object)) {
@@ -264,32 +318,16 @@ confusing, but I doubt it.</p>
         }
     }
     <span class="hljs-keyword">return</span> <span class="hljs-built_in">Object</span>.defineProperties({}, properties)
-}
-
-<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">finalize</span> (<span class="hljs-params">Class, Prototype, vargs</span>) </span>{
-    <span class="hljs-keyword">const</span> options = Class.options.apply(Class, vargs)
-    <span class="hljs-keyword">const</span> prototypes = [ Prototype.prototypes[options.code] || { <span class="hljs-attr">code</span>: <span class="hljs-literal">null</span> } ]
-    <span class="hljs-keyword">const</span> code = prototypes[<span class="hljs-number">0</span>].code
-    <span class="hljs-keyword">if</span> (prototypes[<span class="hljs-number">0</span>].code != <span class="hljs-literal">null</span> &amp;&amp; prototypes[<span class="hljs-number">0</span>].code != options.code) {
-        <span class="hljs-keyword">let</span> superPrototype = prototypes[<span class="hljs-number">0</span>], superCode
-        <span class="hljs-keyword">do</span> {
-            superCode = superPrototype.code
-            superPrototype = Prototype.prototypes[superCode]
-            prototypes.unshift(superPrototype)
-        } <span class="hljs-keyword">while</span> (superPrototype.code != superCode)
-    }
-    prototypes.push(options, { <span class="hljs-attr">code</span>: prototypes[prototypes.length - <span class="hljs-number">1</span>].code })
-    <span class="hljs-keyword">return</span> Class.options.apply(Class, prototypes)
 }</pre></div></div>
 
         </li>
 
 
-        <li id="section-12">
+        <li id="section-16">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
               <p>Get an object from a tree of objects <code>object</code> using the given array of
 indexes in the given <code>path</code>. Used by our specialized JSON to generate and
@@ -325,11 +363,11 @@ resolve references.</p>
         </li>
 
 
-        <li id="section-13">
+        <li id="section-17">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>An assert internal to Interrupt that will not get audited.</p>
 
@@ -344,11 +382,11 @@ resolve references.</p>
         </li>
 
 
-        <li id="section-14">
+        <li id="section-18">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
               <p>The Interrupt class extends <code>Error</code> using class ES6 extension.</p>
 
@@ -357,11 +395,11 @@ resolve references.</p>
         </li>
 
 
-        <li id="section-15">
+        <li id="section-19">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
+                <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
 
             </div>
@@ -371,11 +409,11 @@ resolve references.</p>
         </li>
 
 
-        <li id="section-16">
+        <li id="section-20">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+                <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
               <p>Private static initializer. We are committed to Node.js 12 or greater.</p>
 
@@ -390,11 +428,11 @@ resolve references.</p>
         </li>
 
 
-        <li id="section-17">
+        <li id="section-21">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
               <p><strong>TODO</strong> Maybe a set of common symbols mapped to the existing Node.js
 error types? No, the ability to specify a symbol, but it must be unique,
@@ -405,11 +443,11 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
         </li>
 
 
-        <li id="section-18">
+        <li id="section-22">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <p>The <code>Interrupt.Error</code> class is itself an interrupt defined error.</p>
 
@@ -420,11 +458,11 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
         </li>
 
 
-        <li id="section-19">
+        <li id="section-23">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
+                <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
               <p><strong>TODO</strong> Rename.</p>
 
@@ -533,11 +571,11 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
         </li>
 
 
-        <li id="section-20">
+        <li id="section-24">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+                <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
               <p><strong>TODO</strong> Need to be regex so we can detect a naked error with no
 message and a stack that starts with <code>&#39;    at&#39;</code>.</p>
@@ -689,11 +727,11 @@ message and a stack that starts with <code>&#39;    at&#39;</code>.</p>
         </li>
 
 
-        <li id="section-21">
+        <li id="section-25">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
               <p>We implement custom JSON serialization that supports circular references
 because we don’t want to raise an exception on bad JSON because JSON
@@ -708,11 +746,11 @@ neglect to say as much as we can about the properties we’ve been given.</p>
         </li>
 
 
-        <li id="section-22">
+        <li id="section-26">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
+                <a class="pilcrow" href="#section-26">&#182;</a>
               </div>
               <p>Stringify visits each object in the object to look for duplicate
 objects and mark them for reference construction in the replacer. It
@@ -791,11 +829,11 @@ does not create a copy of the object because we want
         </li>
 
 
-        <li id="section-23">
+        <li id="section-27">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
+                <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
               <p>Parse converts our escaped <code>Array</code> and <code>undefined</code> place holders and
 builds an array of references in the reviver. It resolve the
@@ -849,11 +887,11 @@ converted.</p>
         </li>
 
 
-        <li id="section-24">
+        <li id="section-28">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
 
             </div>
@@ -861,11 +899,11 @@ converted.</p>
         </li>
 
 
-        <li id="section-25">
+        <li id="section-29">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+                <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
               <p>This constructor is only called by derived class and should not be called
 by the user. An argument could be made that we accommodate the user that
@@ -879,11 +917,11 @@ not going to be as accommodating as all that.</p>
         </li>
 
 
-        <li id="section-26">
+        <li id="section-30">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-26">&#182;</a>
+                <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
 
             </div>
@@ -893,11 +931,11 @@ not going to be as accommodating as all that.</p>
         </li>
 
 
-        <li id="section-27">
+        <li id="section-31">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-27">&#182;</a>
+                <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
               <p>We can’t use <code>Interrupt.Error.assert</code> because auditing will make us
 blow the stack.</p>
@@ -909,11 +947,11 @@ blow the stack.</p>
         </li>
 
 
-        <li id="section-28">
+        <li id="section-32">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+                <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
               <p>When called with no arguments we call our super constructor with no
 arguments to eventually call <code>Error</code> with no argments to create an
@@ -921,7 +959,19 @@ empty error.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">const</span> options = finalize(Class, Prototype, vargs)
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">const</span> args = Class.options.apply(Class, vargs)
+        <span class="hljs-keyword">const</span> prototypes = [ Prototype.prototypes[args.code] || { <span class="hljs-attr">code</span>: <span class="hljs-literal">null</span> } ]
+        <span class="hljs-keyword">const</span> code = prototypes[<span class="hljs-number">0</span>].code
+        <span class="hljs-keyword">if</span> (prototypes[<span class="hljs-number">0</span>].code != <span class="hljs-literal">null</span> &amp;&amp; prototypes[<span class="hljs-number">0</span>].code != args.code) {
+            <span class="hljs-keyword">let</span> superPrototype = prototypes[<span class="hljs-number">0</span>], superCode
+            <span class="hljs-keyword">do</span> {
+                superCode = superPrototype.code
+                superPrototype = Prototype.prototypes[superCode]
+                prototypes.unshift(superPrototype)
+            } <span class="hljs-keyword">while</span> (superPrototype.code != superCode)
+        }
+        prototypes.push(args, { <span class="hljs-attr">code</span>: prototypes[prototypes.length - <span class="hljs-number">1</span>].code })
+        <span class="hljs-keyword">const</span> options = Class.options.apply(Class, prototypes)
 
         <span class="hljs-keyword">const</span> properties = {
             <span class="hljs-attr">name</span>: {</pre></div></div>
@@ -929,11 +979,11 @@ empty error.</p>
         </li>
 
 
-        <li id="section-29">
+        <li id="section-33">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <p><strong>TODO</strong> Class.name?</p>
 
@@ -972,11 +1022,11 @@ empty error.</p>
         </li>
 
 
-        <li id="section-30">
+        <li id="section-34">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p><strong>TODO</strong> Maybe option errors are in a weak map?</p>
 
@@ -991,7 +1041,6 @@ empty error.</p>
         }
 
         <span class="hljs-keyword">const</span> stackTraceLimit = <span class="hljs-built_in">Error</span>.stackTraceLimit
-        <span class="hljs-built_in">console</span>.log(options[<span class="hljs-string">'#stack'</span>])
         <span class="hljs-keyword">if</span> (options[<span class="hljs-string">'#stack'</span>] != <span class="hljs-literal">null</span>) {
             <span class="hljs-built_in">Error</span>.stackTraceLimit = options[<span class="hljs-string">'#stack'</span>]
         }</pre></div></div>
@@ -999,11 +1048,11 @@ empty error.</p>
         </li>
 
 
-        <li id="section-31">
+        <li id="section-35">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
               <p><strong>TODO</strong> Display internal errors.</p>
 
@@ -1027,11 +1076,11 @@ empty error.</p>
         </li>
 
 
-        <li id="section-32">
+        <li id="section-36">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <p>FYI It is faster to use <code>Error.captureStackTrace</code> again than
 it is to try to strip the stack frames created by <code>Error</code>
@@ -1044,11 +1093,11 @@ coming back to experiment with it.</p>
         </li>
 
 
-        <li id="section-33">
+        <li id="section-37">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
 
             </div>
@@ -1063,11 +1112,11 @@ coming back to experiment with it.</p>
         </li>
 
 
-        <li id="section-34">
+        <li id="section-38">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <p>We ignore the depth and options. We’re not going to limit the output nor
 sprinkle it with colors, not now and probably not ever. This was the
@@ -1083,11 +1132,11 @@ properties to its output.</p>
         </li>
 
 
-        <li id="section-35">
+        <li id="section-39">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+                <a class="pilcrow" href="#section-39">&#182;</a>
               </div>
               <p>Our <code>toString</code> representation mirrors that of Node.js. We remove the
 context and headings from the <code>message</code> used to generate <code>stack</code>.</p>
@@ -1113,11 +1162,11 @@ context and headings from the <code>message</code> used to generate <code>stack<
         </li>
 
 
-        <li id="section-36">
+        <li id="section-40">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+                <a class="pilcrow" href="#section-40">&#182;</a>
               </div>
               <p><strong>TODO</strong> Wouldn’t it be nice to have some sort of way to specify
 properties by code? Like which subsystem or a severity?</p>
@@ -1127,11 +1176,11 @@ properties by code? Like which subsystem or a severity?</p>
         </li>
 
 
-        <li id="section-37">
+        <li id="section-41">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+                <a class="pilcrow" href="#section-41">&#182;</a>
               </div>
 
             </div>
@@ -1144,35 +1193,6 @@ properties by code? Like which subsystem or a severity?</p>
         }
 
         <span class="hljs-keyword">const</span> Class = <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SuperClass</span> </span>{
-            <span class="hljs-keyword">static</span> Context = <span class="hljs-class"><span class="hljs-keyword">class</span> </span>{
-                <span class="hljs-keyword">constructor</span> (...vargs) {
-                    <span class="hljs-keyword">const</span> options = finalize(Class, Prototype, vargs)</pre></div></div>
-
-        </li>
-
-
-        <li id="section-38">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-38">&#182;</a>
-              </div>
-              <p><strong>TODO</strong> Common population of displayed.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>                    <span class="hljs-keyword">const</span> instance = { <span class="hljs-attr">errors</span>: [], <span class="hljs-attr">displayed</span>: {} }
-                    <span class="hljs-keyword">this</span>._dump = <span class="hljs-string">`<span class="hljs-subst">${name}</span>.Context: <span class="hljs-subst">${context(options, instance, <span class="hljs-literal">false</span>)}</span>`</span>
-                    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> property <span class="hljs-keyword">in</span> options.properties) {
-                        <span class="hljs-keyword">this</span>[property] = options.properties[property]
-                    }
-                }
-
-                toString () {
-                    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._dump
-                }
-            }
-
             <span class="hljs-keyword">constructor</span> (...vargs) {
                 <span class="hljs-keyword">if</span> (vargs[<span class="hljs-number">0</span>] === PROTECTED) {
                     <span class="hljs-keyword">super</span>(...vargs)
@@ -1207,11 +1227,11 @@ properties by code? Like which subsystem or a severity?</p>
         </li>
 
 
-        <li id="section-39">
+        <li id="section-42">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-39">&#182;</a>
+                <a class="pilcrow" href="#section-42">&#182;</a>
               </div>
               <p><strong>TODO</strong> Keep expecting us to use the first code that is set, but
 we don’t do that, do we?</p>
@@ -1230,11 +1250,11 @@ we don’t do that, do we?</p>
         </li>
 
 
-        <li id="section-40">
+        <li id="section-43">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-40">&#182;</a>
+                <a class="pilcrow" href="#section-43">&#182;</a>
               </div>
               <p><strong>TODO</strong> Wondering about code overrides, should they be allowed?
 Or do we accept the first code that is set?</p>
@@ -1261,11 +1281,11 @@ Or do we accept the first code that is set?</p>
         </li>
 
 
-        <li id="section-41">
+        <li id="section-44">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-41">&#182;</a>
+                <a class="pilcrow" href="#section-44">&#182;</a>
               </div>
               <p><strong>TODO</strong> code = { text, symbol } // name? label? identifier? id? string?</p>
 
@@ -1335,11 +1355,11 @@ Or do we accept the first code that is set?</p>
         </li>
 
 
-        <li id="section-42">
+        <li id="section-45">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-42">&#182;</a>
+                <a class="pilcrow" href="#section-45">&#182;</a>
               </div>
               <p><strong>TODO</strong> Convert <code>symbol</code> to <code>string</code>.</p>
 
@@ -1500,11 +1520,11 @@ Or do we accept the first code that is set?</p>
         </li>
 
 
-        <li id="section-43">
+        <li id="section-46">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-43">&#182;</a>
+                <a class="pilcrow" href="#section-46">&#182;</a>
               </div>
               <p><strong>TODO</strong> Assert constructor is a function.</p>
 
@@ -1565,11 +1585,11 @@ Or do we accept the first code that is set?</p>
         </li>
 
 
-        <li id="section-44">
+        <li id="section-47">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-44">&#182;</a>
+                <a class="pilcrow" href="#section-47">&#182;</a>
               </div>
               <p>We have an prototypical state of an exception that we do not want to
 store in the class and we definitely do not want to expose it
@@ -1580,11 +1600,11 @@ publicly.</p>
         </li>
 
 
-        <li id="section-45">
+        <li id="section-48">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-45">&#182;</a>
+                <a class="pilcrow" href="#section-48">&#182;</a>
               </div>
               <p>Running out of names, must tidy.</p>
 
@@ -1604,11 +1624,11 @@ publicly.</p>
         </li>
 
 
-        <li id="section-46">
+        <li id="section-49">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-46">&#182;</a>
+                <a class="pilcrow" href="#section-49">&#182;</a>
               </div>
               <p>Detect duplicate declarations.</p>
 
@@ -1623,11 +1643,11 @@ publicly.</p>
         </li>
 
 
-        <li id="section-47">
+        <li id="section-50">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-47">&#182;</a>
+                <a class="pilcrow" href="#section-50">&#182;</a>
               </div>
               <p>Define a code with no default properties.</p>
 
@@ -1643,11 +1663,11 @@ publicly.</p>
         </li>
 
 
-        <li id="section-48">
+        <li id="section-51">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-48">&#182;</a>
+                <a class="pilcrow" href="#section-51">&#182;</a>
               </div>
               <p>Invoke a function that will return further code definitions.</p>
 
@@ -1661,11 +1681,11 @@ publicly.</p>
         </li>
 
 
-        <li id="section-49">
+        <li id="section-52">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-49">&#182;</a>
+                <a class="pilcrow" href="#section-52">&#182;</a>
               </div>
               <p>If an array, unshift the definitions onto our argument list,
 otherwise fall through to object processing.</p>
@@ -1689,11 +1709,11 @@ otherwise fall through to object processing.</p>
         </li>
 
 
-        <li id="section-50">
+        <li id="section-53">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-50">&#182;</a>
+                <a class="pilcrow" href="#section-53">&#182;</a>
               </div>
               <p>Duplicate declaration detection. <strong>TODO</strong> Better error.</p>
 
@@ -1705,11 +1725,11 @@ otherwise fall through to object processing.</p>
         </li>
 
 
-        <li id="section-51">
+        <li id="section-54">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-51">&#182;</a>
+                <a class="pilcrow" href="#section-54">&#182;</a>
               </div>
               <p>Use an existing code symbol from the super class if one exists,
 otherwise create a new symbol.</p>
@@ -1724,11 +1744,11 @@ otherwise create a new symbol.</p>
         </li>
 
 
-        <li id="section-52">
+        <li id="section-55">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-52">&#182;</a>
+                <a class="pilcrow" href="#section-55">&#182;</a>
               </div>
               <p><strong>TODO</strong> This is new, what about it?</p>
 
@@ -1753,11 +1773,11 @@ otherwise create a new symbol.</p>
         </li>
 
 
-        <li id="section-53">
+        <li id="section-56">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-53">&#182;</a>
+                <a class="pilcrow" href="#section-56">&#182;</a>
               </div>
               <p>Goes here.</p>
 
@@ -1768,11 +1788,11 @@ otherwise create a new symbol.</p>
         </li>
 
 
-        <li id="section-54">
+        <li id="section-57">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-54">&#182;</a>
+                <a class="pilcrow" href="#section-57">&#182;</a>
               </div>
               <p><strong>TODO</strong> Kind of broken. What if the user uses a key other than
 the existing code? Turn <code>is</code> into map and use the existing code,
@@ -1792,11 +1812,11 @@ I guess.</p>
         </li>
 
 
-        <li id="section-55">
+        <li id="section-58">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-55">&#182;</a>
+                <a class="pilcrow" href="#section-58">&#182;</a>
               </div>
               <p>Create an alias of the specified <code>code</code>. When creating an alias,
 specifying a <code>symbol</code> is not allowed.</p>
@@ -1812,11 +1832,11 @@ specifying a <code>symbol</code> is not allowed.</p>
         </li>
 
 
-        <li id="section-56">
+        <li id="section-59">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-56">&#182;</a>
+                <a class="pilcrow" href="#section-59">&#182;</a>
               </div>
               <p>If the code in the object matches the used as the key, that’s
 exactly the form we use for the prototype, otherwise we’re
@@ -1835,11 +1855,11 @@ creating an alias.</p>
         </li>
 
 
-        <li id="section-57">
+        <li id="section-60">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-57">&#182;</a>
+                <a class="pilcrow" href="#section-60">&#182;</a>
               </div>
               <p>No alias, set the code to key from the set of aliases.</p>
 
@@ -1852,11 +1872,11 @@ creating an alias.</p>
         </li>
 
 
-        <li id="section-58">
+        <li id="section-61">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-58">&#182;</a>
+                <a class="pilcrow" href="#section-61">&#182;</a>
               </div>
               <p>Define an alias extending on the given code or alias.</p>
 
@@ -1877,11 +1897,11 @@ creating an alias.</p>
         </li>
 
 
-        <li id="section-59">
+        <li id="section-62">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-59">&#182;</a>
+                <a class="pilcrow" href="#section-62">&#182;</a>
               </div>
               <p>Must be an alias.</p>
 
@@ -1905,11 +1925,11 @@ creating an alias.</p>
         </li>
 
 
-        <li id="section-60">
+        <li id="section-63">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-60">&#182;</a>
+                <a class="pilcrow" href="#section-63">&#182;</a>
               </div>
               <p>Create a property to hold the symbol in the class.</p>
 
@@ -1920,11 +1940,11 @@ creating an alias.</p>
         </li>
 
 
-        <li id="section-61">
+        <li id="section-64">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-61">&#182;</a>
+                <a class="pilcrow" href="#section-64">&#182;</a>
               </div>
               <p>Our internal tracking of symbols.</p>
 
@@ -1963,11 +1983,11 @@ creating an alias.</p>
         </li>
 
 
-        <li id="section-62">
+        <li id="section-65">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-62">&#182;</a>
+                <a class="pilcrow" href="#section-65">&#182;</a>
               </div>
               <p>Get just the message for the given Interrupt error.</p>
 <p>If the error is not an Interrupt error return the <code>message</code> property of
@@ -2166,11 +2186,11 @@ the error or <code>null</code> if the property is not defined.</p>
         </li>
 
 
-        <li id="section-63">
+        <li id="section-66">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-63">&#182;</a>
+                <a class="pilcrow" href="#section-66">&#182;</a>
               </div>
               <p>print(‘’, $ =&gt; [ $.id, 1 + $.duplicates.size ], tree)</p>
 
@@ -2181,11 +2201,11 @@ the error or <code>null</code> if the property is not defined.</p>
         </li>
 
 
-        <li id="section-64">
+        <li id="section-67">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-64">&#182;</a>
+                <a class="pilcrow" href="#section-67">&#182;</a>
               </div>
               <p>print(‘’, $ =&gt; [ $.id, 1 + $.duplicates.size ], tree)</p>
 
@@ -2198,11 +2218,11 @@ the error or <code>null</code> if the property is not defined.</p>
         </li>
 
 
-        <li id="section-65">
+        <li id="section-68">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-65">&#182;</a>
+                <a class="pilcrow" href="#section-68">&#182;</a>
               </div>
               <p>A valid JavaScript identifier. Taken from <a href="https://gist.github.com/mathiasbynens/6334847">this
 gist</a> and used as a string for

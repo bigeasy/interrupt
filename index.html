@@ -117,6 +117,98 @@ construction error should have string <code>code</code>, a non-enumberable <code
 property whose value is a <code>Symbol</code> with a display name is the same as the code,
 a <code>message</code>. Any additional properites should be have JavaScript identifier
 names and JSON serializable values.</p>
+<pre><code>UserError.codes</code></pre><ul>
+<li>&lt;String[]&gt; The names of the error codes for the error.</li>
+</ul>
+<p>An array containing the names of all the codes for the error.</p>
+<pre><code>UserError.&lt;USER_CODE&gt;</code></pre><ul>
+<li><symbol> The symbol associated with a user defined error code.</symbol></li>
+</ul>
+<p>A static property for each code defined in the <code>Interrupt.code()</code> declarator is
+defined on the generated error class. This symbol will be used to set the
+<code>symbol</code> property of constructed errors.</p>
+<pre><code class="language-javascript">const ConfigError = Interrupt.create(&apos;ConfigError&apos;, &apos;IO_ERROR&apos;)
+
+assert(typeof ConfigError.IO_ERROR === &apos;symbol&apos;)</code></pre>
+<pre><code class="language-text">Interrupt.Code((?: (?: code, symbol ) | object ))</code></pre>
+<ul>
+<li>code <code>&lt;String&gt;</code> &#x2014; The name of the code.</li>
+<li>symbol <code>&lt;Symbol&gt;</code> &#x2014; A symbol to associate with the code.</li>
+<li>object <code>&lt;Object&gt;</code> &#x2014; An object whose <code>code</code> and <code>symbol</code> properties are
+used to construct a code object.</li>
+</ul>
+<p>Construct a code object with an enumerable <code>code</code> name property and a
+non-enumerable <code>symbol</code> property for the code symbol.</p>
+<p>This is a helper function to add additional codes to your constructed errors
+that you can test by symbol at runtime, but whose symbols will be excluded from
+JSON serialized output.</p>
+<pre><code class="language-text">Interrupt.OPTIONS</code></pre>
+<ul>
+<li><symbol> The value of <code>&apos;#type&apos;</code> in an options object.</symbol></li>
+</ul>
+<p>When you construct an options object using <code>Interrupt.options()</code> the <code>&apos;#type&apos;</code>
+property is set to this symbol to unambiuously identify the object as an options
+object.</p>
+<pre><code class="language-text">Interrupt.CURRY</code></pre>
+<ul>
+<li><code>&lt;Object&gt;</code> An object containing a <code>#type&apos;</code> property with a value of
+<code>Interrupt.OPTIONS</code>.</li>
+</ul>
+<p>A pre-constructed options object for use with user-defined helper functions to
+indicate that the helper function should be curried. An object with a <code>&apos;#type&apos;</code>
+property whose value is <code>Interrupt.OPTIONS</code> is an options object and cannot be
+mistaken for any other type.</p>
+<pre><code class="language-text">Interrupt.message(error)</code></pre>
+<ul>
+<li>error <code>&lt;Object&gt;</code> &#x2014; Any value other than <code>null</code> or <code>undefined</code>.</li>
+</ul>
+<p>If <code>error</code> is an instance of <code>Interrupt</code>, return the <code>sprintf</code> formatted error
+message without the additional stack trace formatted message. If <code>error</code> is any
+other object return the <code>message</code> property of that object.</p>
+<pre><code class="language-text">Interrupt.parse(stack)</code></pre>
+<ul>
+<li>stack <code>&lt;String&gt;</code> &#x2014; A stack trace string from <code>Error.stack</code>.</li>
+</ul>
+<p>Parse a stack trace from any <code>Error</code> instance. Returns an object with the error
+class, message and an array with the parsed stack trace. If the stack trace is
+from an instance of <code>Interrupt</code> or the result of calling <code>Interrupt.stringify()</code>
+on a non-Interrupt <code>Error</code> the resuling object tree will include enumerable
+<code>Error</code> properties and nested errors.</p>
+<pre><code class="language-text">Interrupt.explode(error)</code></pre>
+<ul>
+<li><code>&lt;Object&gt;</code> Any value other than <code>null</code> or <code>undefined</code>.</li>
+</ul>
+<p><strong>TODO</strong> Why not <code>null</code> or <code>undefined</code>. What if you pass in <code>1</code>. Can&apos;t we just
+JSON stringify and parse something?
+<strong>TODO</strong> Return the component parts and a flag instead of the array encasement.</p>
+<p>Converts an <code>Error</code> into an object containing its component parts for
+serialization in the Interrupt serialization format or else returns an array
+containing the component parts if the Interrupt serialization would be
+malformed.</p>
+<pre><code class="language-text">Interrupt.stringify(error)</code></pre>
+<ul>
+<li><code>&lt;Object&gt;</code> An instance of <code>Error</code>.</li>
+</ul>
+<p>Serialize the given <code>error</code> using the Interrupt serialization format. If <code>error</code>
+is an instance of <code>Interrupt</code>, simply return <code>error.stack</code>. Otherwise serialize
+the error using the Interrupt serialization format including enumerable
+properties and nested errors. If the <code>Error</code> properties would create a malformed
+Interrupt serialization, serialize the <code>Error</code> properties as JSON instead.</p>
+<pre><code class="language-text">userError[util.inspect.custom](depth, options)</code></pre>
+<ul>
+<li>depth <code>&lt;Integer&gt;</code> The depth to recurse when serializing. (ignored)</li>
+<li>options <code>&lt;Object&gt;</code> The inspect options. (ignored)</li>
+</ul>
+<p>Implements serialization used by <code>util.inspect</code>. <code>util.inspect</code> is used to dump
+the exception to standard error when an Node.js program has an uncaught
+exception or an unhandled rejection. <code>util.inspect</code> would ordinarily duplicate
+the dispaly of enumerable properties using its own unparsible serialization
+format. This implementation returns the parsible <code>error.stack</code> property of an
+instance of <code>Interrupt</code>.</p>
+<pre><code class="language-text">userError.toString()</code></pre>
+<p>Returns the generated class name and the <code>sprintf</code> formatted message spearated
+by a colon. Without overriding it, the full message with properties, nested
+errors and headings would be returned.</p>
 </div>
   </div>
   <!-- todo: move into an edify plugin-->

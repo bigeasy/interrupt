@@ -115,3 +115,136 @@ construction error should have string `code`, a non-enumberable `symbol`
 property whose value is a `Symbol` with a display name is the same as the code,
 a `message`. Any additional properites should be have JavaScript identifier
 names and JSON serializable values.
+
+```
+UserError.codes
+```
+
+ * <String[]> The names of the error codes for the error.
+
+An array containing the names of all the codes for the error.
+
+```
+UserError.<USER_CODE>
+```
+
+ * <Symbol> The symbol associated with a user defined error code.
+
+A static property for each code defined in the `Interrupt.code()` declarator is
+defined on the generated error class. This symbol will be used to set the
+`symbol` property of constructed errors.
+
+```javascript
+const ConfigError = Interrupt.create('ConfigError', 'IO_ERROR')
+
+assert(typeof ConfigError.IO_ERROR === 'symbol')
+```
+
+```text
+Interrupt.Code((?: (?: code, symbol ) | object ))
+```
+
+ * code `<String>` &mdash; The name of the code.
+ * symbol `<Symbol>` &mdash; A symbol to associate with the code.
+ * object `<Object>` &mdash; An object whose `code` and `symbol` properties are
+ used to construct a code object.
+
+Construct a code object with an enumerable `code` name property and a
+non-enumerable `symbol` property for the code symbol.
+
+This is a helper function to add additional codes to your constructed errors
+that you can test by symbol at runtime, but whose symbols will be excluded from
+JSON serialized output.
+
+```text
+Interrupt.OPTIONS
+```
+
+ * <Symbol> The value of `'#type'` in an options object.
+
+When you construct an options object using `Interrupt.options()` the `'#type'`
+property is set to this symbol to unambiuously identify the object as an options
+object.
+
+```text
+Interrupt.CURRY
+```
+
+ * `<Object>` An object containing a `#type'` property with a value of
+ `Interrupt.OPTIONS`.
+
+A pre-constructed options object for use with user-defined helper functions to
+indicate that the helper function should be curried. An object with a `'#type'`
+property whose value is `Interrupt.OPTIONS` is an options object and cannot be
+mistaken for any other type.
+
+```text
+Interrupt.message(error)
+```
+
+ * error `<Object>` &mdash; Any value other than `null` or `undefined`.
+
+If `error` is an instance of `Interrupt`, return the `sprintf` formatted error
+message without the additional stack trace formatted message. If `error` is any
+other object return the `message` property of that object.
+
+```text
+Interrupt.parse(stack)
+```
+
+ * stack `<String>` &mdash; A stack trace string from `Error.stack`.
+
+Parse a stack trace from any `Error` instance. Returns an object with the error
+class, message and an array with the parsed stack trace. If the stack trace is
+from an instance of `Interrupt` or the result of calling `Interrupt.stringify()`
+on a non-Interrupt `Error` the resuling object tree will include enumerable
+`Error` properties and nested errors.
+
+```text
+Interrupt.explode(error)
+```
+
+ * `<Object>` Any value other than `null` or `undefined`.
+
+**TODO** Why not `null` or `undefined`. What if you pass in `1`. Can't we just
+JSON stringify and parse something?
+**TODO** Return the component parts and a flag instead of the array encasement.
+
+Converts an `Error` into an object containing its component parts for
+serialization in the Interrupt serialization format or else returns an array
+containing the component parts if the Interrupt serialization would be
+malformed.
+
+```text
+Interrupt.stringify(error)
+```
+
+ * `<Object>` An instance of `Error`.
+
+Serialize the given `error` using the Interrupt serialization format. If `error`
+is an instance of `Interrupt`, simply return `error.stack`. Otherwise serialize
+the error using the Interrupt serialization format including enumerable
+properties and nested errors. If the `Error` properties would create a malformed
+Interrupt serialization, serialize the `Error` properties as JSON instead.
+
+```text
+userError[util.inspect.custom](depth, options)
+```
+
+ * depth `<Integer>` The depth to recurse when serializing. (ignored)
+ * options `<Object>` The inspect options. (ignored)
+
+Implements serialization used by `util.inspect`. `util.inspect` is used to dump
+the exception to standard error when an Node.js program has an uncaught
+exception or an unhandled rejection. `util.inspect` would ordinarily duplicate
+the dispaly of enumerable properties using its own unparsible serialization
+format. This implementation returns the parsible `error.stack` property of an
+instance of `Interrupt`.
+
+```text
+userError.toString()
+```
+
+Returns the generated class name and the `sprintf` formatted message spearated
+by a colon. Without overriding it, the full message with properties, nested
+errors and headings would be returned.
