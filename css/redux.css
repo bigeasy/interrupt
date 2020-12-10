@@ -1,1 +1,89 @@
 /* No more less. Just use minimal contemporary CSS. */
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Source Sans Pro', Merriweather, Geneva, "Helvetica Neue", "Gill Sans", Geneva, Times, Georgia, Geneva, Avenir, "Helvetica Neue";
+}
+h1, h2 {
+    font-family: Inconsolata;
+}
+p code, ul code {
+    font-family: Inconsolata;
+    padding-left: 3px;
+    padding-right: 3px;
+}
+p {
+    line-height: 1.4em;
+    margin-left: 3em;
+}
+ul {
+    padding: 0;
+    padding-left: 1em;
+    margin-left: 5em;
+}
+ul li ul {
+    padding: 0;
+    padding-left: 1em;
+    margin-left: 1em;
+}
+li {
+    list-style: disc;
+    line-height: 1.4em;
+    margin-left: 0;
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+}
+div.example pre code {
+}
+div.example pre {
+    border: 0;
+    padding: 0;
+    padding: 0;
+    margin-top: 0;
+    margin-left: 3em;
+}
+pre {
+    margin-top: 3em;
+    border: 1px dotted gray;
+    padding: 1em;
+}
+pre code {
+    font-family: Inconsolata;
+}
+pre code.hljs {
+    padding: 1em;
+}
+div {
+    align-self: center;
+}
+div.container {
+    width: 1000px;
+}
+table {
+    border-collapse: collapse;
+    align-self: center;
+}
+table tr td.ditto_x {
+    padding: 3pt 12pt;
+    text-align: center;
+}
+table tr.header td {
+    font-family: 'Georgia';
+    font-style: italic;
+}
+table tr.divider td {
+    border-top: 1px solid black
+}
+table tr td.infinitive {
+    font-weight: bold;
+    padding-top: 24pt;
+    font-family: 'Georgia';
+    padding-bottom: 12pt;
+    text-align: center;
+    font-size: 1.35em;
+}
+table td {
+    vertical-align: top;
+    padding: 3pt 6pt;
+    line-height: 1.25em;
+}

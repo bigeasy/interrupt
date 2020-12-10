@@ -2,19 +2,25 @@
 
   <meta charset="utf-8">
   <title>Interrupt</title>
-  <link href="https://fonts.googleapis.com/css?family=Cutive+Mono|Sorts+Mill+Goudy|Mate|Oxygen+Mono|Offside|Raleway:400,700" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css?family=Merriweather|Source+Sans+Pro|Mate|Offside|Raleway:400,700" rel="stylesheet" type="text/css">
   <link href="https://fonts.googleapis.com/css?family=Sorts+Mill+Goudy">
   <link rel="stylesheet" type="text/css" href="css/redux.css">
+  <!-- link(rel="stylesheet" type="text/css" href="css/ascetic.css")-->
+  <!-- link(rel="stylesheet" type="text/css" href="https://cloud.typography.com/7892692/6030832/css/fonts.css")-->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata">
 
-<a href="https://github.com/bigeasy/interrupt/"><img style="position: fixed; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/styles/tomorrow-night.min.css" integrity="sha512-Ly91v1PH9MuXZoEzAV762yfHfn7sAaUHOrv5a3d27/Pk6trrRcEJTXQrU3lgxC/v4+CzRqAK68hnHnDx2agvng==" crossorigin="anonymous"><a href="https://github.com/bigeasy/interrupt/"><img style="position: fixed; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
   <div class="container">
     <div class="unit welcome">
       <h1>Interrupt</h1>
       <!-- todo: code font is too small for body text font-->
     </div>
-    <div class="unit description markdown include" data-file="index.md"><h1 id="interrupt">Interrupt</h1>
-<h2 id="api">API</h2>
-<pre><code class="language-text">UserError = Interrupt.create(className[, superClass ][, codesObject | codesArray | code ]*)</code></pre>
+    <div class="unit description markdown include" data-file="index.md"><p>This is the API reference documentation for Interrupt. It does not describe
+Interrupt theory and practice. For that we recommend you read and run the
+<a href="docco/readme.t.js.html"><code>readme.t.js</code></a>.</p>
+<pre><code class="language-text">UserError = Interrupt.create(className[, superClass ][, codes{ name: code } | codes[] | code ]*)</code></pre>
 <ul>
 <li><code>className</code> &#x2014; The class name. It can include dots to appear dot
 qualified in stack traces.</li>
@@ -127,9 +133,12 @@ names and JSON serializable values.</p>
 <p>A static property for each code defined in the <code>Interrupt.code()</code> declarator is
 defined on the generated error class. This symbol will be used to set the
 <code>symbol</code> property of constructed errors.</p>
-<pre><code class="language-javascript">const ConfigError = Interrupt.create(&apos;ConfigError&apos;, &apos;IO_ERROR&apos;)
+<div class="example">
 
-assert(typeof ConfigError.IO_ERROR === &apos;symbol&apos;)</code></pre>
+<pre><code class="language-javascript hljs"><span class="hljs-keyword">const</span> ConfigError = Interrupt.create(<span class="hljs-string">&apos;ConfigError&apos;</span>, <span class="hljs-string">&apos;IO_ERROR&apos;</span>)
+assert(<span class="hljs-keyword">typeof</span> ConfigError.IO_ERROR === <span class="hljs-string">&apos;symbol&apos;</span>)</code></pre>
+</div>
+
 <pre><code class="language-text">Interrupt.Code((?: (?: code, symbol ) | object ))</code></pre>
 <ul>
 <li>code <code>&lt;String&gt;</code> &#x2014; The name of the code.</li>

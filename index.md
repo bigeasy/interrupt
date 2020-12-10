@@ -1,9 +1,10 @@
-# Interrupt
 
-## API
+This is the API reference documentation for Interrupt. It does not describe
+Interrupt theory and practice. For that we recommend you read and run the
+[`readme.t.js`](docco/readme.t.js.html).
 
 ```text
-UserError = Interrupt.create(className[, superClass ][, codesObject | codesArray | code ]*)
+UserError = Interrupt.create(className[, superClass ][, codes{ name: code } | codes[] | code ]*)
 ```
 
  * `className` &mdash; The class name. It can include dots to appear dot
@@ -134,11 +135,14 @@ A static property for each code defined in the `Interrupt.code()` declarator is
 defined on the generated error class. This symbol will be used to set the
 `symbol` property of constructed errors.
 
+<div class="example">
+
 ```javascript
 const ConfigError = Interrupt.create('ConfigError', 'IO_ERROR')
-
 assert(typeof ConfigError.IO_ERROR === 'symbol')
 ```
+
+</div>
 
 ```text
 Interrupt.Code((?: (?: code, symbol ) | object ))
