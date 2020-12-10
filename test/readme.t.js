@@ -1,5 +1,9 @@
 // # Interrupt
 
+// **TODO** Currently making a pass to fix the English, also organize the
+// sections so that they build on each. Will follow with pass to ensure that all
+// the unit tests (calls to `okay`) have meaningful descriptions.
+
 // Exceptions are nice. I like the concept. I've always done my best to employ
 // them in JavaScript and Node.js but it isn't always easy.
 
@@ -12,8 +16,9 @@
 
 // Interrupt allows you to get exceptions that have a file name and line number
 // from your program, instead of a stubby stack trace that points to the
-// wilderness of the Node.js source, or no stack trace at all. It does this with
-// some syntactical struggle, but without the expensive superfluous stack trace
+// wilderness of the Node.js source, or [no stack trace at
+// all](https://github.com/nodejs/node/issues/30944). It does this with some
+// syntactical struggle, but without the expensive superfluous stack trace
 // generation of the long stack trace modules.
 
 // Interrupt allows you to nest exceptions so you can provide application
@@ -119,16 +124,42 @@ require('proof')(180, async okay => {
     // All of the examples in this code are _contrived_, and in practice, I'm
     // never quite this zealous with my use of exceptions or Interrupt.
 
+    // ## Happy Path vs Error Path
+
+    // Throughout we'll be referring to the happy path and the error path.
+
+    // The happy path is the path of code execution where everything goes as
+    // expected. It is the code path that gets the most exercise, the path that
+    // receives the most robust testing.
+
+    // The error path is the path of code excution that is followed when things
+    // go sideways. One would hope that the error path is not often executed
+    // during normal operation. One would expect the error path to be followed
+    // as a result unforseen circumstances that might not have been considered
+    // during development. Sadly, the error path usually does not receive a lot
+    // of testing. One should tread lightly on the error path.
+
+    // Interrupt endevours to be exacting on the happy path and accommodating on
+    // error path. It has a lot of assertions on functions that are executed
+    // during normal operation and a lot of fallbacks on the functions that are
+    // executed during exception handling.
+
+    // When we speak of the error path in this documenation, we are urging
+    // caution and justifing our accommodations. When we speak of the happy path
+    // in this documentation we are urging rigor and justifying our assertions.
+
     // ## Errors by Code
 
     // Errors in JavaScript have very little context information. The only
-    // property defined by the spec is `message`. (The `stack` property is a
-    // Google V8 extension.)
+    // properties defined by the spec are `name` and `message`.
+
+    // **TODO** As of this writing, Interrupt is targeted for Node.js and Google
+    // V8 only, but can probably be ported to other JavaScript engines if
+    // someone would like to recommend a cross-browser development setup. I'm
+    // open to porting if someone is interested.
 
     // The `message` is supposed to be human readable and because of this it
-    // doesn't serve well as a programmatic indication of error type. A
-    // developer many innocently reword a message for clarity and break code
-    // that uses that old wording as test in a conditional statement.
+    // doesn't serve well as a programmatic indication of error type.
 
     //
     console.log('\n--- message only Errors ---\n')
@@ -183,15 +214,13 @@ require('proof')(180, async okay => {
     }
     //
 
-    // In the contrived example above we had to use a regular expression on the
-    // human readable message to recover from a file I/O error. We couldn't use
-    // an equality test because the message contains the file name which is
-    // variable.
+    // In the example above we had to use a regular expression on the human
+    // readable message to recover from a file I/O error. We cannot use an
+    // equality test because the message contains the file name which is
+    // variable. It is not reassuring to see these fuzzy conditions on the error
+    // path. Someone could break our code by rewording their error message.
 
-    // Furthermore, if someone where to reword the message to "unable to read
-    // file:" that code would break.
-
-    // One way to add programmatic error type information is to create multiple
+    // One way to add rigorous error type information is to create multiple
     // error types. This is what they taught you to do when you first learned
     // about exceptions; create an exception taxonomy.
 
@@ -258,14 +287,15 @@ require('proof')(180, async okay => {
 
     // Other languages have the ability to catch an exception by type. This
     // ability to catch by type is where the idea for an exception class for
-    // each type of error comes from. JavaScript does not have this ability so
-    // once the exception is caught it must be filtered through an `if`/`else`
-    // ladder with `instanceof` to determine the type of exception.
+    // each type of error comes from.
 
-    // Without that ability, Using entire classes for what is essentially a flag
-    // is a kind of heavyweight approach. The user now has to import the
-    // module's exceptions into the namespace of their application to use them
-    // as test conditions. Our `require` statements start to look like this.
+    // JavaScript does not have this ability so once the exception is caught it
+    // must be filtered through an `if`/`else` ladder with `instanceof` to
+    // determine the type of exception. Using entire classes for what is
+    // essentially a flag is a heavyweight approach. The user now has to import
+    // the module's exceptions into the namespace of their application to use
+    // them as test conditions. Not only do we have to add this `if`/`else`
+    // ladder, we have to our `require` statements start to look like this.
 
     // ```javascript
     // const {
@@ -276,7 +306,8 @@ require('proof')(180, async okay => {
     // ```
 
     // Kinda feels like we're moving the internals of a dependency into our
-    // module to check a flag.
+    // module to check a flag. This is so foreign to JavaScript, to use type
+    // information directly, instead of using ploymorphism.
 
     // Node.js itself doesn't extend the error class heirarchy by much.  In
     // fact, in our code we further test the cause of the I/O error by checking
@@ -286,8 +317,9 @@ require('proof')(180, async okay => {
     // The Node.js libraries use a base `Error` class (with the exception of the
     // `assert` module) and simply set a `code` on the error object. All of the
     // errors eminating from the standard Node.js modules have a `code` property
-    // and each `code` property has associated documentation. If you use codes
-    // your module can adhere to this practice.
+    // and each `code` property has associated documentation.
+
+    // If you use codes your module can adhere to this practice.
 
     //
     console.log('\n--- errors using codes ---\n')
