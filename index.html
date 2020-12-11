@@ -1,11 +1,9 @@
-
-
-
+<!DOCTYPE html><html><head>
   <title>Title</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css?family=Inconsolata|Merriweather|Source+Sans+Pro|Mate|Offside|Raleway:400,700" rel="stylesheet" type="text/css">
   <link href="https://fonts.googleapis.com/css?family=Sorts+Mill+Goudy">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/styles/tomorrow-night.min.css" integrity="sha512-Ly91v1PH9MuXZoEzAV762yfHfn7sAaUHOrv5a3d27/Pk6trrRcEJTXQrU3lgxC/v4+CzRqAK68hnHnDx2agvng==" crossorigin="anonymous"><a href="https://github.com/bigeasy/interrupt/"><img style="position: fixed; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/styles/tomorrow-night.min.css" integrity="sha512-Ly91v1PH9MuXZoEzAV762yfHfn7sAaUHOrv5a3d27/Pk6trrRcEJTXQrU3lgxC/v4+CzRqAK68hnHnDx2agvng==" crossorigin="anonymous"></head><body><a href="https://github.com/bigeasy/interrupt/"><img style="position: fixed; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
   <style type="text/css">
     body {
         display: flex;
@@ -272,10 +270,8 @@
       <p>A static property for each code defined in the `Interrupt.code()`
       declarator is defined on the generated error class. This symbol will be
       used to set the <code>symbol</code> property of constructed errors.
-      </p><pre><code class="language-javascript hljs">
-        <span class="hljs-keyword">const</span> ConfigError = Interrupt.create(<span class="hljs-string">&apos;ConfigError&apos;</span>, <span class="hljs-string">&apos;IO_ERROR&apos;</span>)
-        assert(<span class="hljs-keyword">typeof</span> ConfigError.IO_ERROR === <span class="hljs-string">&apos;symbol&apos;</span>)
-      </code></pre>
+      </p><pre><code class="language-javascript hljs"><span class="hljs-keyword">const</span> ConfigError = Interrupt.create(<span class="hljs-string">&apos;ConfigError&apos;</span>, <span class="hljs-string">&apos;IO_ERROR&apos;</span>)
+assert(<span class="hljs-keyword">typeof</span> ConfigError.IO_ERROR === <span class="hljs-string">&apos;symbol&apos;</span>)</code></pre>
     </div>
     <h2 class="invocation">Interrupt.Code(object{ code, symbol } | ( code, symbol ))</h2>
     <div class="definition">
@@ -396,4 +392,5 @@
   </div>
 
 
-<!-- vim: set sw=2 ts=2: -->
+
+</body></html><!-- vim: set sw=2 ts=2: -->

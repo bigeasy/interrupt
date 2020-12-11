@@ -59,7 +59,7 @@
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> util = <span class="hljs-built_in">require</span>(<span class="hljs-string">'util'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> util = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;util&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -74,7 +74,7 @@
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> coalesce = <span class="hljs-built_in">require</span>(<span class="hljs-string">'extant'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> coalesce = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;extant&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -89,7 +89,7 @@
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> Keyify = <span class="hljs-built_in">require</span>(<span class="hljs-string">'keyify'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> Keyify = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;keyify&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -125,7 +125,7 @@ to be violated.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> location = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./location'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> location = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./location&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -141,7 +141,7 @@ fill in the <code>sprintf</code> place-holders.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> sprintf = <span class="hljs-built_in">require</span>(<span class="hljs-string">'sprintf-js'</span>).sprintf</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> sprintf = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;sprintf-js&#x27;</span>).sprintf</pre></div></div>
 
         </li>
 
@@ -157,7 +157,7 @@ derived Interrupt class.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> PROTECTED = <span class="hljs-built_in">Symbol</span>(<span class="hljs-string">'PROTECTED'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> PROTECTED = <span class="hljs-built_in">Symbol</span>(<span class="hljs-string">&#x27;PROTECTED&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -173,7 +173,7 @@ Use for disambiguation when currying <code>assert</code>.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> OPTIONS = <span class="hljs-built_in">Symbol</span>(<span class="hljs-string">'OPTIONS'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> OPTIONS = <span class="hljs-built_in">Symbol</span>(<span class="hljs-string">&#x27;OPTIONS&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -189,7 +189,7 @@ exceptions to audit assertions and guarded functions.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> AUDIT = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'example'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> AUDIT = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&#x27;example&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -206,7 +206,7 @@ includes the message in the stack trace.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">context</span> (<span class="hljs-params">options, instance, stack = true</span>) </span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">context</span> (<span class="hljs-params">options, instance, stack = <span class="hljs-literal">true</span></span>) </span>{</pre></div></div>
 
         </li>
 
@@ -248,7 +248,7 @@ as is if <code>sprintf</code> fails.</p>
             </div>
 
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Object</span>.keys(instance.displayed).length != <span class="hljs-number">0</span>) {
-        message += <span class="hljs-string">'\n\n'</span> + Interrupt.JSON.stringify(instance.displayed)
+        message += <span class="hljs-string">&#x27;\n\n&#x27;</span> + Interrupt.JSON.stringify(instance.displayed)
     }</pre></div></div>
 
         </li>
@@ -272,8 +272,8 @@ confusing, but I doubt it.</p>
         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>, I = options.errors.length; i &lt; I; i++) {
             <span class="hljs-keyword">const</span> error = options.errors[i]
             <span class="hljs-keyword">const</span> text = error <span class="hljs-keyword">instanceof</span> <span class="hljs-built_in">Error</span> ? Interrupt.stringify(error) : error.toString()
-            <span class="hljs-keyword">const</span> indented = text.replace(<span class="hljs-regexp">/^/gm</span>, <span class="hljs-string">'    '</span>)
-            message += <span class="hljs-string">'\n\ncause:\n\n'</span> + indented
+            <span class="hljs-keyword">const</span> indented = text.replace(<span class="hljs-regexp">/^/gm</span>, <span class="hljs-string">&#x27;    &#x27;</span>)
+            message += <span class="hljs-string">&#x27;\n\ncause:\n\n&#x27;</span> + indented
         }
     }</pre></div></div>
 
@@ -290,8 +290,8 @@ confusing, but I doubt it.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (stack &amp;&amp; (options[<span class="hljs-string">'#stack'</span>] == <span class="hljs-literal">null</span> || options[<span class="hljs-string">'#stack'</span>] != <span class="hljs-number">0</span>)) {
-        message += <span class="hljs-string">'\n\nstack:\n'</span>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">if</span> (stack &amp;&amp; (options[<span class="hljs-string">&#x27;#stack&#x27;</span>] == <span class="hljs-literal">null</span> || options[<span class="hljs-string">&#x27;#stack&#x27;</span>] != <span class="hljs-number">0</span>)) {
+        message += <span class="hljs-string">&#x27;\n\nstack:\n&#x27;</span>
     }
 
     <span class="hljs-keyword">return</span> message
@@ -344,19 +344,19 @@ resolve references.</p>
 }
 
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Collector</span> </span>{
-    <span class="hljs-keyword">constructor</span> () {
-        <span class="hljs-keyword">this</span>._lines = []
+    <span class="hljs-title">constructor</span> (<span class="hljs-params"></span>) {
+        <span class="hljs-built_in">this</span>._lines = []
     }
 
     push (line) {
-        <span class="hljs-keyword">this</span>._lines.push(line)
+        <span class="hljs-built_in">this</span>._lines.push(line)
     }
 
     end () {
-        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._lines[<span class="hljs-keyword">this</span>._lines.length - <span class="hljs-number">1</span>] === <span class="hljs-string">''</span>) {
-            <span class="hljs-keyword">this</span>._lines.pop()
+        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._lines[<span class="hljs-built_in">this</span>._lines.length - <span class="hljs-number">1</span>] === <span class="hljs-string">&#x27;&#x27;</span>) {
+            <span class="hljs-built_in">this</span>._lines.pop()
         }
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._lines.join(<span class="hljs-string">'\n'</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._lines.join(<span class="hljs-string">&#x27;\n&#x27;</span>)
     }
 }</pre></div></div>
 
@@ -375,7 +375,7 @@ resolve references.</p>
 
             <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">assert</span> (<span class="hljs-params">condition, ...vargs</span>) </span>{
     <span class="hljs-keyword">if</span> (! condition) {
-        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Interrupt.Error(Interrupt.Error.options.apply(Interrupt.Error, [{ <span class="hljs-string">'#callee'</span>: assert }].concat(vargs)))
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Interrupt.Error(Interrupt.Error.options.apply(Interrupt.Error, [{ <span class="hljs-string">&#x27;#callee&#x27;</span>: assert }].concat(vargs)))
     }
 }</pre></div></div>
 
@@ -419,9 +419,9 @@ resolve references.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>    static #initializer = (function () {
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">static</span> #initializer = (<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
         Prototypes.set(Interrupt, {
-            is: new Map, Super: { Codes: {}, Aliases: {} }
+            <span class="hljs-attr">is</span>: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Map</span>, <span class="hljs-attr">Super</span>: { <span class="hljs-attr">Codes</span>: {}, <span class="hljs-attr">Aliases</span>: {} }
         })
     } ())</pre></div></div>
 
@@ -453,7 +453,7 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">'Interrupt.Error'</span>, {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">static</span> <span class="hljs-built_in">Error</span> = Interrupt.create(<span class="hljs-string">&#x27;Interrupt.Error&#x27;</span>, {</pre></div></div>
 
         </li>
 
@@ -468,33 +468,33 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>        INVALID_CODE: <span class="hljs-string">'code is already a property of the superclass'</span>,
-        <span class="hljs-attr">UNKNOWN_CODE</span>: <span class="hljs-string">'unknown code'</span>,
-        <span class="hljs-attr">INVALID_CODE_TYPE</span>: <span class="hljs-string">'invalid code type'</span>,
-        <span class="hljs-attr">INVALID_ACCESS</span>: <span class="hljs-string">'constructor is not a public interface'</span>,
+            <div class="content"><div class='highlight'><pre>        INVALID_CODE: <span class="hljs-string">&#x27;code is already a property of the superclass&#x27;</span>,
+        <span class="hljs-attr">UNKNOWN_CODE</span>: <span class="hljs-string">&#x27;unknown code&#x27;</span>,
+        <span class="hljs-attr">INVALID_CODE_TYPE</span>: <span class="hljs-string">&#x27;invalid code type&#x27;</span>,
+        <span class="hljs-attr">INVALID_ACCESS</span>: <span class="hljs-string">&#x27;constructor is not a public interface&#x27;</span>,
         <span class="hljs-attr">PARSE_ERROR</span>: <span class="hljs-literal">null</span>,
         <span class="hljs-attr">SPRINTF_ERROR</span>: <span class="hljs-literal">null</span>,
-        <span class="hljs-attr">NULL_ARGUMENT</span>: <span class="hljs-string">'null argument given to exception constructor'</span>,
-        <span class="hljs-attr">INVALID_PROPERTY_NAME</span>: <span class="hljs-string">'invalid property name'</span>,
-        <span class="hljs-attr">INVALID_PROPERTY_TYPE</span>: <span class="hljs-string">'invalid property type'</span>,
-        <span class="hljs-attr">INVALID_PROPERTY_NAME</span>: <span class="hljs-string">'invalid property name'</span>,
+        <span class="hljs-attr">NULL_ARGUMENT</span>: <span class="hljs-string">&#x27;null argument given to exception constructor&#x27;</span>,
+        <span class="hljs-attr">INVALID_PROPERTY_NAME</span>: <span class="hljs-string">&#x27;invalid property name&#x27;</span>,
+        <span class="hljs-attr">INVALID_PROPERTY_TYPE</span>: <span class="hljs-string">&#x27;invalid property type&#x27;</span>,
+        <span class="hljs-attr">INVALID_PROPERTY_NAME</span>: <span class="hljs-string">&#x27;invalid property name&#x27;</span>,
         <span class="hljs-attr">DEFERRED_CONSTRUCTOR_INVALID_RETURN</span>: <span class="hljs-literal">null</span>,
         <span class="hljs-attr">DEFERRED_CONSTRUCTOR_NOT_CALLED</span>: <span class="hljs-literal">null</span>
     }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">{ Codes }</span>) </span>{
         <span class="hljs-keyword">return</span> {
             <span class="hljs-attr">SUPER_PROTOTYPE_MISSING</span>: {
                 <span class="hljs-attr">code</span>: Codes.INVALID_CODE.symbol,
-                <span class="hljs-attr">message</span>: <span class="hljs-string">'attempt to define alias of non-existant code or alias'</span>
+                <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;attempt to define alias of non-existant code or alias&#x27;</span>
             },
             <span class="hljs-attr">SYMBOLS_NOT_ALLOWED</span>: {
                 <span class="hljs-attr">code</span>: Codes.INVALID_CODE.symbol,
-                <span class="hljs-attr">message</span>: <span class="hljs-string">'code alias definitions cannot define a `symbol` property'</span>
+                <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;code alias definitions cannot define a `symbol` property&#x27;</span>
             }
         }
     })
 
     <span class="hljs-keyword">static</span> explode (error) {
-        <span class="hljs-keyword">const</span> preamble = error.message == <span class="hljs-string">''</span>
+        <span class="hljs-keyword">const</span> preamble = error.message == <span class="hljs-string">&#x27;&#x27;</span>
             ? <span class="hljs-string">`<span class="hljs-subst">${error.name}</span>`</span>
             : <span class="hljs-string">`<span class="hljs-subst">${error.name}</span>: <span class="hljs-subst">${error.message}</span>`</span>
         <span class="hljs-keyword">if</span> (
@@ -514,7 +514,7 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
                 }
             }]
         }
-        <span class="hljs-keyword">const</span> stack = error.stack[preamble.length] == <span class="hljs-string">'\n'</span>
+        <span class="hljs-keyword">const</span> stack = error.stack[preamble.length] == <span class="hljs-string">&#x27;\n&#x27;</span>
             ? error.stack.substring(preamble.length + <span class="hljs-number">1</span>)
             : error.stack.substring(preamble.length)
         <span class="hljs-keyword">return</span> {
@@ -533,16 +533,16 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
         <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(exploded)) {
             <span class="hljs-keyword">return</span> Interrupt.JSON.stringify(exploded[<span class="hljs-number">0</span>])
         }
-        <span class="hljs-keyword">if</span> (exploded.message == <span class="hljs-string">''</span> &amp;&amp; <span class="hljs-built_in">Object</span>.keys(exploded.properties).length == <span class="hljs-number">0</span>) {
+        <span class="hljs-keyword">if</span> (exploded.message == <span class="hljs-string">&#x27;&#x27;</span> &amp;&amp; <span class="hljs-built_in">Object</span>.keys(exploded.properties).length == <span class="hljs-number">0</span>) {
             <span class="hljs-keyword">return</span> error.stack
         }
-        <span class="hljs-keyword">const</span> message = error.message.split(<span class="hljs-string">'\n'</span>)
+        <span class="hljs-keyword">const</span> message = error.message.split(<span class="hljs-string">&#x27;\n&#x27;</span>)
         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">1</span>, I = message.length; i &lt; I; i++) {
             message[i] = <span class="hljs-string">`    <span class="hljs-subst">${message[i]}</span>`</span>
         }
-        <span class="hljs-keyword">const</span> title = exploded.message == <span class="hljs-string">''</span>
+        <span class="hljs-keyword">const</span> title = exploded.message == <span class="hljs-string">&#x27;&#x27;</span>
             ? <span class="hljs-string">`<span class="hljs-subst">${exploded.name}</span>`</span>
-            : <span class="hljs-string">`<span class="hljs-subst">${exploded.name}</span>: <span class="hljs-subst">${message.join(<span class="hljs-string">'\n'</span>)}</span>`</span>
+            : <span class="hljs-string">`<span class="hljs-subst">${exploded.name}</span>: <span class="hljs-subst">${message.join(<span class="hljs-string">&#x27;\n&#x27;</span>)}</span>`</span>
         <span class="hljs-keyword">const</span> header = <span class="hljs-built_in">Object</span>.keys(exploded.properties).length == <span class="hljs-number">0</span>
             ? title
             : <span class="hljs-string">`<span class="hljs-subst">${title}</span>\n\n<span class="hljs-subst">${Interrupt.<span class="hljs-built_in">JSON</span>.stringify(exploded.properties)}</span>`</span>
@@ -553,19 +553,19 @@ and we can put those types in <code>Interrupt.Error</code>.</p>
     }
 
     <span class="hljs-keyword">static</span> Parser = <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Parser</span> </span>{
-        <span class="hljs-keyword">constructor</span> (scan = false) {
-            <span class="hljs-keyword">this</span>._scannable = scan
-            <span class="hljs-keyword">this</span>._scanning = scan
-            <span class="hljs-keyword">this</span>._mode = scan ? <span class="hljs-string">'scan'</span> : <span class="hljs-string">'exception'</span>
-            <span class="hljs-keyword">this</span>._collector = <span class="hljs-literal">null</span>
-            <span class="hljs-keyword">this</span>._depth = <span class="hljs-number">0</span>
-            <span class="hljs-keyword">this</span>._position = { <span class="hljs-attr">line</span>: <span class="hljs-number">1</span> }
+        <span class="hljs-title">constructor</span> (<span class="hljs-params">scan = <span class="hljs-literal">false</span></span>) {
+            <span class="hljs-built_in">this</span>._scannable = scan
+            <span class="hljs-built_in">this</span>._scanning = scan
+            <span class="hljs-built_in">this</span>._mode = scan ? <span class="hljs-string">&#x27;scan&#x27;</span> : <span class="hljs-string">&#x27;exception&#x27;</span>
+            <span class="hljs-built_in">this</span>._collector = <span class="hljs-literal">null</span>
+            <span class="hljs-built_in">this</span>._depth = <span class="hljs-number">0</span>
+            <span class="hljs-built_in">this</span>._position = { <span class="hljs-attr">line</span>: <span class="hljs-number">1</span> }
         }
 
         <span class="hljs-keyword">static</span> _DEDENT = {
-            <span class="hljs-string">'message'</span>: <span class="hljs-number">1</span>,
-            <span class="hljs-string">'properties'</span>: <span class="hljs-number">0</span>,
-            <span class="hljs-string">'stack'</span>: <span class="hljs-number">0</span>
+            <span class="hljs-string">&#x27;message&#x27;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-string">&#x27;properties&#x27;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-string">&#x27;stack&#x27;</span>: <span class="hljs-number">0</span>
         }</pre></div></div>
 
         </li>
@@ -583,68 +583,68 @@ message and a stack that starts with <code>&#39;    at&#39;</code>.</p>
             </div>
 
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">static</span> _START = {
-            <span class="hljs-string">'properties'</span>: <span class="hljs-string">'{'</span>,
-            <span class="hljs-string">'stack'</span>: <span class="hljs-string">'stack:'</span>,
-            <span class="hljs-string">'errors'</span>: <span class="hljs-string">'cause:'</span>
+            <span class="hljs-string">&#x27;properties&#x27;</span>: <span class="hljs-string">&#x27;{&#x27;</span>,
+            <span class="hljs-string">&#x27;stack&#x27;</span>: <span class="hljs-string">&#x27;stack:&#x27;</span>,
+            <span class="hljs-string">&#x27;errors&#x27;</span>: <span class="hljs-string">&#x27;cause:&#x27;</span>
         }
 
         <span class="hljs-keyword">static</span> _TRANSITION = {
-            <span class="hljs-string">'message'</span>: [ <span class="hljs-string">'properties'</span>, <span class="hljs-string">'errors'</span>, <span class="hljs-string">'stack'</span> ],
-            <span class="hljs-string">'properties'</span>: [ <span class="hljs-string">'errors'</span>, <span class="hljs-string">'stack'</span> ],
-            <span class="hljs-string">'errors'</span>: [ <span class="hljs-string">'errors'</span>, <span class="hljs-string">'stack'</span> ],
-            <span class="hljs-string">'stack'</span>: [],
-            <span class="hljs-string">'object'</span>: []
+            <span class="hljs-string">&#x27;message&#x27;</span>: [ <span class="hljs-string">&#x27;properties&#x27;</span>, <span class="hljs-string">&#x27;errors&#x27;</span>, <span class="hljs-string">&#x27;stack&#x27;</span> ],
+            <span class="hljs-string">&#x27;properties&#x27;</span>: [ <span class="hljs-string">&#x27;errors&#x27;</span>, <span class="hljs-string">&#x27;stack&#x27;</span> ],
+            <span class="hljs-string">&#x27;errors&#x27;</span>: [ <span class="hljs-string">&#x27;errors&#x27;</span>, <span class="hljs-string">&#x27;stack&#x27;</span> ],
+            <span class="hljs-string">&#x27;stack&#x27;</span>: [],
+            <span class="hljs-string">&#x27;object&#x27;</span>: []
         }
 
         <span class="hljs-keyword">static</span> _INCLUDE = {
-            <span class="hljs-string">'message'</span>: <span class="hljs-literal">false</span>,
-            <span class="hljs-string">'properties'</span>: <span class="hljs-literal">true</span>,
-            <span class="hljs-string">'errors'</span>: <span class="hljs-literal">false</span>,
-            <span class="hljs-string">'stack'</span>: <span class="hljs-string">'false'</span>
+            <span class="hljs-string">&#x27;message&#x27;</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-string">&#x27;properties&#x27;</span>: <span class="hljs-literal">true</span>,
+            <span class="hljs-string">&#x27;errors&#x27;</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-string">&#x27;stack&#x27;</span>: <span class="hljs-string">&#x27;false&#x27;</span>
         }
 
         _complete () {
-            <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">this</span>._mode) {
-            <span class="hljs-keyword">case</span> <span class="hljs-string">'message'</span>: {
-                    <span class="hljs-keyword">this</span>._node.message = <span class="hljs-keyword">this</span>._collector.end()
-                    <span class="hljs-keyword">this</span>._collector.length = <span class="hljs-number">0</span>
+            <span class="hljs-keyword">switch</span> (<span class="hljs-built_in">this</span>._mode) {
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;message&#x27;</span>: {
+                    <span class="hljs-built_in">this</span>._node.message = <span class="hljs-built_in">this</span>._collector.end()
+                    <span class="hljs-built_in">this</span>._collector.length = <span class="hljs-number">0</span>
                 }
                 <span class="hljs-keyword">break</span>
-            <span class="hljs-keyword">case</span> <span class="hljs-string">'properties'</span>: {
-                    <span class="hljs-keyword">this</span>._node.properties = Interrupt.JSON.parse(<span class="hljs-keyword">this</span>._collector.end())
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;properties&#x27;</span>: {
+                    <span class="hljs-built_in">this</span>._node.properties = Interrupt.JSON.parse(<span class="hljs-built_in">this</span>._collector.end())
                 }
                 <span class="hljs-keyword">break</span>
-            <span class="hljs-keyword">case</span> <span class="hljs-string">'stack'</span>: {
-                    <span class="hljs-keyword">this</span>._node.stack = unstacker.parse(<span class="hljs-keyword">this</span>._collector.end())
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;stack&#x27;</span>: {
+                    <span class="hljs-built_in">this</span>._node.stack = unstacker.parse(<span class="hljs-built_in">this</span>._collector.end())
                 }
                 <span class="hljs-keyword">break</span>
-            <span class="hljs-keyword">case</span> <span class="hljs-string">'errors'</span>: {
-                    <span class="hljs-keyword">this</span>._node.errors.push(<span class="hljs-keyword">this</span>._collector.end())
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;errors&#x27;</span>: {
+                    <span class="hljs-built_in">this</span>._node.errors.push(<span class="hljs-built_in">this</span>._collector.end())
                 }
                 <span class="hljs-keyword">break</span>
-            <span class="hljs-keyword">case</span> <span class="hljs-string">'object'</span>: {
-                    <span class="hljs-keyword">this</span>._node = Interrupt.JSON.parse(<span class="hljs-keyword">this</span>._collector.end())
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;object&#x27;</span>: {
+                    <span class="hljs-built_in">this</span>._node = Interrupt.JSON.parse(<span class="hljs-built_in">this</span>._collector.end())
                 }
                 <span class="hljs-keyword">break</span>
             }
         }
 
         _transition (source) {
-            <span class="hljs-attr">MODES</span>: <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> mode <span class="hljs-keyword">of</span> Interrupt.Parser._TRANSITION[<span class="hljs-keyword">this</span>._mode]) {
+            <span class="hljs-attr">MODES</span>: <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> mode <span class="hljs-keyword">of</span> Interrupt.Parser._TRANSITION[<span class="hljs-built_in">this</span>._mode]) {
                 <span class="hljs-keyword">if</span> (source.trimRight() === Interrupt.Parser._START[mode]) {
-                    <span class="hljs-keyword">this</span>._complete()
-                    <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">this</span>._mode = mode) {
-                    <span class="hljs-keyword">case</span> <span class="hljs-string">'errors'</span>: {
-                            <span class="hljs-keyword">this</span>._collector = <span class="hljs-keyword">new</span> Interrupt.Parser
-                            <span class="hljs-keyword">this</span>._collector._mode = <span class="hljs-string">'cause'</span>
+                    <span class="hljs-built_in">this</span>._complete()
+                    <span class="hljs-keyword">switch</span> (<span class="hljs-built_in">this</span>._mode = mode) {
+                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;errors&#x27;</span>: {
+                            <span class="hljs-built_in">this</span>._collector = <span class="hljs-keyword">new</span> Interrupt.Parser
+                            <span class="hljs-built_in">this</span>._collector._mode = <span class="hljs-string">&#x27;cause&#x27;</span>
                         }
                         <span class="hljs-keyword">break</span>
-                    <span class="hljs-keyword">default</span>: {
-                            <span class="hljs-keyword">this</span>._collector = <span class="hljs-keyword">new</span> Collector
+                    <span class="hljs-attr">default</span>: {
+                            <span class="hljs-built_in">this</span>._collector = <span class="hljs-keyword">new</span> Collector
                         }
                         <span class="hljs-keyword">break</span>
                     }
-                    <span class="hljs-keyword">return</span> Interrupt.Parser._INCLUDE[<span class="hljs-keyword">this</span>._mode]
+                    <span class="hljs-keyword">return</span> Interrupt.Parser._INCLUDE[<span class="hljs-built_in">this</span>._mode]
                 }
             }
             <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>
@@ -654,9 +654,9 @@ message and a stack that starts with <code>&#39;    at&#39;</code>.</p>
             <span class="hljs-keyword">const</span> $ = RE.exceptionStart.exec(line)
             <span class="hljs-keyword">if</span> ($ != <span class="hljs-literal">null</span>) {
                 <span class="hljs-keyword">const</span> [ , space, className, separator, message ] = $
-                <span class="hljs-keyword">this</span>._depth = space.length
-                <span class="hljs-keyword">this</span>._collector = <span class="hljs-keyword">new</span> Collector
-                <span class="hljs-keyword">this</span>._node = {
+                <span class="hljs-built_in">this</span>._depth = space.length
+                <span class="hljs-built_in">this</span>._collector = <span class="hljs-keyword">new</span> Collector
+                <span class="hljs-built_in">this</span>._node = {
                     <span class="hljs-attr">className</span>: className,
                     <span class="hljs-attr">message</span>: <span class="hljs-literal">null</span>,
                     <span class="hljs-attr">properties</span>: {},
@@ -665,25 +665,25 @@ message and a stack that starts with <code>&#39;    at&#39;</code>.</p>
                     <span class="hljs-attr">stack</span>: []
                 }
                 <span class="hljs-keyword">if</span> (separator != <span class="hljs-literal">null</span>) {
-                    <span class="hljs-keyword">this</span>._collector.push(message)
+                    <span class="hljs-built_in">this</span>._collector.push(message)
                 }
-                <span class="hljs-keyword">this</span>._mode = <span class="hljs-string">'message'</span>
+                <span class="hljs-built_in">this</span>._mode = <span class="hljs-string">&#x27;message&#x27;</span>
                 <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>
             }
             <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>
         }
 
-        push(line) {
-            <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">this</span>._mode) {
-            <span class="hljs-keyword">case</span> <span class="hljs-string">'exception'</span>: {
-                    <span class="hljs-keyword">this</span>._position = { <span class="hljs-attr">line</span>: <span class="hljs-number">1</span>, <span class="hljs-attr">text</span>: line }
-                    <span class="hljs-keyword">const</span> dedented = dedent(line, <span class="hljs-keyword">this</span>._depth, <span class="hljs-keyword">this</span>._position)
+        <span class="hljs-function"><span class="hljs-title">push</span>(<span class="hljs-params">line</span>)</span> {
+            <span class="hljs-keyword">switch</span> (<span class="hljs-built_in">this</span>._mode) {
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;exception&#x27;</span>: {
+                    <span class="hljs-built_in">this</span>._position = { <span class="hljs-attr">line</span>: <span class="hljs-number">1</span>, <span class="hljs-attr">text</span>: line }
+                    <span class="hljs-keyword">const</span> dedented = dedent(line, <span class="hljs-built_in">this</span>._depth, <span class="hljs-built_in">this</span>._position)
                     <span class="hljs-keyword">const</span> $ = RE.exceptionStart.exec(line)
-                    assert($ != <span class="hljs-literal">null</span>, <span class="hljs-string">'PARSE_ERROR'</span>, <span class="hljs-keyword">this</span>._position)
+                    assert($ != <span class="hljs-literal">null</span>, <span class="hljs-string">&#x27;PARSE_ERROR&#x27;</span>, <span class="hljs-built_in">this</span>._position)
                     <span class="hljs-keyword">const</span> [ , space, className, separator, message ] = $
-                    <span class="hljs-keyword">this</span>._depth = space.length
-                    <span class="hljs-keyword">this</span>._collector = <span class="hljs-keyword">new</span> Collector
-                    <span class="hljs-keyword">this</span>._node = {
+                    <span class="hljs-built_in">this</span>._depth = space.length
+                    <span class="hljs-built_in">this</span>._collector = <span class="hljs-keyword">new</span> Collector
+                    <span class="hljs-built_in">this</span>._node = {
                         <span class="hljs-attr">className</span>: className,
                         <span class="hljs-attr">message</span>: <span class="hljs-literal">null</span>,
                         <span class="hljs-attr">properties</span>: {},
@@ -692,26 +692,26 @@ message and a stack that starts with <code>&#39;    at&#39;</code>.</p>
                         <span class="hljs-attr">stack</span>: []
                     }
                     <span class="hljs-keyword">if</span> (separator != <span class="hljs-literal">null</span>) {
-                        <span class="hljs-keyword">this</span>._collector.push(message)
+                        <span class="hljs-built_in">this</span>._collector.push(message)
                     }
-                    <span class="hljs-keyword">this</span>._mode = <span class="hljs-string">'message'</span>
+                    <span class="hljs-built_in">this</span>._mode = <span class="hljs-string">&#x27;message&#x27;</span>
                 }
                 <span class="hljs-keyword">break</span>
-            <span class="hljs-keyword">case</span> <span class="hljs-string">'cause'</span>: {
-                    <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/\S+/</span>.test(line) &amp;&amp; ! <span class="hljs-keyword">this</span>._exception(line)) {
-                        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'OH, NO!'</span>)
-                        <span class="hljs-keyword">this</span>._collector = <span class="hljs-keyword">new</span> Collector
-                        <span class="hljs-keyword">this</span>._collector.push(line)
-                        <span class="hljs-keyword">this</span>._mode = <span class="hljs-string">'object'</span>
+            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;cause&#x27;</span>: {
+                    <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/\S+/</span>.test(line) &amp;&amp; ! <span class="hljs-built_in">this</span>._exception(line)) {
+                        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&#x27;OH, NO!&#x27;</span>)
+                        <span class="hljs-built_in">this</span>._collector = <span class="hljs-keyword">new</span> Collector
+                        <span class="hljs-built_in">this</span>._collector.push(line)
+                        <span class="hljs-built_in">this</span>._mode = <span class="hljs-string">&#x27;object&#x27;</span>
                     }
                 }
                 <span class="hljs-keyword">break</span>
-            <span class="hljs-keyword">default</span>: {
-                    <span class="hljs-keyword">this</span>._position.line++
-                    <span class="hljs-keyword">this</span>._position.text = line
-                    <span class="hljs-keyword">const</span> dedented = dedent(line, <span class="hljs-keyword">this</span>._depth, <span class="hljs-keyword">this</span>._position)
-                    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._transition(dedented, <span class="hljs-string">'properties'</span>, <span class="hljs-string">'cause'</span>, <span class="hljs-string">'stack'</span>)) {
-                        <span class="hljs-keyword">this</span>._collector.push(dedent(dedented, <span class="hljs-keyword">this</span>._mode == <span class="hljs-string">'message'</span> ? <span class="hljs-number">1</span> : <span class="hljs-number">0</span>, <span class="hljs-keyword">this</span>._position))
+            <span class="hljs-attr">default</span>: {
+                    <span class="hljs-built_in">this</span>._position.line++
+                    <span class="hljs-built_in">this</span>._position.text = line
+                    <span class="hljs-keyword">const</span> dedented = dedent(line, <span class="hljs-built_in">this</span>._depth, <span class="hljs-built_in">this</span>._position)
+                    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>._transition(dedented, <span class="hljs-string">&#x27;properties&#x27;</span>, <span class="hljs-string">&#x27;cause&#x27;</span>, <span class="hljs-string">&#x27;stack&#x27;</span>)) {
+                        <span class="hljs-built_in">this</span>._collector.push(dedent(dedented, <span class="hljs-built_in">this</span>._mode == <span class="hljs-string">&#x27;message&#x27;</span> ? <span class="hljs-number">1</span> : <span class="hljs-number">0</span>, <span class="hljs-built_in">this</span>._position))
                     }
                 }
                 <span class="hljs-keyword">break</span>
@@ -719,8 +719,8 @@ message and a stack that starts with <code>&#39;    at&#39;</code>.</p>
         }
 
         end () {
-            <span class="hljs-keyword">this</span>._complete()
-            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._node
+            <span class="hljs-built_in">this</span>._complete()
+            <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>._node
         }
     }</pre></div></div>
 
@@ -764,20 +764,20 @@ does not create a copy of the object because we want
             <span class="hljs-keyword">const</span> replacements = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Map</span>
             <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">visit</span> (<span class="hljs-params">path, value</span>) </span>{
                 <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">typeof</span> value) {
-                <span class="hljs-keyword">case</span> <span class="hljs-string">'object'</span>: {
+                <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;object&#x27;</span>: {
                         <span class="hljs-keyword">if</span> (value != <span class="hljs-literal">null</span>) {
                             <span class="hljs-keyword">const</span> reference = seen.get(value)
                             <span class="hljs-keyword">if</span> (reference != <span class="hljs-literal">null</span>) {
-                                replacements.set(value, <span class="hljs-string">'_reference'</span>)
+                                replacements.set(value, <span class="hljs-string">&#x27;_reference&#x27;</span>)
                             } <span class="hljs-keyword">else</span> {
                                 seen.set(value, path)
                                 <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(value)) {
                                     <span class="hljs-keyword">const</span> array = []
                                     <span class="hljs-keyword">if</span> (
-                                        <span class="hljs-keyword">typeof</span> value[<span class="hljs-number">0</span>] == <span class="hljs-string">'string'</span> &amp;&amp;
+                                        <span class="hljs-keyword">typeof</span> value[<span class="hljs-number">0</span>] == <span class="hljs-string">&#x27;string&#x27;</span> &amp;&amp;
                                         <span class="hljs-regexp">/^_reference|_array|_undefined$/</span>.test(value[<span class="hljs-number">0</span>])
                                     ) {
-                                        replacements.set(value, [ <span class="hljs-string">'_array'</span> ].concat(value))
+                                        replacements.set(value, [ <span class="hljs-string">&#x27;_array&#x27;</span> ].concat(value))
                                     }
                                 } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (value <span class="hljs-keyword">instanceof</span> <span class="hljs-built_in">Error</span> &amp;&amp; ! (value <span class="hljs-keyword">instanceof</span> Interrupt &amp;&amp; value === object)) {
                                     <span class="hljs-keyword">const</span> error = { <span class="hljs-attr">message</span>: value.message }
@@ -793,31 +793,31 @@ does not create a copy of the object because we want
                             }
                         }
                     }
-                <span class="hljs-keyword">default</span>:
+                <span class="hljs-attr">default</span>:
                     <span class="hljs-keyword">return</span> value
                 }
             }
             <span class="hljs-keyword">const</span> referenced = visit([], object)
             <span class="hljs-keyword">return</span> <span class="hljs-built_in">JSON</span>.stringify(referenced, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">index, value</span>) </span>{
-                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value === <span class="hljs-string">'undefined'</span>) {
-                    <span class="hljs-keyword">return</span> [ <span class="hljs-string">'_undefined'</span> ]
+                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value === <span class="hljs-string">&#x27;undefined&#x27;</span>) {
+                    <span class="hljs-keyword">return</span> [ <span class="hljs-string">&#x27;_undefined&#x27;</span> ]
                 }
-                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value === <span class="hljs-string">'function'</span> || <span class="hljs-keyword">typeof</span> value === <span class="hljs-string">'symbol'</span>) {
+                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value === <span class="hljs-string">&#x27;function&#x27;</span> || <span class="hljs-keyword">typeof</span> value === <span class="hljs-string">&#x27;symbol&#x27;</span>) {
                     <span class="hljs-keyword">return</span> value.toString()
                 }
-                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value == <span class="hljs-string">'object'</span> &amp;&amp; value != <span class="hljs-literal">null</span>) {
+                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value == <span class="hljs-string">&#x27;object&#x27;</span> &amp;&amp; value != <span class="hljs-literal">null</span>) {
                     <span class="hljs-keyword">const</span> replacement = replacements.get(value)
                     <span class="hljs-keyword">if</span> (replacement != <span class="hljs-literal">null</span>) {
-                        <span class="hljs-keyword">if</span> (replacement === <span class="hljs-string">'_reference'</span>) {
+                        <span class="hljs-keyword">if</span> (replacement === <span class="hljs-string">&#x27;_reference&#x27;</span>) {
                             <span class="hljs-keyword">const</span> path = seen.get(value)
                             <span class="hljs-keyword">const</span> origin = {
-                                <span class="hljs-attr">object</span>: <span class="hljs-keyword">get</span>(object, path.slice(0, path.length - 1)),
-                                index: path[path.length - 1]
+                                <span class="hljs-attr">object</span>: get(object, path.slice(<span class="hljs-number">0</span>, path.length - <span class="hljs-number">1</span>)),
+                                <span class="hljs-attr">index</span>: path[path.length - <span class="hljs-number">1</span>]
                             }
-                            if (origin.object === this &amp;&amp; origin.index === index) {
+                            <span class="hljs-keyword">if</span> (origin.object === <span class="hljs-built_in">this</span> &amp;&amp; origin.index === index) {
                                 <span class="hljs-keyword">return</span> value
                             }
-                            <span class="hljs-keyword">return</span> [ <span class="hljs-string">'_reference'</span>, path ]
+                            <span class="hljs-keyword">return</span> [ <span class="hljs-string">&#x27;_reference&#x27;</span>, path ]
                         }
                         <span class="hljs-keyword">return</span> replacement
                     }
@@ -846,18 +846,18 @@ converted.</p>
             <span class="hljs-keyword">const</span> references = []
             <span class="hljs-keyword">const</span> parsed = [ <span class="hljs-built_in">JSON</span>.parse(json) ]
             <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">visit</span> (<span class="hljs-params">object, index, value</span>) </span>{
-                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value == <span class="hljs-string">'object'</span> &amp;&amp; value != <span class="hljs-literal">null</span>) {
+                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> value == <span class="hljs-string">&#x27;object&#x27;</span> &amp;&amp; value != <span class="hljs-literal">null</span>) {
                     <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(value)) {
                         <span class="hljs-keyword">switch</span> (value[<span class="hljs-number">0</span>]) {
-                        <span class="hljs-keyword">case</span> <span class="hljs-string">'_reference'</span>:
+                        <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;_reference&#x27;</span>:
                             references.push({ object, index, <span class="hljs-attr">path</span>: value[<span class="hljs-number">1</span>] })
                             <span class="hljs-keyword">break</span>
-                        <span class="hljs-keyword">case</span> <span class="hljs-string">'_undefined'</span>:
+                        <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;_undefined&#x27;</span>:
                             object[index] = <span class="hljs-keyword">void</span> <span class="hljs-number">0</span>
                             <span class="hljs-keyword">break</span>
-                        <span class="hljs-keyword">case</span> <span class="hljs-string">'_array'</span>:
+                        <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;_array&#x27;</span>:
                             value.shift()
-                        <span class="hljs-keyword">default</span>:
+                        <span class="hljs-attr">default</span>:
                             <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>, I = value.length; i &lt; I; i++) {
                                 visit(value, i, value[i])
                             }
@@ -871,13 +871,13 @@ converted.</p>
             }
             visit(parsed, <span class="hljs-number">0</span>, parsed[<span class="hljs-number">0</span>])
             <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> { object, index, path } <span class="hljs-keyword">of</span> references) {
-                object[index] = <span class="hljs-keyword">get</span>(parsed[0], path)
+                object[index] = get(parsed[<span class="hljs-number">0</span>], path)
             }
-            return parsed[0]
+            <span class="hljs-keyword">return</span> parsed[<span class="hljs-number">0</span>]
         }
     }
 
-    static Code (object) {
+    <span class="hljs-keyword">static</span> Code (object) {
         <span class="hljs-keyword">return</span> <span class="hljs-built_in">Object</span>.defineProperties({}, {
             <span class="hljs-attr">code</span>: { <span class="hljs-attr">value</span>: object.code, <span class="hljs-attr">enumerable</span>: <span class="hljs-literal">true</span> },
             <span class="hljs-attr">symbol</span>: { <span class="hljs-attr">value</span>: object.symbol, <span class="hljs-attr">enumerable</span>: <span class="hljs-literal">false</span> }
@@ -926,7 +926,7 @@ not going to be as accommodating as all that.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">constructor</span> (Protected, Class, Prototype, vargs) {</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-title">constructor</span> (<span class="hljs-params">Protected, Class, Prototype, vargs</span>) {</pre></div></div>
 
         </li>
 
@@ -942,7 +942,7 @@ blow the stack.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>        assert(PROTECTED === Protected, <span class="hljs-string">'INVALID_ACCESS'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        assert(PROTECTED === Protected, <span class="hljs-string">&#x27;INVALID_ACCESS&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -1014,7 +1014,7 @@ empty error.</p>
         }
 
         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> property <span class="hljs-keyword">of</span> <span class="hljs-built_in">Object</span>.getOwnPropertyNames(options)) {
-            <span class="hljs-keyword">if</span> (property[<span class="hljs-number">0</span>] != <span class="hljs-string">'_'</span> &amp;&amp; property[<span class="hljs-number">0</span>] != <span class="hljs-string">'#'</span> &amp;&amp; !<span class="hljs-regexp">/^(?:name|message|stack|symbol)$/</span>.test(property) &amp;&amp; !(property <span class="hljs-keyword">in</span> properties)) {
+            <span class="hljs-keyword">if</span> (property[<span class="hljs-number">0</span>] != <span class="hljs-string">&#x27;_&#x27;</span> &amp;&amp; property[<span class="hljs-number">0</span>] != <span class="hljs-string">&#x27;#&#x27;</span> &amp;&amp; !<span class="hljs-regexp">/^(?:name|message|stack|symbol)$/</span>.test(property) &amp;&amp; !(property <span class="hljs-keyword">in</span> properties)) {
                 properties[property] = <span class="hljs-built_in">Object</span>.getOwnPropertyDescriptor(options, property)
             }
         }</pre></div></div>
@@ -1032,7 +1032,7 @@ empty error.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">const</span> instance = { <span class="hljs-attr">message</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">errors</span>: options[<span class="hljs-string">'#errors'</span>], options, <span class="hljs-attr">displayed</span>: {} }
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">const</span> instance = { <span class="hljs-attr">message</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">errors</span>: options[<span class="hljs-string">&#x27;#errors&#x27;</span>], options, <span class="hljs-attr">displayed</span>: {} }
 
         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> property <span class="hljs-keyword">in</span> properties) {
             <span class="hljs-keyword">if</span> (properties[property].enumerable) {
@@ -1041,8 +1041,8 @@ empty error.</p>
         }
 
         <span class="hljs-keyword">const</span> stackTraceLimit = <span class="hljs-built_in">Error</span>.stackTraceLimit
-        <span class="hljs-keyword">if</span> (options[<span class="hljs-string">'#stack'</span>] != <span class="hljs-literal">null</span>) {
-            <span class="hljs-built_in">Error</span>.stackTraceLimit = options[<span class="hljs-string">'#stack'</span>]
+        <span class="hljs-keyword">if</span> (options[<span class="hljs-string">&#x27;#stack&#x27;</span>] != <span class="hljs-literal">null</span>) {
+            <span class="hljs-built_in">Error</span>.stackTraceLimit = options[<span class="hljs-string">&#x27;#stack&#x27;</span>]
         }</pre></div></div>
 
         </li>
@@ -1064,14 +1064,14 @@ empty error.</p>
             options.errors.length == <span class="hljs-number">0</span> &amp;&amp;
             <span class="hljs-built_in">Object</span>.keys(options).filter(<span class="hljs-function"><span class="hljs-params">name</span> =&gt;</span> !<span class="hljs-regexp">/^#|^errors$/</span>.test(name)).length == <span class="hljs-number">0</span>
         ) {
-            <span class="hljs-keyword">super</span>()
+            <span class="hljs-built_in">super</span>()
         } <span class="hljs-keyword">else</span> {
-            <span class="hljs-keyword">super</span>(context(options, instance))
+            <span class="hljs-built_in">super</span>(context(options, instance))
         }
 
-        Instances.set(<span class="hljs-keyword">this</span>, instance)
+        Instances.set(<span class="hljs-built_in">this</span>, instance)
 
-        <span class="hljs-built_in">Object</span>.defineProperties(<span class="hljs-keyword">this</span>, properties)</pre></div></div>
+        <span class="hljs-built_in">Object</span>.defineProperties(<span class="hljs-built_in">this</span>, properties)</pre></div></div>
 
         </li>
 
@@ -1102,8 +1102,8 @@ coming back to experiment with it.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (options[<span class="hljs-string">'#callee'</span>] != <span class="hljs-literal">null</span>) {
-            <span class="hljs-built_in">Error</span>.captureStackTrace(<span class="hljs-keyword">this</span>, options[<span class="hljs-string">'#callee'</span>])
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> (options[<span class="hljs-string">&#x27;#callee&#x27;</span>] != <span class="hljs-literal">null</span>) {
+            <span class="hljs-built_in">Error</span>.captureStackTrace(<span class="hljs-built_in">this</span>, options[<span class="hljs-string">&#x27;#callee&#x27;</span>])
         }
 
         <span class="hljs-built_in">Error</span>.stackTraceLimit = stackTraceLimit
@@ -1126,7 +1126,7 @@ properties to its output.</p>
             </div>
 
             <div class="content"><div class='highlight'><pre>    [util.inspect.custom](depth, options) {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.stack
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.stack
     }</pre></div></div>
 
         </li>
@@ -1144,19 +1144,19 @@ context and headings from the <code>message</code> used to generate <code>stack<
             </div>
 
             <div class="content"><div class='highlight'><pre>    toString () {
-        <span class="hljs-keyword">const</span> instance = Instances.get(<span class="hljs-keyword">this</span>)
+        <span class="hljs-keyword">const</span> instance = Instances.get(<span class="hljs-built_in">this</span>)
         <span class="hljs-keyword">if</span> (instance.message == <span class="hljs-literal">null</span>) {
-            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.name
+            <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.name
         }
-        <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-keyword">this</span>.name}</span>: <span class="hljs-subst">${instance.message}</span>`</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${<span class="hljs-built_in">this</span>.name}</span>: <span class="hljs-subst">${instance.message}</span>`</span>
     }
 
-    <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> OPTIONS () {
+    <span class="hljs-keyword">static</span> get OPTIONS () {
         <span class="hljs-keyword">return</span> OPTIONS
     }
 
-    <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> CURRY () {
-        <span class="hljs-keyword">return</span> { <span class="hljs-string">'#type'</span>: OPTIONS }
+    <span class="hljs-keyword">static</span> get CURRY () {
+        <span class="hljs-keyword">return</span> { <span class="hljs-string">&#x27;#type&#x27;</span>: OPTIONS }
     }</pre></div></div>
 
         </li>
@@ -1186,22 +1186,22 @@ properties by code? Like which subsystem or a severity?</p>
             </div>
 
             <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">static</span> create (name, ...vargs) {
-        <span class="hljs-keyword">const</span> SuperClass = <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">'function'</span> ? vargs.shift() : Interrupt
+        <span class="hljs-keyword">const</span> SuperClass = <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">&#x27;function&#x27;</span> ? vargs.shift() : Interrupt
 
         <span class="hljs-keyword">if</span> (Interrupt.Error != <span class="hljs-literal">null</span>) {
-            assert(SuperClass === Interrupt || SuperClass.prototype <span class="hljs-keyword">instanceof</span> Interrupt, <span class="hljs-string">'INVALID_SUPER_CLASS'</span>, SuperClass.name)
+            assert(SuperClass === Interrupt || SuperClass.prototype <span class="hljs-keyword">instanceof</span> Interrupt, <span class="hljs-string">&#x27;INVALID_SUPER_CLASS&#x27;</span>, SuperClass.name)
         }
 
         <span class="hljs-keyword">const</span> Class = <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SuperClass</span> </span>{
-            <span class="hljs-keyword">constructor</span> (...vargs) {
+            <span class="hljs-title">constructor</span> (<span class="hljs-params">...vargs</span>) {
                 <span class="hljs-keyword">if</span> (vargs[<span class="hljs-number">0</span>] === PROTECTED) {
-                    <span class="hljs-keyword">super</span>(...vargs)
+                    <span class="hljs-built_in">super</span>(...vargs)
                 } <span class="hljs-keyword">else</span> {
-                    <span class="hljs-keyword">super</span>(PROTECTED, Class, Prototype, vargs)
+                    <span class="hljs-built_in">super</span>(PROTECTED, Class, Prototype, vargs)
                 }
             }
 
-            <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> codes () {
+            <span class="hljs-keyword">static</span> get codes () {
                 <span class="hljs-keyword">return</span> <span class="hljs-built_in">Object</span>.keys(Prototype.codes)
             }
 
@@ -1214,15 +1214,15 @@ properties by code? Like which subsystem or a severity?</p>
                     <span class="hljs-keyword">return</span> { <span class="hljs-attr">value</span>: value, <span class="hljs-attr">enumerable</span>: <span class="hljs-literal">true</span>, <span class="hljs-attr">writable</span>: <span class="hljs-literal">true</span>, <span class="hljs-attr">configurable</span>: <span class="hljs-literal">true</span> }
                 }
                 <span class="hljs-keyword">const</span> options = {
-                    <span class="hljs-string">'#type'</span>: attr(OPTIONS),
-                    <span class="hljs-string">'#errors'</span>: attr([]),
+                    <span class="hljs-string">&#x27;#type&#x27;</span>: attr(OPTIONS),
+                    <span class="hljs-string">&#x27;#errors&#x27;</span>: attr([]),
                     <span class="hljs-attr">errors</span>: attr([]),
-                    <span class="hljs-string">'#stack'</span>: attr(<span class="hljs-literal">null</span>),
-                    <span class="hljs-string">'#callee'</span>: attr(<span class="hljs-literal">null</span>)
+                    <span class="hljs-string">&#x27;#stack&#x27;</span>: attr(<span class="hljs-literal">null</span>),
+                    <span class="hljs-string">&#x27;#callee&#x27;</span>: attr(<span class="hljs-literal">null</span>)
                 }
                 <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> argument <span class="hljs-keyword">of</span> vargs) {
                     <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">typeof</span> argument) {
-                    <span class="hljs-keyword">case</span> <span class="hljs-string">'string'</span>: {</pre></div></div>
+                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;string&#x27;</span>: {</pre></div></div>
 
         </li>
 
@@ -1245,7 +1245,7 @@ we don’t do that, do we?</p>
                             }
                         }
                         <span class="hljs-keyword">break</span>
-                    <span class="hljs-keyword">case</span> <span class="hljs-string">'symbol'</span>: {</pre></div></div>
+                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;symbol&#x27;</span>: {</pre></div></div>
 
         </li>
 
@@ -1267,15 +1267,15 @@ Or do we accept the first code that is set?</p>
                             }
                         }
                         <span class="hljs-keyword">break</span>
-                    <span class="hljs-keyword">case</span> <span class="hljs-string">'number'</span>: {
+                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;number&#x27;</span>: {
                             <span class="hljs-keyword">if</span> ((<span class="hljs-built_in">Number</span>.isInteger(argument) || argument == <span class="hljs-literal">Infinity</span>) &amp;&amp; argument &gt;= <span class="hljs-number">0</span>) {
-                                options[<span class="hljs-string">'#stack'</span>] = attr(argument)
+                                options[<span class="hljs-string">&#x27;#stack&#x27;</span>] = attr(argument)
                             } <span class="hljs-keyword">else</span> {
-                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>)))
+                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>)))
                             }
                         }
                         <span class="hljs-keyword">break</span>
-                    <span class="hljs-keyword">case</span> <span class="hljs-string">'object'</span>: {
+                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;object&#x27;</span>: {
                             <span class="hljs-keyword">if</span> (argument == <span class="hljs-literal">null</span>) {</pre></div></div>
 
         </li>
@@ -1291,7 +1291,7 @@ Or do we accept the first code that is set?</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>                                options[<span class="hljs-string">'#errors'</span>].push(combine(Interrupt.Error.codes(<span class="hljs-string">'NULL_ARGUMENT'</span>)))
+            <div class="content"><div class='highlight'><pre>                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;NULL_ARGUMENT&#x27;</span>)))
                             } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (argument <span class="hljs-keyword">instanceof</span> <span class="hljs-built_in">Error</span>) {
                                 options.errors.value.push(argument)
                             } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(argument)) {
@@ -1299,58 +1299,58 @@ Or do we accept the first code that is set?</p>
                             } <span class="hljs-keyword">else</span> {
                                 <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> property <span class="hljs-keyword">of</span> <span class="hljs-built_in">Object</span>.getOwnPropertyNames(argument)) {
                                     <span class="hljs-keyword">switch</span> (property) {
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'#type'</span>: {
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;#type&#x27;</span>: {
                                             <span class="hljs-keyword">if</span> (argument[property] !== OPTIONS) {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'#errors'</span>: {
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;#errors&#x27;</span>: {
                                             <span class="hljs-keyword">if</span> (
                                                 <span class="hljs-built_in">Array</span>.isArray(argument[property]) &amp;&amp;
                                                 argument[property].every(<span class="hljs-function"><span class="hljs-params">error</span> =&gt;</span> {
                                                     <span class="hljs-keyword">return</span> Interrupt.Error[error.code] === error.symbol
                                                 })
                                             ) {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push.apply(options[<span class="hljs-string">'#errors'</span>].value, argument[property])
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push.apply(options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value, argument[property])
                                             } <span class="hljs-keyword">else</span> {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'#stack'</span>: {
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;#stack&#x27;</span>: {
                                             <span class="hljs-keyword">const</span> stack = argument[property]
                                             <span class="hljs-keyword">if</span> (stack == <span class="hljs-literal">null</span>) {
                                             } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> ((<span class="hljs-built_in">Number</span>.isInteger(stack) || stack == <span class="hljs-literal">Infinity</span>) &amp;&amp; stack &gt;= <span class="hljs-number">0</span>) {
-                                                options[<span class="hljs-string">'#stack'</span>] = attr(stack)
+                                                options[<span class="hljs-string">&#x27;#stack&#x27;</span>] = attr(stack)
                                             } <span class="hljs-keyword">else</span> {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'stack'</span>:
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'name'</span>: {
-                                            options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_NAME'</span>), { property }))
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;stack&#x27;</span>:
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;name&#x27;</span>: {
+                                            options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_NAME&#x27;</span>), { property }))
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'errors'</span>: {
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;errors&#x27;</span>: {
                                             <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(argument[property])) {
                                                 options.errors.value.push.apply(options.errors.value, argument[property])
                                             } <span class="hljs-keyword">else</span> {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'message'</span>: {
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;message&#x27;</span>: {
                                             <span class="hljs-keyword">if</span> (argument[property] == <span class="hljs-literal">null</span>) {
-                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] === <span class="hljs-string">'string'</span>) {
+                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] === <span class="hljs-string">&#x27;string&#x27;</span>) {
                                                 options.message = attr(argument[property])
                                             } <span class="hljs-keyword">else</span> {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'code'</span>: {</pre></div></div>
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;code&#x27;</span>: {</pre></div></div>
 
         </li>
 
@@ -1366,49 +1366,49 @@ Or do we accept the first code that is set?</p>
             </div>
 
             <div class="content"><div class='highlight'><pre>                                            <span class="hljs-keyword">if</span> (argument[property] == <span class="hljs-literal">null</span>) {
-                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] === <span class="hljs-string">'string'</span>) {
+                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] === <span class="hljs-string">&#x27;string&#x27;</span>) {
                                                 <span class="hljs-keyword">if</span> (Prototype.prototypes[argument[property]]) {
                                                     options.code = attr(argument[property])
                                                 } <span class="hljs-keyword">else</span> {
-                                                    options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'UNKNOWN_CODE'</span>), {
+                                                    options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;UNKNOWN_CODE&#x27;</span>), {
                                                         <span class="hljs-attr">property</span>: property,
                                                         <span class="hljs-attr">value</span>: argument[property]
                                                     }))
                                                 }
                                             } <span class="hljs-keyword">else</span> {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.code(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.code(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'symbol'</span>: {
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;symbol&#x27;</span>: {
                                             <span class="hljs-keyword">if</span> (argument[property] == <span class="hljs-literal">null</span>) {
-                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] == <span class="hljs-string">'symbol'</span>) {
+                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] == <span class="hljs-string">&#x27;symbol&#x27;</span>) {
                                                 <span class="hljs-keyword">const</span> code = Prototype.symbols.get(argument[property])
                                                 <span class="hljs-keyword">if</span> (code != <span class="hljs-literal">null</span>) {
                                                     options.code = attr(code)
                                                 } <span class="hljs-keyword">else</span> {
-                                                    options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'UNKNOWN_CODE'</span>), {
+                                                    options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;UNKNOWN_CODE&#x27;</span>), {
                                                         <span class="hljs-attr">property</span>: property,
                                                         <span class="hljs-attr">value</span>: argument[property]
                                                     }))
                                                 }
                                             } <span class="hljs-keyword">else</span> {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">case</span> <span class="hljs-string">'#callee'</span>: {
+                                    <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;#callee&#x27;</span>: {
                                             <span class="hljs-keyword">if</span> (argument[property] == <span class="hljs-literal">null</span>) {
-                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] == <span class="hljs-string">'function'</span>) {
+                                            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> argument[property] == <span class="hljs-string">&#x27;function&#x27;</span>) {
                                                 options[property] = attr(argument[property])
                                             } <span class="hljs-keyword">else</span> {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">'INVALID_PROPERTY_TYPE'</span>), { property }))
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.codes(<span class="hljs-string">&#x27;INVALID_PROPERTY_TYPE&#x27;</span>), { property }))
                                             }
                                         }
                                         <span class="hljs-keyword">break</span>
-                                    <span class="hljs-keyword">default</span>: {
-                                            <span class="hljs-keyword">if</span> (!RE.identifier.test(property) &amp;&amp; property != <span class="hljs-string">'#stack'</span>) {
-                                                options[<span class="hljs-string">'#errors'</span>].value.push(combine(Interrupt.Error.code(<span class="hljs-string">'INVALID_PROPERTY_NAME'</span>), { property }))
+                                    <span class="hljs-attr">default</span>: {
+                                            <span class="hljs-keyword">if</span> (!RE.identifier.test(property) &amp;&amp; property != <span class="hljs-string">&#x27;#stack&#x27;</span>) {
+                                                options[<span class="hljs-string">&#x27;#errors&#x27;</span>].value.push(combine(Interrupt.Error.code(<span class="hljs-string">&#x27;INVALID_PROPERTY_NAME&#x27;</span>), { property }))
                                             } <span class="hljs-keyword">else</span> {
                                                 options[property] = <span class="hljs-built_in">Object</span>.getOwnPropertyDescriptor(argument, property)
                                             }
@@ -1442,17 +1442,17 @@ Or do we accept the first code that is set?</p>
 
         <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">construct</span> (<span class="hljs-params">options, vargs, errors, ...callees</span>) </span>{
             <span class="hljs-keyword">const</span> error = _construct(options, vargs, errors, callees)
-            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit === <span class="hljs-string">'function'</span>) {
+            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit === <span class="hljs-string">&#x27;function&#x27;</span>) {
                 Interrupt.audit(error, Instances.get(error).errors)
             }
             <span class="hljs-keyword">return</span> error
         }
 
         <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">_construct</span> (<span class="hljs-params">options, vargs, errors, callees</span>) </span>{
-            <span class="hljs-keyword">if</span> (vargs.length === <span class="hljs-number">1</span> &amp;&amp; <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">'function'</span>) {
+            <span class="hljs-keyword">if</span> (vargs.length === <span class="hljs-number">1</span> &amp;&amp; <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">&#x27;function&#x27;</span>) {
                 <span class="hljs-keyword">let</span> called = <span class="hljs-literal">false</span>
                 <span class="hljs-keyword">const</span> f = vargs.pop()
-                <span class="hljs-keyword">const</span> merged = Class.options({ <span class="hljs-string">'#callee'</span>: callees[<span class="hljs-number">1</span>] || $ }, options)
+                <span class="hljs-keyword">const</span> merged = Class.options({ <span class="hljs-string">&#x27;#callee&#x27;</span>: callees[<span class="hljs-number">1</span>] || $ }, options)
                 <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">$</span> (<span class="hljs-params">...vargs</span>) </span>{
                     called = <span class="hljs-literal">true</span>
                     <span class="hljs-keyword">const</span> options = Class.options.apply(Class, [ merged ].concat(vargs, { errors }))
@@ -1467,7 +1467,7 @@ Or do we accept the first code that is set?</p>
                     })
                     <span class="hljs-keyword">return</span> error
                 }
-                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> error != <span class="hljs-string">'object'</span> || error == <span class="hljs-literal">null</span> || !(error <span class="hljs-keyword">instanceof</span> Class)) {
+                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> error != <span class="hljs-string">&#x27;object&#x27;</span> || error == <span class="hljs-literal">null</span> || !(error <span class="hljs-keyword">instanceof</span> Class)) {
                     <span class="hljs-keyword">const</span> error = <span class="hljs-keyword">new</span> Class
                     <span class="hljs-keyword">const</span> instance = Instances.get(error)
                     instance.errors.push({
@@ -1477,12 +1477,12 @@ Or do we accept the first code that is set?</p>
                 }
                 <span class="hljs-keyword">return</span> error
             } <span class="hljs-keyword">else</span> {
-                <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Class(Class.options.apply(Class, [{ <span class="hljs-string">'#callee'</span>: callees[<span class="hljs-number">0</span>] }, options ].concat(vargs, { errors })))
+                <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Class(Class.options.apply(Class, [{ <span class="hljs-string">&#x27;#callee&#x27;</span>: callees[<span class="hljs-number">0</span>] }, options ].concat(vargs, { errors })))
             }
         }
 
         <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">_assert</span> (<span class="hljs-params">callee, options, vargs</span>) </span>{
-            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] === <span class="hljs-string">'object'</span> &amp;&amp; vargs[<span class="hljs-number">0</span>][<span class="hljs-string">'#type'</span>] === OPTIONS) {
+            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] === <span class="hljs-string">&#x27;object&#x27;</span> &amp;&amp; vargs[<span class="hljs-number">0</span>][<span class="hljs-string">&#x27;#type&#x27;</span>] === OPTIONS) {
                 <span class="hljs-keyword">const</span> merged = Class.options.apply(Class, [ options ].concat(vargs))
                 <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">assert</span> (<span class="hljs-params">...vargs</span>) </span>{
                     _assert(assert, merged, vargs)
@@ -1490,17 +1490,17 @@ Or do we accept the first code that is set?</p>
             } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!vargs[<span class="hljs-number">0</span>]) {
                 vargs.shift()
                 <span class="hljs-keyword">throw</span> construct(options, vargs, [], callee, callee)
-            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit == <span class="hljs-string">'function'</span>) {
+            } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit == <span class="hljs-string">&#x27;function&#x27;</span>) {
                 construct(options, vargs, [], callee, callee)
             }
         }
 
         <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">_invoke</span> (<span class="hljs-params">callee, options, vargs</span>) </span>{
-            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">'function'</span>) {
+            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">&#x27;function&#x27;</span>) {
                 <span class="hljs-keyword">const</span> f = vargs.shift()
                 <span class="hljs-keyword">try</span> {
                     <span class="hljs-keyword">const</span> result = f()
-                    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit === <span class="hljs-string">'function'</span>) {
+                    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit === <span class="hljs-string">&#x27;function&#x27;</span>) {
                         construct(options, vargs, [ AUDIT ], callee, callee)
                     }
                     <span class="hljs-keyword">return</span> result
@@ -1515,7 +1515,7 @@ Or do we accept the first code that is set?</p>
         }
 
         <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">_callback</span> (<span class="hljs-params">callee, options, vargs</span>) </span>{
-            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">'function'</span>) {</pre></div></div>
+            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">&#x27;function&#x27;</span>) {</pre></div></div>
 
         </li>
 
@@ -1530,31 +1530,31 @@ Or do we accept the first code that is set?</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>                <span class="hljs-keyword">const</span> [ <span class="hljs-keyword">constructor</span>, callback ] = vargs
-                return function (...vargs) {
+            <div class="content"><div class='highlight'><pre>                <span class="hljs-keyword">const</span> [ <span class="hljs-title">constructor</span>, <span class="hljs-title">callback</span> ] = <span class="hljs-title">vargs</span>
+                <span class="hljs-title">return</span> <span class="hljs-title">function</span> (<span class="hljs-params">...vargs</span>) {
                     <span class="hljs-keyword">if</span> (vargs[<span class="hljs-number">0</span>] == <span class="hljs-literal">null</span>) {
                         callback.apply(<span class="hljs-literal">null</span>, vargs)
-                        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit == <span class="hljs-string">'function'</span>) {
-                            construct(options, [ <span class="hljs-keyword">constructor</span> ], [ AUDIT ])
+                        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit == <span class="hljs-string">&#x27;function&#x27;</span>) {
+                            construct(options, [ <span class="hljs-title">constructor</span> ], [ <span class="hljs-title">AUDIT</span> ])
                         }
-                    } else {
-                        callback(construct(options, [ <span class="hljs-keyword">constructor</span> ], [ vargs[0] ]))
+                    } <span class="hljs-title">else</span> {
+                        callback(construct(options, [ <span class="hljs-title">constructor</span> ], [ <span class="hljs-title">vargs</span>[0] ]))
                     }
                 }
             }
-            const merged = Class.options.apply(Class, [ options ].concat(vargs))
-            return function wrapper (...vargs) {
+            <span class="hljs-title">const</span> <span class="hljs-title">merged</span> = <span class="hljs-title">Class</span>.<span class="hljs-title">options</span>.<span class="hljs-title">apply</span>(<span class="hljs-params">Class, [ options ].concat(vargs)</span>)
+            <span class="hljs-title">return</span> <span class="hljs-title">function</span> <span class="hljs-title">wrapper</span> (<span class="hljs-params">...vargs</span>) {
                 <span class="hljs-keyword">return</span> _callback(wrapper, merged, vargs)
             }
         }
 
         <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">resolve</span> (<span class="hljs-params">callee, f, options, vargs</span>) </span>{
             <span class="hljs-keyword">try</span> {
-                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> f == <span class="hljs-string">'function'</span>) {
+                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> f == <span class="hljs-string">&#x27;function&#x27;</span>) {
                     f = f()
                 }
                 <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> f
-                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit == <span class="hljs-string">'function'</span>) {
+                <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> Interrupt.audit == <span class="hljs-string">&#x27;function&#x27;</span>) {
                     construct(options, vargs, [ AUDIT ], callee)
                 }
                 <span class="hljs-keyword">return</span> result
@@ -1565,11 +1565,11 @@ Or do we accept the first code that is set?</p>
 
         <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">_resolver</span> (<span class="hljs-params">callee, options, vargs</span>) </span>{
             <span class="hljs-keyword">if</span> (
-                <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">'function'</span> ||
+                <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">&#x27;function&#x27;</span> ||
                 (
-                    <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">'object'</span> &amp;&amp;
+                    <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>] == <span class="hljs-string">&#x27;object&#x27;</span> &amp;&amp;
                     vargs[<span class="hljs-number">0</span>] != <span class="hljs-literal">null</span> &amp;&amp;
-                    <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>].then == <span class="hljs-string">'function'</span>
+                    <span class="hljs-keyword">typeof</span> vargs[<span class="hljs-number">0</span>].then == <span class="hljs-string">&#x27;function&#x27;</span>
                 )
             ) {
                 <span class="hljs-keyword">return</span> resolve(callee, vargs.shift(), options, vargs)
@@ -1580,7 +1580,7 @@ Or do we accept the first code that is set?</p>
             }
         }
 
-        <span class="hljs-built_in">Object</span>.defineProperty(Class, <span class="hljs-string">'name'</span>, { <span class="hljs-attr">value</span>: name })</pre></div></div>
+        <span class="hljs-built_in">Object</span>.defineProperty(Class, <span class="hljs-string">&#x27;name&#x27;</span>, { <span class="hljs-attr">value</span>: name })</pre></div></div>
 
         </li>
 
@@ -1653,7 +1653,7 @@ publicly.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">case</span> <span class="hljs-string">'string'</span>: {
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;string&#x27;</span>: {
                     <span class="hljs-keyword">const</span> object = {}
                     object[codes] = <span class="hljs-literal">null</span>
                     vargs.unshift(object)
@@ -1673,7 +1673,7 @@ publicly.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">case</span> <span class="hljs-string">'function'</span>: {
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;function&#x27;</span>: {
                     vargs.unshift(codes({ <span class="hljs-attr">Codes</span>: Prototype.Super.Codes, <span class="hljs-attr">Super</span>: SuperPrototype.Super }))
                     <span class="hljs-keyword">continue</span>
                 }</pre></div></div>
@@ -1692,8 +1692,8 @@ otherwise fall through to object processing.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">case</span> <span class="hljs-string">'object'</span>: {
-                    assert(codes != <span class="hljs-literal">null</span>, <span class="hljs-string">'INVALID_ARGUMENT'</span>)
+            <div class="content"><div class='highlight'><pre>            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;object&#x27;</span>: {
+                    assert(codes != <span class="hljs-literal">null</span>, <span class="hljs-string">&#x27;INVALID_ARGUMENT&#x27;</span>)
                     <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Array</span>.isArray(codes)) {
                         vargs.unshift.apply(vargs, codes)
                         <span class="hljs-keyword">continue</span>
@@ -1719,7 +1719,7 @@ otherwise fall through to object processing.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre>                        assert(!duplicates.has(code), <span class="hljs-string">'DUPLICATE_CODE'</span>, { code })
+            <div class="content"><div class='highlight'><pre>                        assert(!duplicates.has(code), <span class="hljs-string">&#x27;DUPLICATE_CODE&#x27;</span>, { code })
                         duplicates.add(code)</pre></div></div>
 
         </li>
@@ -1739,7 +1739,7 @@ otherwise create a new symbol.</p>
             <div class="content"><div class='highlight'><pre>
                         <span class="hljs-keyword">const</span> object = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
                             <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">typeof</span> codes[code]) {
-                            <span class="hljs-keyword">case</span> <span class="hljs-string">'symbol'</span>: {</pre></div></div>
+                            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;symbol&#x27;</span>: {</pre></div></div>
 
         </li>
 
@@ -1756,16 +1756,16 @@ otherwise create a new symbol.</p>
 
             <div class="content"><div class='highlight'><pre>                                    <span class="hljs-keyword">return</span> { code, <span class="hljs-attr">symbol</span>: codes[code] }
                                 }
-                            <span class="hljs-keyword">case</span> <span class="hljs-string">'string'</span>: {
+                            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;string&#x27;</span>: {
                                     <span class="hljs-keyword">return</span> { <span class="hljs-attr">message</span>: codes[code] }
                                 }
-                            <span class="hljs-keyword">case</span> <span class="hljs-string">'object'</span>: {
+                            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;object&#x27;</span>: {
                                     <span class="hljs-keyword">if</span> (codes[code] == <span class="hljs-literal">null</span>) {
                                         <span class="hljs-keyword">return</span> {}
                                     }
                                     <span class="hljs-keyword">return</span> codes[code]
                                 }
-                            <span class="hljs-keyword">default</span>:
+                            <span class="hljs-attr">default</span>:
                                 <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>
                             }
                         } ()</pre></div></div>
@@ -1807,7 +1807,7 @@ I guess.</p>
                                 <span class="hljs-keyword">return</span> { code }
                             }
                             <span class="hljs-keyword">switch</span> (<span class="hljs-keyword">typeof</span> coalesce(object.code)) {
-                            <span class="hljs-keyword">case</span> <span class="hljs-string">'symbol'</span>: {</pre></div></div>
+                            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;symbol&#x27;</span>: {</pre></div></div>
 
         </li>
 
@@ -1824,10 +1824,10 @@ specifying a <code>symbol</code> is not allowed.</p>
             </div>
 
             <div class="content"><div class='highlight'><pre>                                    <span class="hljs-keyword">const</span> code = Prototype.symbols.get(object.code)
-                                    assert(code != <span class="hljs-literal">null</span>, <span class="hljs-string">'INVALID_CODE'</span>)
+                                    assert(code != <span class="hljs-literal">null</span>, <span class="hljs-string">&#x27;INVALID_CODE&#x27;</span>)
                                     <span class="hljs-keyword">return</span> combine(object, { <span class="hljs-attr">code</span>: code })
                                 }
-                            <span class="hljs-keyword">case</span> <span class="hljs-string">'string'</span>: {</pre></div></div>
+                            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;string&#x27;</span>: {</pre></div></div>
 
         </li>
 
@@ -1847,10 +1847,10 @@ creating an alias.</p>
             <div class="content"><div class='highlight'><pre>                                    <span class="hljs-keyword">if</span> (object.code == code) {
                                         <span class="hljs-keyword">return</span> object
                                     }
-                                    assert(Prototype.prototypes[object.code] != <span class="hljs-literal">null</span>, <span class="hljs-string">'INVALID_CODE'</span>)
+                                    assert(Prototype.prototypes[object.code] != <span class="hljs-literal">null</span>, <span class="hljs-string">&#x27;INVALID_CODE&#x27;</span>)
                                     <span class="hljs-keyword">return</span> object
                                 }
-                            <span class="hljs-keyword">case</span> <span class="hljs-string">'object'</span>: {</pre></div></div>
+                            <span class="hljs-keyword">case</span> <span class="hljs-string">&#x27;object&#x27;</span>: {</pre></div></div>
 
         </li>
 
@@ -1885,14 +1885,14 @@ creating an alias.</p>
             <div class="content"><div class='highlight'><pre>                                    <span class="hljs-keyword">const</span> superSuperCode = SuperPrototype.is.get(object.code)
                                     <span class="hljs-keyword">if</span> (superSuperCode != <span class="hljs-literal">null</span>) {
                                         <span class="hljs-keyword">if</span> (superSuperCode === object.code.code) {
-                                            assert(superSuperCode == code, <span class="hljs-string">'INVALID_CODE'</span>)
+                                            assert(superSuperCode == code, <span class="hljs-string">&#x27;INVALID_CODE&#x27;</span>)
                                             <span class="hljs-keyword">return</span> combine(object.code, object, { <span class="hljs-attr">code</span>: code })
                                         } <span class="hljs-keyword">else</span> {
                                             <span class="hljs-keyword">return</span> combine(object.code, object, { <span class="hljs-attr">code</span>: code, <span class="hljs-attr">symbol</span>: <span class="hljs-literal">null</span> })
                                         }
                                     }
                                     <span class="hljs-keyword">const</span> superCode = Prototype.is.get(object.code)
-                                    assert(superCode != <span class="hljs-literal">null</span>, <span class="hljs-string">'INVALID_CODE'</span>)</pre></div></div>
+                                    assert(superCode != <span class="hljs-literal">null</span>, <span class="hljs-string">&#x27;INVALID_CODE&#x27;</span>)</pre></div></div>
 
         </li>
 
@@ -1909,8 +1909,8 @@ creating an alias.</p>
 
             <div class="content"><div class='highlight'><pre>                                    <span class="hljs-keyword">return</span> combine(object.code, object, { <span class="hljs-attr">symbol</span>: <span class="hljs-literal">null</span>, <span class="hljs-attr">code</span>: object.code.code })
                                 }
-                            <span class="hljs-keyword">default</span>:
-                                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'INVALID_CODE'</span>)
+                            <span class="hljs-attr">default</span>:
+                                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">&#x27;INVALID_CODE&#x27;</span>)
                             }
                         } ()
 
@@ -1959,10 +1959,10 @@ creating an alias.</p>
 
                             Prototype.Super.Codes[code] = prototype
                         } <span class="hljs-keyword">else</span> {
-                            assert(Prototype.prototypes[prototype.code], <span class="hljs-string">'SUPER_PROTOTYPE_MISSING'</span>, {
+                            assert(Prototype.prototypes[prototype.code], <span class="hljs-string">&#x27;SUPER_PROTOTYPE_MISSING&#x27;</span>, {
                                 <span class="hljs-attr">definition</span>: { <span class="hljs-attr">superCode</span>: prototype.code, <span class="hljs-attr">code</span>: code }
                             })
-                            assert(prototype.symbol == <span class="hljs-literal">null</span>, <span class="hljs-string">'SYMBOLS_NOT_ALLOWED'</span>, {
+                            assert(prototype.symbol == <span class="hljs-literal">null</span>, <span class="hljs-string">&#x27;SYMBOLS_NOT_ALLOWED&#x27;</span>, {
                                 <span class="hljs-attr">definition</span>: { <span class="hljs-attr">symbol</span>: <span class="hljs-built_in">String</span>(prototype.symbol), <span class="hljs-attr">superCode</span>: prototype.code, <span class="hljs-attr">code</span>: code }
                             })
                             Prototype.Super.Aliases[code] = prototype
@@ -1972,8 +1972,8 @@ creating an alias.</p>
                     }
                 }
                 <span class="hljs-keyword">break</span>
-            <span class="hljs-keyword">default</span>:
-                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Interrupt.Error(<span class="hljs-string">'INVALID_ARGUMENT'</span>)
+            <span class="hljs-attr">default</span>:
+                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> Interrupt.Error(<span class="hljs-string">&#x27;INVALID_ARGUMENT&#x27;</span>)
             }
         }
 
@@ -2005,7 +2005,7 @@ the error or <code>null</code> if the property is not defined.</p>
 
     <span class="hljs-keyword">static</span> parse (stack) {
         <span class="hljs-keyword">const</span> parser = <span class="hljs-keyword">new</span> Interrupt.Parser
-        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> line <span class="hljs-keyword">of</span> stack.split(<span class="hljs-string">'\n'</span>)) {
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> line <span class="hljs-keyword">of</span> stack.split(<span class="hljs-string">&#x27;\n&#x27;</span>)) {
             parser.push(line)
         }
         parser.end()
@@ -2024,10 +2024,10 @@ the error or <code>null</code> if the property is not defined.</p>
                     <span class="hljs-attr">duplicated</span>: <span class="hljs-literal">false</span>,
                     <span class="hljs-attr">duplicates</span>: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Set</span>,
                     <span class="hljs-attr">id</span>: id++,
-                    <span class="hljs-attr">key</span>: key,
+                    key: key,
                     <span class="hljs-attr">stringified</span>: Keyify.stringify(key),
                     <span class="hljs-attr">context</span>: {}, <span class="hljs-comment">// **TODO** Legacy, dubious.</span>
-                    error: error,
+                    <span class="hljs-attr">error</span>: error,
                     <span class="hljs-attr">errors</span>: <span class="hljs-literal">null</span>
                 }
                 node.errors = error.errors.map(<span class="hljs-function">(<span class="hljs-params">cause, index</span>) =&gt;</span> {
@@ -2039,7 +2039,7 @@ the error or <code>null</code> if the property is not defined.</p>
                 <span class="hljs-attr">parent</span>: parent,
                 <span class="hljs-attr">duplicated</span>: <span class="hljs-literal">false</span>,
                 <span class="hljs-attr">id</span>: id++,
-                <span class="hljs-attr">key</span>: key,
+                key: key,
                 <span class="hljs-attr">duplicates</span>: <span class="hljs-keyword">new</span> <span class="hljs-built_in">Set</span>,
                 <span class="hljs-attr">stringified</span>: Keyify.stringify(key),
                 <span class="hljs-attr">error</span>: error,
@@ -2072,7 +2072,7 @@ the error or <code>null</code> if the property is not defined.</p>
                 <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>
             }
             <span class="hljs-keyword">const</span> errors = right.errors.slice(<span class="hljs-number">0</span>)
-            CAUSES: <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> cause <span class="hljs-keyword">of</span> left.errors) {
+            <span class="hljs-attr">CAUSES</span>: <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> cause <span class="hljs-keyword">of</span> left.errors) {
                 <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; errors.length; i++) {
                     <span class="hljs-keyword">if</span> (compare(cause, errors[i])) {
                         errors.splice(i, <span class="hljs-number">1</span>)
@@ -2143,7 +2143,7 @@ the error or <code>null</code> if the property is not defined.</p>
             <span class="hljs-keyword">const</span> errors = []
             <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> cause <span class="hljs-keyword">of</span> node.errors) {
                 <span class="hljs-keyword">const</span> formatted = format(cause)
-                <span class="hljs-keyword">const</span> indented = formatted.replace(<span class="hljs-regexp">/^/gm</span>, <span class="hljs-string">'    '</span>)
+                <span class="hljs-keyword">const</span> indented = formatted.replace(<span class="hljs-regexp">/^/gm</span>, <span class="hljs-string">&#x27;    &#x27;</span>)
                 errors.push(<span class="hljs-string">`\ncause:\n\n<span class="hljs-subst">${indented}</span>\n`</span>)
             }
             <span class="hljs-keyword">const</span> repeated = node.duplicates.size + <span class="hljs-number">1</span>
@@ -2152,12 +2152,12 @@ the error or <code>null</code> if the property is not defined.</p>
             <span class="hljs-keyword">if</span> (repeated != <span class="hljs-number">1</span>) {
                 properties.repeated = repeated
             }
-            <span class="hljs-keyword">const</span> stack = node.error.stack.replace(<span class="hljs-regexp">/[\s\S]*^stack:$/m</span>, <span class="hljs-string">'stack:'</span>)
+            <span class="hljs-keyword">const</span> stack = node.error.stack.replace(<span class="hljs-regexp">/[\s\S]*^stack:$/m</span>, <span class="hljs-string">&#x27;stack:&#x27;</span>)
             <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Object</span>.keys(properties).length != <span class="hljs-number">0</span>) {
                 <span class="hljs-keyword">const</span> contextualized = Interrupt.JSON.stringify(properties)
-                <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${node.error.name}</span>: <span class="hljs-subst">${instance.message}</span>\n\n<span class="hljs-subst">${properties}</span>\n\n<span class="hljs-subst">${errors.join(<span class="hljs-string">''</span>)}</span>\n\n<span class="hljs-subst">${stack}</span>`</span>
+                <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${node.error.name}</span>: <span class="hljs-subst">${instance.message}</span>\n\n<span class="hljs-subst">${properties}</span>\n\n<span class="hljs-subst">${errors.join(<span class="hljs-string">&#x27;&#x27;</span>)}</span>\n\n<span class="hljs-subst">${stack}</span>`</span>
             }
-            <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${node.error.name}</span>: <span class="hljs-subst">${instance.message}</span>\n\n<span class="hljs-subst">${errors.join(<span class="hljs-string">''</span>)}</span>\n\n<span class="hljs-subst">${stack}</span>`</span>
+            <span class="hljs-keyword">return</span> <span class="hljs-string">`<span class="hljs-subst">${node.error.name}</span>: <span class="hljs-subst">${instance.message}</span>\n\n<span class="hljs-subst">${errors.join(<span class="hljs-string">&#x27;&#x27;</span>)}</span>\n\n<span class="hljs-subst">${stack}</span>`</span>
         }
         <span class="hljs-comment">/*
         function print (indent, extract, node) {
@@ -2230,14 +2230,14 @@ inclusion into other regexen.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> identifier = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./identifier.json'</span>)
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">const</span> identifier = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./identifier.json&#x27;</span>)
 
 <span class="hljs-keyword">const</span> RE = {
     <span class="hljs-attr">identifier</span>: <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">`^<span class="hljs-subst">${identifier}</span>$`</span>),
-    <span class="hljs-attr">exceptionStart</span>: <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">`^(\\s*)(<span class="hljs-subst">${identifier}</span>(?:\.<span class="hljs-subst">${identifier}</span>)*)(:)\\s([\\s\\S]*)`</span>, <span class="hljs-string">'m'</span>)
+    <span class="hljs-attr">exceptionStart</span>: <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">`^(\\s*)(<span class="hljs-subst">${identifier}</span>(?:\.<span class="hljs-subst">${identifier}</span>)*)(:)\\s([\\s\\S]*)`</span>, <span class="hljs-string">&#x27;m&#x27;</span>)
 }
 
-<span class="hljs-keyword">const</span> unstacker = <span class="hljs-built_in">require</span>(<span class="hljs-string">'stacktrace-parser'</span>)
+<span class="hljs-keyword">const</span> unstacker = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;stacktrace-parser&#x27;</span>)
 
 <span class="hljs-keyword">const</span> Dedents = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Map</span>
 
@@ -2251,7 +2251,7 @@ inclusion into other regexen.</p>
         <span class="hljs-keyword">return</span> dedent(line, depth, position)
     }
     <span class="hljs-keyword">const</span> $ = dedenter.exec(line)
-    assert($ != <span class="hljs-literal">null</span>, <span class="hljs-string">'PARSE_ERROR'</span>, position)
+    assert($ != <span class="hljs-literal">null</span>, <span class="hljs-string">&#x27;PARSE_ERROR&#x27;</span>, position)
     <span class="hljs-keyword">return</span> $[<span class="hljs-number">1</span>]
 }
 
