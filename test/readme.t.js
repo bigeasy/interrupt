@@ -2,7 +2,8 @@
 
 // **TODO** Currently making a pass to fix the English, also organize the
 // sections so that they build on each. Will follow with pass to ensure that all
-// the unit tests (calls to `okay`) have meaningful descriptions.
+// the unit tests (calls to `okay`) have meaningful descriptions. Look for a
+// **TODO** that indicates where you left off on the first pass.
 
 // Exceptions are nice. I like the concept. I've always done my best to employ
 // them in JavaScript and Node.js but it isn't always easy.
@@ -289,7 +290,7 @@ require('proof')(180, async okay => {
     // ability to catch by type is where the idea for an exception class for
     // each type of error comes from.
 
-    // JavaScript does not have this ability so once the exception is caught it
+    // JavaScript does not have this ability. Once the exception is caught it
     // must be filtered through an `if`/`else` ladder with `instanceof` to
     // determine the type of exception. Using entire classes for what is
     // essentially a flag is a heavyweight approach. The user now has to import
@@ -305,9 +306,9 @@ require('proof')(180, async okay => {
     // } = require('./config')
     // ```
 
-    // Kinda feels like we're moving the internals of a dependency into our
-    // module to check a flag. This is so foreign to JavaScript, to use type
-    // information directly, instead of using ploymorphism.
+    // This is so foreign to JavaScript, to use type information directly,
+    // instead of using ploymorphism. Kinda feels like we're moving the
+    // internals of a dependency into our module to check a flag.
 
     // Node.js itself doesn't extend the error class heirarchy by much.  In
     // fact, in our code we further test the cause of the I/O error by checking
@@ -396,31 +397,29 @@ require('proof')(180, async okay => {
 
     //
     {
-        // _`Interrupt` is an `Error`._
-        okay(Interrupt.prototype instanceof Error, 'generated error is an `Error`')
+        okay(Interrupt.prototype instanceof Error, '`Interrupt` is an `Error`')
 
-        // _Generate an `Interrupt` derived error class._
         const ConfigError = Interrupt.create('ConfigError', {
             IO_ERROR: 'unable to read config file',
             PARSE_ERROR: 'unable to parse config file'
         })
 
         const codes = ConfigError.codes
-        okay(codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'create error codes')
-        //
+        okay(codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'set of generated error codes')
 
-        // _Generated `Error` class is an `Error`._
-        okay(ConfigError.prototype instanceof Error, 'generated error is an `Error`')
+        okay(typeof ConfigError.IO_ERROR, 'symbol', 'constants that map a generated error code name to a code symbol')
+        okay(typeof ConfigError.PARSE_ERROR, 'symbol', 'one for each error code')
 
-        // _Generated `Error` class is an `Interrupt`._
         okay(ConfigError.prototype instanceof Interrupt, 'generated error is an `Interrupt`')
+
+        okay(ConfigError.prototype instanceof Error, 'generated error is therefore also an `Error`')
     }
     //
 
     // Furthermore, Interrupt discourages the use of the `message` property
-    // programmatically. In fact, Interrupt hijacks the `message`, adding
-    // context and nested error stack traces so that they will appear in
-    // `error.stack`.
+    // programmatically. In fact, Interrupt hijacks the `message` in order to
+    // add the enumerable properties and nested error stack traces to the
+    // `message` so that they will appear in `error.stack`.
 
     // Hijacking sounds bad, I know, but jamming all the report information into
     // the `message` means it will appear in `stack`. Becuase it always appears
@@ -455,19 +454,20 @@ require('proof')(180, async okay => {
     }
     //
 
-    // But, error messages are really for debugging, aren't they? If we really
-    // wanted a facility to display messages to the user, certianly we'd want
-    // one that supports internationalization. We'd want string tables and we'd
-    // want to solicit translations from open source contributors. We wouldn't
-    // want all that complexity built into the error path of our application at
-    // every level of the call stack.
+    // Error messages are really for debugging, aren't they? They're not really
+    // for displaying error messages to an end user. If we really wanted a
+    // facility to display messages to the user, certianly we'd want one that
+    // supports internationalization. We'd want string tables and we'd want to
+    // solicit translations from open source contributors. We wouldn't want all
+    // that complexity built into the error path of our application at every
+    // level of the call stack.
 
     // Okay, that's a bit much, but I always dump `error.stack` and rarely dump
-    // `error.message`, and we have a way to get just message if that's all you
-    // need.
+    // `error.message`, and we have a way to get just the message if that's all
+    // you need.
 
-    // If you want to get the plain message for display purposes you can use the
-    // static `Interrupt.message()` method.
+    // If you want to get the just the message for display purposes you can use
+    // the static `Interrupt.message()` method.
 
     //
     console.log('\n--- obtain just the message from an Interrupt error ---\n')
@@ -522,10 +522,10 @@ require('proof')(180, async okay => {
     }
     //
 
-    // You can still test against the `message` property using a regular
-    // expression. A single line message will appear alone on the first line of
-    // the `message` property. You can match the entirety of the first line with
-    // a multi-line regular expression.
+    // Additionally, You can still test against the `message` property using a
+    // regular expression. A single line message will appear alone on the first
+    // line of the `message` property. You can match the entirety of the first
+    // line with a multi-line regular expression.
 
     //
     {
@@ -553,6 +553,9 @@ require('proof')(180, async okay => {
         }
     }
     //
+
+    // **TODO** When you implement multi-line error messages, the description of
+    // how to use them goes here.
 
     // If you provide a code parameter that was not defined when you called
     // `Interrupt.create()` the string value is used as a message.
@@ -585,8 +588,8 @@ require('proof')(180, async okay => {
     }
     //
 
-    // This means you can just use Interrupt directly without code if you so
-    // choose, but I really like codes.
+    // This means you can just use an Interrupt derived error directly without
+    // code if you so choose, but I really like codes.
 
     //
     console.log('\n--- using Interrupt without codes ---\n')
@@ -671,25 +674,27 @@ require('proof')(180, async okay => {
     }
     //
 
-    // Codes are unambiguous, not liable to change, easier to document and if
-    // you do make changes to code, it is easier to document and document the
-    // deprecation.
+    // Codes are less ambiguous than using `message` to determine the type of
+    // error. Codes are not liable to change, easier to document and if you do
+    // make changes to code, it is easier to document the change and document
+    // the deprecation of the old code name.
 
-    // Codes get even more unambiguous when you use `Symbol`.
+    // **TODO** A second on renaming codes. Maybe deprecation warnings are part
+    // of the audit? User could add a `deprecated` flag.
+
+    // Codes become entirely unambiguous when you use a `Symbol`.
 
     // Every code you define for your generated Interrupt class will have an
     // associated `Symbol`.
 
-    // The generated exception class has a property named for every code you
-    // defined in your call to `Interrupt.create()`. The property has the code
-    // name and the value is a `Symbol`. The `Symbol` is unique for the code.
+    // The generated error class has a property named for every code you defined
+    // in your call to `Interrupt.create()`. The property name is the code name
+    // and the value is a `Symbol`. By default, the `Symbol` is unique for the
+    // code.
 
-    // When you create an exception it sets a non-enumerable `symbol` property
-    // on the exception instance with the associated `Symbol` for the code as
-    // its value. This is set in addition to the code.
-
-    // The symbol property is not printed in the properties section of the stack
-    // trace message. It is already represented by the `code` string.
+    // When you construct an interrupt derived error it sets a non-enumerable
+    // `symbol` property on the exception instance with the associated `Symbol`
+    // for the code as its value. This is set in addition to the code.
 
     // Now you can test the exception type by an unambiguous `Symbol`.
 
@@ -723,6 +728,15 @@ require('proof')(180, async okay => {
     }
     //
 
+    // Becuase the `symbol` property is a non-enumerable property of the
+    // generated error, it is not printed in the properties section of the stack
+    // trace message. It is already represented by the `code` string. The code
+    // string is somewhat ambiguous, but we would not able parse and restore a
+    // symbol without having to make the same assumptions. This is, a `Symbol`
+    // cannot be serialized so we'd have to serialize the `toString()` value
+    // which is as ambiguous as the string code. We skip it so that the stack
+    // trace report is not so chatty and redundant.
+    //
     // You can also specify the code by symbol. Instead of passing the string
     // name of the code you pass in the symbol for the code.
 
@@ -757,11 +771,7 @@ require('proof')(180, async okay => {
     //
 
     // Because symbols are unique if we use the same code names in two
-    // difference exception classes we can distinguish the type symbol.
-
-    // You can start to see how symbols and a `switch` statement can make for a
-    // clean catch block that starts to look like the catch error by type
-    // facility in other languages.
+    // different exception classes we can distinguish the type symbol.
 
     //
     console.log('\n--- catching exceptions by type and code ---\n')
@@ -831,9 +841,16 @@ require('proof')(180, async okay => {
     // catch block we use a switch statement to distinguish between a
     // CSV `NULL_ARGUMENT` code and a JSON `NULL_ARGMENT` code.
 
+    // You can start to see how symbols and a `switch` statement can make for a
+    // clean catch block that starts to look like the catch error by type
+    // facility in other languages.
+
     // Without the `symbol` property we'd have to compare both the `code`
     // property and test the `instanceof` the `error` to see if was a `CSVError`
     // or a `JSONError`.
+
+
+    // **TODO** Rewrite pass ends here.
 
     // **TODO** We probably need sub-headings.
     // **TODO** Move this up above symbols.
