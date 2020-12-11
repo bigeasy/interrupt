@@ -96,7 +96,15 @@
 
   <div class="container">
   <h1>Interrupt</h1>
-    <h2 class="invocation">UserError = Interrupt.create(className[, superClass ][, code |  codes{ name: prototype | message } | codes() | codes[] ]*)</h2>
+    <p><strong>TODO</strong> Minimal advocacy preamble. And for the rest of the
+    document, there is a lot yet to do. It repeats the `readme.t.js`, a lot, and
+    it is not very meaningful without code examples. The `readme.t.js` and this
+    document should link back and forth.
+    </p><p class="markdown"></p><p>To learn how to use Interrupt in your program please use
+    the <a href="docco/readme.t.js"><code>readme.t.js</code></a>. This is the API documentation for
+    Interrupt. It lays out the rules for Interrupt but it doesn&apos;t really cover
+    the finder points of usage.</p>
+<p></p><h2 class="invocation">UserError = Interrupt.create(className[, superClass ][, code |  codes{ name: prototype | message } | codes() | codes[] ]*)</h2>
     <div class="definition">
       <p>This variadic function accepts a required <code>className</code>,
       followed by an optional <code>superClass</code> followed by zero or many
@@ -264,8 +272,10 @@
       <p>A static property for each code defined in the `Interrupt.code()`
       declarator is defined on the generated error class. This symbol will be
       used to set the <code>symbol</code> property of constructed errors.
-      </p><pre><code class="language-javascript hljs"><span class="hljs-keyword">const</span> ConfigError = Interrupt.create(<span class="hljs-string">&apos;ConfigError&apos;</span>, <span class="hljs-string">&apos;IO_ERROR&apos;</span>)
-assert(<span class="hljs-keyword">typeof</span> ConfigError.IO_ERROR === <span class="hljs-string">&apos;symbol&apos;</span>)</code></pre>
+      </p><pre><code class="language-javascript hljs">
+        <span class="hljs-keyword">const</span> ConfigError = Interrupt.create(<span class="hljs-string">&apos;ConfigError&apos;</span>, <span class="hljs-string">&apos;IO_ERROR&apos;</span>)
+        assert(<span class="hljs-keyword">typeof</span> ConfigError.IO_ERROR === <span class="hljs-string">&apos;symbol&apos;</span>)
+      </code></pre>
     </div>
     <h2 class="invocation">Interrupt.Code(object{ code, symbol } | ( code, symbol ))</h2>
     <div class="definition">
