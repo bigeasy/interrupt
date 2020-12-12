@@ -165,11 +165,12 @@ require('proof')(4, async okay => {
             })
 
             read (dirname, poker, callback) {
+                poker.top = true
                 fs.readdir(dirname, Reader.Error.callback({ '#poker': poker }, 'UNABLE_TO_READ_DIRECTORY', $ => $(), (error, dir, options) => {
                     if (error) {
                         callback(error)
                     } else {
-                        console.log('options', options)
+                        console.log(options['#pokers'])
                         function readFile () {
                             if (dir.length == 0) {
                                 callback(null, files)

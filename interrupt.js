@@ -868,6 +868,10 @@ class Interrupt extends Error {
                 return Object.defineProperties({}, options)
             }
 
+            static create (options, vargs, ...callees) {
+                return construct(options, vargs, callees[0], callees[1])
+            }
+
             static audit (options, vargs, ...callees) {
                 if (typeof Interrupt.audit == 'function') {
                     construct(options, vargs, callees[0], callees[1])
@@ -892,8 +896,9 @@ class Interrupt extends Error {
         }
 
         function _construct (options, vargs, callees) {
+            debugger
             const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
-                ? Class.options(options, { '#poker': vargs.pop() }, { '#vargs': vargs })
+                ? Class.options(options, { '#vargs': vargs }, { '#poker': vargs.pop() })
                 : Class.options(options, { '#vargs': vargs })
             if (prelimary['#pokers'].length != 0) {
                 let error = null
@@ -904,7 +909,7 @@ class Interrupt extends Error {
                 while (pokers.length != 0) {
                     previous = function (caller, callee) {
                         return caller.bind(null, callee)
-                    } (pokers.pop(), previous)
+                    } (pokers.shift(), previous)
                 }
                 previous()
                 if (error == null) {
