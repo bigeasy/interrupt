@@ -642,6 +642,10 @@ class Interrupt extends Error {
         return { '#type': OPTIONS }
     }
 
+    static get auditing () {
+        return typeof this.audit == 'function'
+    }
+
     // **TODO** Wouldn't it be nice to have some sort of way to specify
     // properties by code? Like which subsystem or a severity?
 
@@ -681,7 +685,8 @@ class Interrupt extends Error {
                     '#stack': attr(null),
                     '#callee': attr(null)
                 }
-                for (const argument of vargs) {
+                while (vargs.length != 0) {
+                    const argument = vargs.shift()
                     switch (typeof argument) {
                     case 'string': {
                             // **TODO** Keep expecting us to use the first code that is set, but
@@ -723,6 +728,15 @@ class Interrupt extends Error {
                                     switch (property) {
                                     case '#type': {
                                             if (argument[property] !== OPTIONS) {
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case '#vargs': {
+                                            if (argument[property] == null) {
+                                            } else if (Array.isArray(argument[property])) {
+                                                vargs.unshift.apply(vargs, argument[property])
+                                            } else {
                                                 options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
@@ -848,12 +862,14 @@ class Interrupt extends Error {
                 return null
             }
 
-            static assert (...vargs) {
-                return _assert(Class.assert, {}, vargs)
+            static audit (options, vargs, ...callees) {
+                if (typeof Interrupt.audit == 'function') {
+                    construct(options, vargs, callees[0], callees[1])
+                }
             }
 
-            static assert2 (...vargs) {
-                return _assert2(Class.assert2, {}, vargs)
+            static assert (...vargs) {
+                return _assert(Class.assert, {}, vargs)
             }
 
             static invoke (...vargs) {
@@ -867,14 +883,6 @@ class Interrupt extends Error {
             static resolve (...vargs) {
                 return _resolver(Class.resolve, {}, vargs)
             }
-        }
-
-        function construct (options, vargs, errors, ...callees) {
-            const error = _construct(options, vargs, errors, callees)
-            if (typeof Interrupt.audit === 'function') {
-                Interrupt.audit(error, Instances.get(error).errors)
-            }
-            return error
         }
 
         // Going to have to explain what a poker is and why you might want to
@@ -904,51 +912,18 @@ class Interrupt extends Error {
             return error
         }
 
-        function _construct (options, vargs, errors, callees) {
-            if (vargs.length === 1 && typeof vargs[0] == 'function') {
-                let called = false
-                const f = vargs.pop()
-                const merged = Class.options({ '#callee': callees[1] || $ }, options)
-                function $ (...vargs) {
-                    called = true
-                    const options = Class.options.apply(Class, [ merged ].concat(vargs, { errors }))
-                    return new Class(options)
-                }
-                const error = f($)
-                if (!called) {
-                    const error = new Class
-                    const instance = Instances.get(error)
-                    instance.errors.push({
-                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
-                    })
-                    return error
-                }
-                if (typeof error != 'object' || error == null || !(error instanceof Class)) {
-                    const error = new Class
-                    const instance = Instances.get(error)
-                    instance.errors.push({
-                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_INVALID_RETURN
-                    })
-                    return error
-                }
-                return error
-            } else {
-                return new Class(Class.options.apply(Class, [{ '#callee': callees[0] }, options ].concat(vargs, { errors })))
-            }
-        }
-
-        function _construct2 (options, vargs, errors, callees) {
+        function _construct (options, vargs, callees) {
             if (vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function') {
                 const poker = vargs.pop()
                 // **TODO** `'#vargs'` property in options object.
-                const merged = Class.options({ '#callee': callees[1] || $ }, options, { errors })
+                const merged = Class.options({ '#callee': callees[1] || $ }, options, { '#vargs': vargs })
                 let error = null
                 function $ () {
-                    error = new Class(Class.options.apply(Class, [ merged ].concat(vargs)))
+                    error = new Class(merged)
                 }
                 poker($)
                 if (error == null) {
-                    const error = new Class(Class.options.apply(Class, [ merged ].concat(vargs)))
+                    const error = new Class(merged)
                     const instance = Instances.get(error)
                     instance.errors.push({
                         code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
@@ -957,42 +932,29 @@ class Interrupt extends Error {
                 }
                 return error
             } else {
-                return new Class(Class.options.apply(Class, [{ '#callee': callees[0] }, options ].concat(vargs, { errors })))
+                return new Class(Class.options({ '#callee': callees[0] }, options, { '#vargs': vargs }))
             }
         }
 
-        function construct2 (options, vargs, errors, ...callees) {
-            const error = _construct2(options, vargs, errors, callees)
-            if (typeof Interrupt.audit === 'function') {
+        function construct (options, vargs, ...callees) {
+            const error = _construct(options, vargs, callees)
+            if (Interrupt.auditing) {
                 Interrupt.audit(error, Instances.get(error).errors)
             }
             return error
         }
 
-        function _assert2 (callee, options, vargs) {
-            if (typeof vargs[0] === 'object' && vargs[0] != null && vargs[0]['#type'] === OPTIONS) {
-                const merged = Class.options.apply(Class, [ options ].concat(vargs))
-                return function assert (...vargs) {
-                    return _assert2(assert, merged, vargs)
-                }
-            } else if (!vargs[0]) {
-                vargs.shift()
-                throw construct2(options, vargs, [], callee, callee)
-            } else if (typeof Interrupt.audit == 'function') {
-            }
-        }
-
         function _assert (callee, options, vargs) {
-            if (typeof vargs[0] === 'object' && vargs[0]['#type'] === OPTIONS) {
-                const merged = Class.options.apply(Class, [ options ].concat(vargs))
+            if (typeof vargs[0] === 'object' && vargs[0] != null && vargs[0]['#type'] === OPTIONS) {
+                const curried = Class.options(options, { '#vargs': vargs })
                 return function assert (...vargs) {
-                    _assert(assert, merged, vargs)
+                    return _assert(assert, curried, vargs)
                 }
             } else if (!vargs[0]) {
                 vargs.shift()
-                throw construct(options, vargs, [], callee, callee)
-            } else if (typeof Interrupt.audit == 'function') {
-                construct(options, vargs, [], callee, callee)
+                throw construct(options, vargs, callee, callee)
+            } else if (Interrupt.auditing) {
+                construct(options, vargs, callee, callee)
             }
         }
 
@@ -1001,36 +963,37 @@ class Interrupt extends Error {
                 const f = vargs.shift()
                 try {
                     const result = f()
-                    if (typeof Interrupt.audit === 'function') {
-                        construct(options, vargs, [ AUDIT ], callee, callee)
+                    if (Interrupt.auditing) {
+                        construct(Class.options(options, { errors: [ AUDIT ] }), vargs, callee, callee)
                     }
                     return result
                 } catch (error) {
-                    throw construct(options, vargs, [ error ], callee, callee)
+                    throw construct(Class.options(options, { errors: [ error ] }), vargs, callee, callee)
                 }
             }
-            const merged = Class.options.apply(Class, [ options ].concat(vargs))
+            const curried = Class.options(options, { '#vargs': vargs })
             return function invoker (...vargs) {
-                return _invoke(invoker, merged, vargs)
+                return _invoke(invoker, curried, vargs)
             }
         }
 
+        // **TOODO** You cannot curry a poker function.
         function _callback (callee, options, vargs) {
-            if (typeof vargs[0] == 'function') {
+            if (typeof vargs[vargs.length - 1] == 'function') {
                 // **TODO** Assert constructor is a function.
-                const [ constructor, callback ] = vargs
-                return function (...vargs) {
-                    if (vargs[0] == null) {
-                        callback.apply(null, vargs)
-                        if (typeof Interrupt.audit == 'function') {
-                            construct(options, [ constructor ], [ AUDIT ])
+                const callback = vargs.pop()
+                return function (...response) {
+                    if (response[0] == null) {
+                        if (Interrupt.auditing) {
+                            construct(Class.options(options, { errors: [ AUDIT ] }), vargs)
                         }
+                        callback.apply(null, response)
                     } else {
-                        callback(construct(options, [ constructor ], [ vargs[0] ]))
+                        callback(construct(Class.options(options, { errors: [ response[0] ] }), vargs))
                     }
                 }
             }
-            const merged = Class.options.apply(Class, [ options ].concat(vargs))
+            const merged = Class.options(options, { '#vargs': vargs })
             return function wrapper (...vargs) {
                 return _callback(wrapper, merged, vargs)
             }
@@ -1042,12 +1005,14 @@ class Interrupt extends Error {
                     f = f()
                 }
                 const result = await f
-                if (typeof Interrupt.audit == 'function') {
-                    construct(options, vargs, [ AUDIT ], callee)
+                // **TODO** No, I don't want to do this merge every time. Yes, just
+                // go ahead and have the test condition here.
+                if (Interrupt.auditing) {
+                    construct(Class.options(options, { errors: [ AUDIT ] }), vargs, callee)
                 }
                 return result
             } catch (error) {
-                throw construct(options, vargs, [ error ], callee)
+                throw construct(Class.options(options, { errors: [ error ] }), vargs, callee)
             }
         }
 
@@ -1062,7 +1027,7 @@ class Interrupt extends Error {
             ) {
                 return resolve(callee, vargs.shift(), options, vargs)
             }
-            const merged = Class.options.apply(Class, [ options ].concat(vargs))
+            const merged = Class.options(options, { '#vargs': vargs })
             return function resolver (...vargs) {
                 return _resolver(resolver, merged, vargs)
             }

@@ -2627,16 +2627,11 @@ require('proof')(182, async okay => {
         function parse (json) {
             ParseError.assert(json != null, 'NULL_ARGUMENT')
             ParseError.assert(typeof json == 'string', $ => $('INVALID_TYPE', { type: typeof json }))
-            ParseError.assert2(json.length < MAX_LENGTH, 'TOO_MUCH_JSON', {
+            ParseError.assert(json.length < MAX_LENGTH, 'TOO_MUCH_JSON', {
                 MAX_LENGTH: MAX_LENGTH,
                 length: json.length,
                 difference: json.length - MAX_LENGTH
             }, $ => $())
-            ParseError.assert(json.length < MAX_LENGTH, $ => $('TOO_MUCH_JSON', {
-                MAX_LENGTH: MAX_LENGTH,
-                length: json.length,
-                difference: json.length - MAX_LENGTH
-            }))
             try {
                 return JSON.parse(json)
             } catch (error) {
@@ -2703,7 +2698,7 @@ require('proof')(182, async okay => {
         })
 
         function parse (json) {
-            return ParseError.invoke(() => JSON.parse(json), $ => $('INVALID_JSON', { length: json.length }))
+            return ParseError.invoke(() => JSON.parse(json), 'INVALID_JSON', { length: json.length }, $ => $())
         }
 
         try {
@@ -2926,6 +2921,9 @@ require('proof')(182, async okay => {
     // And for that we have `Interrupt.resolve` which resolves a `Promise` and
     // wraps the exception if it rejects.
 
+    // **TODO** This section is a message. I'm only using the poker function in
+    // some examples, not in others. Need to sort out how to introduce it.
+
     // **TODO** Somewhere I should just write a blog post about my coding style,
     // not to bless the world with my genius (◔_◔) but to just point out that
     // the stuff I write is `async`/`await`, code coverage matters, whatever
@@ -2946,7 +2944,7 @@ require('proof')(182, async okay => {
             })
 
             async read (filename) {
-                const handle = await Reader.Error.resolve(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE', { filename }))
+                const handle = await Reader.Error.resolve(fs.open(filename, 'r'), 'UNABLE_TO_OPEN_FILE', { filename }, $ => $())
                 const stat = await Reader.Error.resolve(handle.stat(), 'UNABLE_TO_STAT_FILE', { filename })
                 const buffer = Buffer.alloc(stat.size)
                 await Reader.Error.resolve(handle.read(buffer, 0, buffer.length, 0), 'UNABLE_TO_READ_FILE', { filename })
@@ -2996,11 +2994,11 @@ require('proof')(182, async okay => {
 
             async read (filename) {
                 const resolver = Reader.Error.resolve({}, { filename })
-                const handle = await resolver(fs.open(filename, 'r'), $ => $('UNABLE_TO_OPEN_FILE'))
-                const stat = await resolver(handle.stat(), $ => $('UNABLE_TO_STAT_FILE'))
+                const handle = await resolver(fs.open(filename, 'r'), 'UNABLE_TO_OPEN_FILE', $ => $())
+                const stat = await resolver(handle.stat(), 'UNABLE_TO_STAT_FILE', $ => $())
                 const buffer = Buffer.alloc(stat.size)
-                await resolver(handle.read(buffer, 0, buffer.length, 0), $ => $('UNABLE_TO_READ_FILE'))
-                await resolver(handle.close(), $ => $('UNABLE_TO_CLOSE_FILE'))
+                await resolver(handle.read(buffer, 0, buffer.length, 0), 'UNABLE_TO_READ_FILE', $ => $())
+                await resolver(handle.close(), 'UNABLE_TO_CLOSE_FILE', $ => $())
                 return buffer
             }
         }
@@ -3194,7 +3192,7 @@ require('proof')(182, async okay => {
             })
 
             async read (filename, callback) {
-                fs.readFile(filename, Reader.Error.callback($ => $('UNABLE_TO_READ_FILE', { filename }), callback))
+                fs.readFile(filename, Reader.Error.callback('UNABLE_TO_READ_FILE', { filename }, $ => $(), callback))
             }
         }
 
@@ -3228,11 +3226,11 @@ require('proof')(182, async okay => {
             })
 
             async read (filename, callback) {
-                fs.readFile(filename, Reader.Error.callback($ => $('UNABLE_TO_READ_FILE', { filename }), callback))
+                fs.readFile(filename, Reader.Error.callback('UNABLE_TO_READ_FILE', { filename }, $ => $(), callback))
             }
 
             async load (filename, callback) {
-                this.read(filename, Reader.Error.callback($ => $('UNABLE_TO_READ_FILE', { filename }), (error, body) => {
+                this.read(filename, Reader.Error.callback('UNABLE_TO_READ_FILE', { filename }, $ => $(), (error, body) => {
                     if (error) {
                         callback(error)
                     } else {
@@ -3272,7 +3270,7 @@ require('proof')(182, async okay => {
 
             async read (dirname, callback) {
                 const wrap = Reader.Error.callback({}, { dirname }), files = []
-                fs.readdir(dirname, wrap($ => $('UNABLE_TO_READ_DIRECTORY'), (error, dir) => {
+                fs.readdir(dirname, wrap('UNABLE_TO_READ_DIRECTORY', $ => $(), (error, dir) => {
                     if (error) {
                         callback(error)
                     } else {
@@ -3281,7 +3279,7 @@ require('proof')(182, async okay => {
                                 callback(null, files)
                             } else {
                                 const filename = path.join(dirname, dir.shift())
-                                fs.readFile(filename, 'utf8', wrap($ => $('UNABLE_TO_READ_FILE', { filename }), (error, body) => {
+                                fs.readFile(filename, 'utf8', wrap('UNABLE_TO_READ_FILE', { filename }, $ => $(), (error, body) => {
                                     if (error) {
                                         callback(error)
                                     } else {
@@ -3449,7 +3447,7 @@ require('proof')(182, async okay => {
             }
 
             classicLoad (filename, callback) {
-                fileSystem.readFile(filename, 'utf8', Config.Error.callback($ => ('INVALID_FILE', { filename }), (error, json) => {
+                fileSystem.readFile(filename, 'utf8', Config.Error.callback('INVALID_FILE', { filename }, $ => $(), (error, json) => {
                     if (error) {
                         callback(error)
                     } else {
