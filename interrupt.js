@@ -742,17 +742,10 @@ class Interrupt extends Error {
                                             }
                                         }
                                         break
-                                    case '$poker': {
+                                    case '$pokers': {
                                             if (argument[property] == null) {
                                             } else if (typeof argument[property] == 'function') {
                                                 options.$pokers.value.push(argument[property])
-                                            } else {
-                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
-                                            }
-                                        }
-                                        break
-                                    case '$pokers': {
-                                            if (argument[property] == null) {
                                             } else if (
                                                 Array.isArray(argument[property]) &&
                                                 argument[property].every(element => typeof element == 'function')
@@ -898,7 +891,7 @@ class Interrupt extends Error {
         function _construct (options, vargs, callees) {
             debugger
             const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
-                ? Class.options(options, { $vargs: vargs }, { $poker: vargs.pop() })
+                ? Class.options(options, { $vargs: vargs }, { $pokers: vargs.pop() })
                 : Class.options(options, { $vargs: vargs })
             if (prelimary.$pokers.length != 0) {
                 let error = null
@@ -977,7 +970,7 @@ class Interrupt extends Error {
                             construct(Class.options(options, { errors: [ AUDIT ] }), vargs)
                         }
                         const poker = typeof vargs[vargs.length - 1] == 'function' ? vargs.pop() : null
-                        const merged = Class.options(options, { $poker: poker }, { $vargs: vargs })
+                        const merged = Class.options(options, { $vargs: vargs }, { $pokers: poker })
                         callback.apply(null, response.concat({ $pokers: merged.$pokers }))
                     } else {
                         callback(construct(Class.options(options, { errors: [ response[0] ] }), vargs))
