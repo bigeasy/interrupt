@@ -832,6 +832,22 @@ class Interrupt extends Error {
                 return Object.defineProperties({}, options)
             }
 
+            static poke (condition, callee, poker, raise, vargs) {
+                const auditing = typeof Interrupt.audit == 'function'
+                const error = condition || auditing ? _poker(callee, poker, vargs) : null
+                if (condition) {
+                    if (raise) {
+                        throw error
+                    }
+                    return error
+                }
+                if (typeof Interrupt.audit == 'function') {
+                    const error = _poker(callee, poker, vargs)
+                    Interrupt.audit(error, Instances.get(error).errors)
+                }
+                return null
+            }
+
             static assert (...vargs) {
                 return _assert(Class.assert, {}, vargs)
             }
@@ -853,6 +869,33 @@ class Interrupt extends Error {
             const error = _construct(options, vargs, errors, callees)
             if (typeof Interrupt.audit === 'function') {
                 Interrupt.audit(error, Instances.get(error).errors)
+            }
+            return error
+        }
+
+        // Going to have to explain what a poker is and why you might want to
+        // use one. I'm introducing this after writing this out in Destructable
+        // and then wanting another one in WriteAhead. Not sure if they are
+        // useful yet, not enjoying the newest Interrupt yet.
+
+        //
+        function _poker (callee, poker, vargs) {
+            if (poker == null) {
+                return new Class(Class.options.apply(Class, [{ '#callee': callee }].concat(vargs)))
+            }
+            let error = null
+            function $ () {
+                error = new Class(Class.options.apply(Class, [{ '#callee': $ }].concat(vargs)))
+            }
+            poker($)
+            if (error == null) {
+                const error = new Class
+                const instance = Instances.get(error)
+                instance.errors.push({
+                    // **TODO** POKED_INVOCATION_NOT_CALLED
+                    code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
+                })
+                return error
             }
             return error
         }
