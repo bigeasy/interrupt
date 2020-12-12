@@ -1,3 +1,19 @@
+## Sat Dec 12 01:16:15 CST 2020
+
+Here it is. All the effort to keep the `util.inspect` dump out of the fatal
+stack trace defeated defeated at [this line](https://github.com/nodejs/node/blob/b589128f6f4c3c6f636bfb0146957847ef0a8d53/lib/internal/errors.js#L721).
+
+Now I have to decide if I want to make all the properties non-enumerable, and I
+think I do. Regardless, I have to figure out how to strip the properties dump
+from the end of of the stack trace in case the user adds a property.
+
+We could make all properties non-enumerable and have an `enumerable` property
+which ought to defeat anyone's attempt to show properties that are not hidden.
+Or we could call it `properties`.
+
+This is all very complicated and highly magical, but that is just the nature of
+this module.
+
 ## Mon Dec  7 03:44:35 CST 2020
 
 Tempted to make all the reported properties children of `context` so that
