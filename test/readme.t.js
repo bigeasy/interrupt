@@ -2564,7 +2564,6 @@ require('proof')(182, async okay => {
     //
     console.log('\n--- Interrupt assertions ---\n')
     {
-        debugger
         const ParseError = Interrupt.create('ParseError', {
             NULL_ARGUMENT: 'the JSON string to parse must not be null',
             INVALID_TYPE: 'JSON must be a string, received: %(type)s',
@@ -2628,6 +2627,11 @@ require('proof')(182, async okay => {
         function parse (json) {
             ParseError.assert(json != null, 'NULL_ARGUMENT')
             ParseError.assert(typeof json == 'string', $ => $('INVALID_TYPE', { type: typeof json }))
+            ParseError.assert2(json.length < MAX_LENGTH, 'TOO_MUCH_JSON', {
+                MAX_LENGTH: MAX_LENGTH,
+                length: json.length,
+                difference: json.length - MAX_LENGTH
+            }, $ => $())
             ParseError.assert(json.length < MAX_LENGTH, $ => $('TOO_MUCH_JSON', {
                 MAX_LENGTH: MAX_LENGTH,
                 length: json.length,
@@ -2643,6 +2647,7 @@ require('proof')(182, async okay => {
         try {
             parse(JSON.stringify('x'.repeat(1023)))
         } catch (error) {
+            console.log(error)
             console.log(`${error.stack}\n`)
             okay(error.symbol, ParseError.TOO_MUCH_JSON, 'deferred assert symbol set')
             okay(error.code, 'TOO_MUCH_JSON', 'deferred assert code set')

@@ -852,6 +852,10 @@ class Interrupt extends Error {
                 return _assert(Class.assert, {}, vargs)
             }
 
+            static assert2 (...vargs) {
+                return _assert2(Class.assert2, {}, vargs)
+            }
+
             static invoke (...vargs) {
                 return _invoke(Class.invoke, {}, vargs)
             }
@@ -930,6 +934,51 @@ class Interrupt extends Error {
                 return error
             } else {
                 return new Class(Class.options.apply(Class, [{ '#callee': callees[0] }, options ].concat(vargs, { errors })))
+            }
+        }
+
+        function _construct2 (options, vargs, errors, callees) {
+            if (vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function') {
+                const poker = vargs.pop()
+                // **TODO** `'#vargs'` property in options object.
+                const merged = Class.options({ '#callee': callees[1] || $ }, options, { errors })
+                let error = null
+                function $ () {
+                    error = new Class(Class.options.apply(Class, [ merged ].concat(vargs)))
+                }
+                poker($)
+                if (error == null) {
+                    const error = new Class(Class.options.apply(Class, [ merged ].concat(vargs)))
+                    const instance = Instances.get(error)
+                    instance.errors.push({
+                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
+                    })
+                    return error
+                }
+                return error
+            } else {
+                return new Class(Class.options.apply(Class, [{ '#callee': callees[0] }, options ].concat(vargs, { errors })))
+            }
+        }
+
+        function construct2 (options, vargs, errors, ...callees) {
+            const error = _construct2(options, vargs, errors, callees)
+            if (typeof Interrupt.audit === 'function') {
+                Interrupt.audit(error, Instances.get(error).errors)
+            }
+            return error
+        }
+
+        function _assert2 (callee, options, vargs) {
+            if (typeof vargs[0] === 'object' && vargs[0] != null && vargs[0]['#type'] === OPTIONS) {
+                const merged = Class.options.apply(Class, [ options ].concat(vargs))
+                return function assert (...vargs) {
+                    return _assert2(assert, merged, vargs)
+                }
+            } else if (!vargs[0]) {
+                vargs.shift()
+                throw construct2(options, vargs, [], callee, callee)
+            } else if (typeof Interrupt.audit == 'function') {
             }
         }
 
