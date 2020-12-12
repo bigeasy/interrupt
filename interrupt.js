@@ -682,6 +682,7 @@ class Interrupt extends Error {
                     '#type': attr(OPTIONS),
                     '#errors': attr([]),
                     errors: attr([]),
+                    '#pokers': attr([]),
                     '#stack': attr(null),
                     '#callee': attr(null)
                 }
@@ -736,6 +737,27 @@ class Interrupt extends Error {
                                             if (argument[property] == null) {
                                             } else if (Array.isArray(argument[property])) {
                                                 vargs.unshift.apply(vargs, argument[property])
+                                            } else {
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case '#poker': {
+                                            if (argument[property] == null) {
+                                            } else if (typeof argument[property] == 'function') {
+                                                options['#pokers'].value.push(argument[property])
+                                            } else {
+                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                            }
+                                        }
+                                        break
+                                    case '#pokers': {
+                                            if (argument[property] == null) {
+                                            } else if (
+                                                Array.isArray(argument[property]) &&
+                                                argument[property].every(element => typeof element == 'function')
+                                            ) {
+                                                options[property].value.push.apply(options[property].value, argument[property])
                                             } else {
                                                 options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
@@ -846,22 +868,6 @@ class Interrupt extends Error {
                 return Object.defineProperties({}, options)
             }
 
-            static poke (condition, callee, poker, raise, vargs) {
-                const auditing = typeof Interrupt.audit == 'function'
-                const error = condition || auditing ? _poker(callee, poker, vargs) : null
-                if (condition) {
-                    if (raise) {
-                        throw error
-                    }
-                    return error
-                }
-                if (typeof Interrupt.audit == 'function') {
-                    const error = _poker(callee, poker, vargs)
-                    Interrupt.audit(error, Instances.get(error).errors)
-                }
-                return null
-            }
-
             static audit (options, vargs, ...callees) {
                 if (typeof Interrupt.audit == 'function') {
                     construct(options, vargs, callees[0], callees[1])
@@ -885,43 +891,22 @@ class Interrupt extends Error {
             }
         }
 
-        // Going to have to explain what a poker is and why you might want to
-        // use one. I'm introducing this after writing this out in Destructable
-        // and then wanting another one in WriteAhead. Not sure if they are
-        // useful yet, not enjoying the newest Interrupt yet.
-
-        //
-        function _poker (callee, poker, vargs) {
-            if (poker == null) {
-                return new Class(Class.options.apply(Class, [{ '#callee': callee }].concat(vargs)))
-            }
-            let error = null
-            function $ () {
-                error = new Class(Class.options.apply(Class, [{ '#callee': $ }].concat(vargs)))
-            }
-            poker($)
-            if (error == null) {
-                const error = new Class
-                const instance = Instances.get(error)
-                instance.errors.push({
-                    // **TODO** POKED_INVOCATION_NOT_CALLED
-                    code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
-                })
-                return error
-            }
-            return error
-        }
-
         function _construct (options, vargs, callees) {
-            if (vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function') {
-                const poker = vargs.pop()
-                // **TODO** `'#vargs'` property in options object.
-                const merged = Class.options({ '#callee': callees[1] || $ }, options, { '#vargs': vargs })
+            const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
+                ? Class.options(options, { '#poker': vargs.pop() }, { '#vargs': vargs })
+                : Class.options(options, { '#vargs': vargs })
+            if (prelimary['#pokers'].length != 0) {
                 let error = null
-                function $ () {
-                    error = new Class(merged)
+                const $ = function () { error = new Class(merged) }
+                const merged = Class.options({ '#callee': $ }, prelimary)
+                const pokers = merged['#pokers'].slice()
+                let previous = $
+                while (pokers.length != 0) {
+                    previous = function (caller, callee) {
+                        return caller.bind(null, callee)
+                    } (pokers.pop(), previous)
                 }
-                poker($)
+                previous()
                 if (error == null) {
                     const error = new Class(merged)
                     const instance = Instances.get(error)
@@ -932,7 +917,7 @@ class Interrupt extends Error {
                 }
                 return error
             } else {
-                return new Class(Class.options({ '#callee': callees[0] }, options, { '#vargs': vargs }))
+                return new Class(Class.options({ '#callee': callees[0] }, prelimary))
             }
         }
 
@@ -980,14 +965,15 @@ class Interrupt extends Error {
         // **TOODO** You cannot curry a poker function.
         function _callback (callee, options, vargs) {
             if (typeof vargs[vargs.length - 1] == 'function') {
-                // **TODO** Assert constructor is a function.
                 const callback = vargs.pop()
                 return function (...response) {
                     if (response[0] == null) {
                         if (Interrupt.auditing) {
                             construct(Class.options(options, { errors: [ AUDIT ] }), vargs)
                         }
-                        callback.apply(null, response)
+                        const poker = typeof vargs[vargs.length - 1] == 'function' ? vargs.pop() : null
+                        const merged = Class.options(options, { '#poker': poker }, { '#vargs': vargs })
+                        callback.apply(null, response.concat({ '#pokers': merged['#pokers'] }))
                     } else {
                         callback(construct(Class.options(options, { errors: [ response[0] ] }), vargs))
                     }

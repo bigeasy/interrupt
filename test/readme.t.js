@@ -3268,7 +3268,7 @@ require('proof')(182, async okay => {
                 UNABLE_TO_READ_FILE: 'unable to read file: %(filename)s'
             })
 
-            async read (dirname, callback) {
+            read (dirname, callback) {
                 const wrap = Reader.Error.callback({}, { dirname }), files = []
                 fs.readdir(dirname, wrap('UNABLE_TO_READ_DIRECTORY', $ => $(), (error, dir) => {
                     if (error) {

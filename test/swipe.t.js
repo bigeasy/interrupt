@@ -120,8 +120,110 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(1, async okay => {
+require('proof')(4, async okay => {
     const Interrupt = require('..')
+    // ## Stack Pokers
+
+    // Because stack traces do not survive across macrotask queues, you have to
+    // write a lot
+
+    // You can use Interrupt to catch and wrap errors in order to have a nested
+    // collection of stack traces to trace errors across macrotask invocations.
+
+    // This can get tedious quickly, however, adding a lot of code, requiring
+    // you to come up with a lot of error names. The true cause of an error
+    // might get burred in a deep nesting making your stack traces hard to read.
+
+    // Instead of wrapping error in exceptions, you can add bread crumbs to your
+    // stack trace. When the error is constructed it will will include in its
+    // stack trace the important stops along the way that brought the program to
+    // its unfortunate state. For this we use poker functions.
+
+    // Poker functions where introduced as deferred construction, but the same
+    // concept can serve an additional purpose.
+
+    // **TODO** Why not insist on using UserClass.create() instead of `new`? I
+    // suppose because you will always have to regenerate the stack in that
+    // case.
+
+    // **TODO** Okay, stuck. We could perpetuate the poke by appending options
+    // to the end of the variadic argument return, and that is sneaky, and
+    // brittle, but probably gets an example written.
+
+    // **TODO** Becomes difficult to maintain for resolve, though. But at least
+    // this would get us started on an implementation.
+
+    //
+    await new Promise(resolve => {
+        const path = require('path')
+        const fs = require('fs')
+
+        class Reader {
+            static Error = Interrupt.create('Reader.Error', {
+                UNABLE_TO_READ_DIRECTORY: 'unable to read directory: %(dirname)s',
+                UNABLE_TO_READ_FILE: 'unable to read file: %(filename)s'
+            })
+
+            read (dirname, poker, callback) {
+                fs.readdir(dirname, Reader.Error.callback({ '#poker': poker }, 'UNABLE_TO_READ_DIRECTORY', $ => $(), (error, dir, options) => {
+                    if (error) {
+                        callback(error)
+                    } else {
+                        console.log('options', options)
+                        function readFile () {
+                            if (dir.length == 0) {
+                                callback(null, files)
+                            } else {
+                                const filename = path.join(dirname, dir.shift())
+                                fs.readFile(filename, 'utf8', Reader.Error.callback(options, 'UNABLE_TO_READ_FILE', { filename }, $ => $(), (error, body) => {
+                                    if (error) {
+                                        callback(error)
+                                    } else {
+                                        files.push({ filename, body })
+                                        readFile()
+                                    }
+                                }))
+                            }
+                        }
+                        readFile()
+                    }
+                }))
+            }
+
+            readdir (...vargs) {
+                const callback = vargs.pop()
+                const dirname = vargs.shift()
+                const pokers = Reader.Error.options({ '#poker': vargs[0] })
+            }
+
+        }
+
+        const reader = new Reader
+
+        reader.read(path.join(__dirname, 'missing'), $ => $(), (error, body) => {
+            console.log('----- returned ----')
+            if (error) {
+                console.log(`${error.stack}\n`)
+                okay(error.code, 'UNABLE_TO_READ_DIRECTORY', 'curried callback wrapper code set')
+                okay(error.errors[0].code, 'ENOENT', 'curried callback nested error set')
+            } else {
+                console.log(/hippopotomus/.test(body.toString()))
+            }
+            reader.read(path.join(__dirname, 'tmp', 'eisdir'), $ => $(), (error, body) => {
+                if (error) {
+                    console.log(`${error.stack}\n`)
+                    okay(error.code, 'UNABLE_TO_READ_FILE', 'curried callback wrapper code set')
+                    okay(error.errors[0].code, 'EISDIR', 'curried callback nested error set')
+                } else {
+                    console.log(/hippopotomus/.test(body.toString()))
+                }
+                resolve()
+            })
+        })
+    })
+    return
+
+    //
     {
         class Config {
             static Error = Interrupt.create('Config.Error', {
