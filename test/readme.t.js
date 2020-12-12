@@ -1561,7 +1561,7 @@ require('proof')(182, async okay => {
             await loadConfigsFallback(path.join(__dirname, 'tmp', 'missing'))
         } catch (error) {
             // _... we got a meaningful JavaScript `TypeError` instead._
-            console.log(`${error.stack}\n`)
+            console.log(`\n${error.stack}\n`)
             okay(error instanceof TypeError, 'useful error diagnosing problems with switch statement')
         }
     }
@@ -1671,7 +1671,7 @@ require('proof')(182, async okay => {
             await load(__filename)
         } catch (error) {
             console.log(`${error.stack}\n`)
-            okay(Object.keys(error).sort(), [ 'code', 'filename' ], 'only two enumerable properties')
+            okay(Object.keys(error.properties).sort(), [ 'code', 'filename' ], 'only two enumerable properties')
             console.log(Object.getOwnPropertyNames(error))
             okay(error.hasOwnProperty('json'), 'added a non-enumerable properties')
             okay(error.json.length > 4096, 'really too big to add to the stack trace')
@@ -1735,7 +1735,7 @@ require('proof')(182, async okay => {
             parse(null)
         } catch (error) {
             console.log(`${error.stack}\n`)
-            okay(Object.keys(error), [ 'code' ], 'only code property set')
+            okay(Object.keys(error.properties), [ 'code' ], 'only code property set')
             okay(!error.propertyIsEnumerable('message'), 'despite our requests, message is not enumerable')
             okay(error.fallback, false, 'non-enumerable default property set')
         }
@@ -1744,7 +1744,7 @@ require('proof')(182, async okay => {
             parse('!')
         } catch (error) {
             console.log(`${error.stack}\n`)
-            okay(Object.keys(error), [ 'code' ], 'only code property set')
+            okay(Object.keys(error.properties), [ 'code' ], 'only code property set')
             okay(error.fallback, true, 'non-enumerable default property set')
         }
     }
@@ -2100,7 +2100,7 @@ require('proof')(182, async okay => {
             assertConfig({ _settings: { volume: 0 } })
         } catch (error) {
             console.log(`${error.stack}\n`)
-            okay({ ...error }, { code: 'PARAM_MISSING' }, 'desired context infomration removed because of underbar')
+            okay({ ...error.properties }, { code: 'PARAM_MISSING' }, 'desired context infomration removed because of underbar')
         }
     }
     //
@@ -2134,7 +2134,7 @@ require('proof')(182, async okay => {
             assertConfig({ _settings: { volume: 0 } })
         } catch (error) {
             console.log(`${error.stack}\n`)
-            okay({ ...error }, {
+            okay({ ...error.properties }, {
                 code: 'PARAM_MISSING',
                 config: { _settings: { volume: 0 } }
             }, 'we know our property names')

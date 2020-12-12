@@ -1,6 +1,3 @@
-// Node.js API.
-const util = require('util')
-
 // Return the first non-`null` like parameter.
 const coalesce = require('extant')
 
@@ -572,7 +569,6 @@ class Interrupt extends Error {
             }
         }
 
-        // **TODO** Maybe option errors are in a weak map?
         const instance = { message: null, errors: options['#errors'], options, displayed: {} }
 
         for (const property in properties) {
@@ -600,7 +596,19 @@ class Interrupt extends Error {
 
         Instances.set(this, instance)
 
-        Object.defineProperties(this, properties)
+        const invisible = {}
+        for (const property in properties) {
+            invisible[property] = { ...properties[property], enumerable: false }
+        }
+
+        invisible.properties = {
+            value: Object.defineProperties({}, properties),
+            enumerable: false,
+            writable: false,
+            configurable: false
+        }
+
+        Object.defineProperties(this, invisible)
 
         // FYI It is faster to use `Error.captureStackTrace` again than
         // it is to try to strip the stack frames created by `Error`
@@ -614,14 +622,6 @@ class Interrupt extends Error {
         }
 
         Error.stackTraceLimit = stackTraceLimit
-    }
-
-    // We ignore the depth and options. We're not going to limit the output nor
-    // sprinkle it with colors, not now and probably not ever. This was the
-    // output we got before `util.inspect` added the enumberable `Error`
-    // properties to its output.
-    [util.inspect.custom](depth, options) {
-        return this.stack
     }
 
     // Our `toString` representation mirrors that of Node.js. We remove the
