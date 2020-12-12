@@ -1,3 +1,24 @@
+## Sat Dec 12 01:43:28 CST 2020
+
+Going to break my Issues streak. No longer going to maintain a GitHub Issue for
+reference and take the time and attention spared and use it to focus on
+documentation. If it gets to where I'm actually managing an open source project
+that requires coordinating many different contributors, I'll develop the habits
+that faciliate that coordination. Currently, I'm burning up hours because of the
+spread of NPM dependencies. If I update an upstream dependency I have to
+recursively update the dependencies listing of the dependents which means
+updating `package.json` and creating a throw away issue that is immediately
+closed. I'm always looking up issues to reference when I make a commit. I'm
+more likely to write a detailed commit message, keeping a journal of changes if
+I'm not spending all this time building this index that I never use.
+
+Could still maintain cross-references using hyperlinks to GitHub releases. If
+they go away because GitHub goes away and that history is broken I wouldn't miss
+it. Really, all this should be designed to allow me to reach a point where I'm
+supporting an open source community, and that may never happen. It may never
+happen because I'm too busy with this cargo cult behavior. It may never happen
+because when it happens I find that it nothing that I can afford to do.
+
 ## Sat Dec 12 01:16:15 CST 2020
 
 Here it is. All the effort to keep the `util.inspect` dump out of the fatal
