@@ -68,7 +68,7 @@ function context (options, instance, stack = true) {
     }
 
     // A header for the stack trace unless the stack trace has been suppressed.
-    if (stack && (options['#stack'] == null || options['#stack'] != 0)) {
+    if (stack && (options.$stack == null || options.$stack != 0)) {
         message += '\n\nstack:\n'
     }
 
@@ -117,7 +117,7 @@ class Collector {
 // An assert internal to Interrupt that will not get audited.
 function assert (condition, ...vargs) {
     if (! condition) {
-        throw new Interrupt.Error(Interrupt.Error.options.apply(Interrupt.Error, [{ '#callee': assert }].concat(vargs)))
+        throw new Interrupt.Error(Interrupt.Error.options.apply(Interrupt.Error, [{ $callee: assert }].concat(vargs)))
     }
 }
 
@@ -564,12 +564,12 @@ class Interrupt extends Error {
         }
 
         for (const property of Object.getOwnPropertyNames(options)) {
-            if (property[0] != '_' && property[0] != '#' && !/^(?:name|message|stack|symbol)$/.test(property) && !(property in properties)) {
+            if (property[0] != '_' && property[0] != '$' && !/^(?:name|message|stack|symbol)$/.test(property) && !(property in properties)) {
                 properties[property] = Object.getOwnPropertyDescriptor(options, property)
             }
         }
 
-        const instance = { message: null, errors: options['#errors'], options, displayed: {} }
+        const instance = { message: null, errors: options.$errors, options, displayed: {} }
 
         for (const property in properties) {
             if (properties[property].enumerable) {
@@ -578,8 +578,8 @@ class Interrupt extends Error {
         }
 
         const stackTraceLimit = Error.stackTraceLimit
-        if (options['#stack'] != null) {
-            Error.stackTraceLimit = options['#stack']
+        if (options.$stack != null) {
+            Error.stackTraceLimit = options.$stack
         }
 
         // **TODO** Display internal errors.
@@ -587,7 +587,7 @@ class Interrupt extends Error {
             options.code == null &&
             options.message == null &&
             options.errors.length == 0 &&
-            Object.keys(options).filter(name => !/^#|^errors$/.test(name)).length == 0
+            Object.keys(options).filter(name => !/^\$|^#|^errors$/.test(name)).length == 0
         ) {
             super()
         } else {
@@ -617,8 +617,8 @@ class Interrupt extends Error {
         // coming back to experiment with it.
 
         //
-        if (options['#callee'] != null) {
-            Error.captureStackTrace(this, options['#callee'])
+        if (options.$callee != null) {
+            Error.captureStackTrace(this, options.$callee)
         }
 
         Error.stackTraceLimit = stackTraceLimit
@@ -639,7 +639,7 @@ class Interrupt extends Error {
     }
 
     static get CURRY () {
-        return { '#type': OPTIONS }
+        return { $type: OPTIONS }
     }
 
     static get auditing () {
@@ -679,12 +679,12 @@ class Interrupt extends Error {
                     return { value: value, enumerable: true, writable: true, configurable: true }
                 }
                 const options = {
-                    '#type': attr(OPTIONS),
-                    '#errors': attr([]),
+                    $type: attr(OPTIONS),
+                    $errors: attr([]),
                     errors: attr([]),
-                    '#pokers': attr([]),
-                    '#stack': attr(null),
-                    '#callee': attr(null)
+                    $pokers: attr([]),
+                    $stack: attr(null),
+                    $callee: attr(null)
                 }
                 while (vargs.length != 0) {
                     const argument = vargs.shift()
@@ -710,16 +710,16 @@ class Interrupt extends Error {
                         break
                     case 'number': {
                             if ((Number.isInteger(argument) || argument == Infinity) && argument >= 0) {
-                                options['#stack'] = attr(argument)
+                                options.$stack = attr(argument)
                             } else {
-                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE')))
+                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE')))
                             }
                         }
                         break
                     case 'object': {
                             if (argument == null) {
                                 // **TODO** code = { text, symbol } // name? label? identifier? id? string?
-                                options['#errors'].push(combine(Interrupt.Error.codes('NULL_ARGUMENT')))
+                                options.$errors.push(combine(Interrupt.Error.codes('NULL_ARGUMENT')))
                             } else if (argument instanceof Error) {
                                 options.errors.value.push(argument)
                             } else if (Array.isArray(argument)) {
@@ -727,31 +727,31 @@ class Interrupt extends Error {
                             } else {
                                 for (const property of Object.getOwnPropertyNames(argument)) {
                                     switch (property) {
-                                    case '#type': {
+                                    case '$type': {
                                             if (argument[property] !== OPTIONS) {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
-                                    case '#vargs': {
+                                    case '$vargs': {
                                             if (argument[property] == null) {
                                             } else if (Array.isArray(argument[property])) {
                                                 vargs.unshift.apply(vargs, argument[property])
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
-                                    case '#poker': {
+                                    case '$poker': {
                                             if (argument[property] == null) {
                                             } else if (typeof argument[property] == 'function') {
-                                                options['#pokers'].value.push(argument[property])
+                                                options.$pokers.value.push(argument[property])
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
-                                    case '#pokers': {
+                                    case '$pokers': {
                                             if (argument[property] == null) {
                                             } else if (
                                                 Array.isArray(argument[property]) &&
@@ -759,43 +759,43 @@ class Interrupt extends Error {
                                             ) {
                                                 options[property].value.push.apply(options[property].value, argument[property])
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
-                                    case '#errors': {
+                                    case '$errors': {
                                             if (
                                                 Array.isArray(argument[property]) &&
                                                 argument[property].every(error => {
                                                     return Interrupt.Error[error.code] === error.symbol
                                                 })
                                             ) {
-                                                options['#errors'].value.push.apply(options['#errors'].value, argument[property])
+                                                options.$errors.value.push.apply(options.$errors.value, argument[property])
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
-                                    case '#stack': {
+                                    case '$stack': {
                                             const stack = argument[property]
                                             if (stack == null) {
                                             } else if ((Number.isInteger(stack) || stack == Infinity) && stack >= 0) {
-                                                options['#stack'] = attr(stack)
+                                                options.$stack = attr(stack)
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
                                     case 'stack':
                                     case 'name': {
-                                            options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_NAME'), { property }))
+                                            options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_NAME'), { property }))
                                         }
                                         break
                                     case 'errors': {
                                             if (Array.isArray(argument[property])) {
                                                 options.errors.value.push.apply(options.errors.value, argument[property])
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -804,7 +804,7 @@ class Interrupt extends Error {
                                             } else if (typeof argument[property] === 'string') {
                                                 options.message = attr(argument[property])
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -815,13 +815,13 @@ class Interrupt extends Error {
                                                 if (Prototype.prototypes[argument[property]]) {
                                                     options.code = attr(argument[property])
                                                 } else {
-                                                    options['#errors'].value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
+                                                    options.$errors.value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
                                                         property: property,
                                                         value: argument[property]
                                                     }))
                                                 }
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.code('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.code('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
@@ -832,28 +832,28 @@ class Interrupt extends Error {
                                                 if (code != null) {
                                                     options.code = attr(code)
                                                 } else {
-                                                    options['#errors'].value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
+                                                    options.$errors.value.push(combine(Interrupt.Error.codes('UNKNOWN_CODE'), {
                                                         property: property,
                                                         value: argument[property]
                                                     }))
                                                 }
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
-                                    case '#callee': {
+                                    case '$callee': {
                                             if (argument[property] == null) {
                                             } else if (typeof argument[property] == 'function') {
                                                 options[property] = attr(argument[property])
                                             } else {
-                                                options['#errors'].value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
+                                                options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE'), { property }))
                                             }
                                         }
                                         break
                                     default: {
-                                            if (!RE.identifier.test(property) && property != '#stack') {
-                                                options['#errors'].value.push(combine(Interrupt.Error.code('INVALID_PROPERTY_NAME'), { property }))
+                                            if (!RE.identifier.test(property)) {
+                                                options.$errors.value.push(combine(Interrupt.Error.code('INVALID_PROPERTY_NAME'), { property }))
                                             } else {
                                                 options[property] = Object.getOwnPropertyDescriptor(argument, property)
                                             }
@@ -898,13 +898,13 @@ class Interrupt extends Error {
         function _construct (options, vargs, callees) {
             debugger
             const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
-                ? Class.options(options, { '#vargs': vargs }, { '#poker': vargs.pop() })
-                : Class.options(options, { '#vargs': vargs })
-            if (prelimary['#pokers'].length != 0) {
+                ? Class.options(options, { $vargs: vargs }, { $poker: vargs.pop() })
+                : Class.options(options, { $vargs: vargs })
+            if (prelimary.$pokers.length != 0) {
                 let error = null
                 const $ = function () { error = new Class(merged) }
-                const merged = Class.options({ '#callee': $ }, prelimary)
-                const pokers = merged['#pokers'].slice()
+                const merged = Class.options({ $callee: $ }, prelimary)
+                const pokers = merged.$pokers.slice()
                 let previous = $
                 while (pokers.length != 0) {
                     previous = function (caller, callee) {
@@ -922,7 +922,7 @@ class Interrupt extends Error {
                 }
                 return error
             } else {
-                return new Class(Class.options({ '#callee': callees[0] }, prelimary))
+                return new Class(Class.options({ $callee: callees[0] }, prelimary))
             }
         }
 
@@ -935,8 +935,8 @@ class Interrupt extends Error {
         }
 
         function _assert (callee, options, vargs) {
-            if (typeof vargs[0] === 'object' && vargs[0] != null && vargs[0]['#type'] === OPTIONS) {
-                const curried = Class.options(options, { '#vargs': vargs })
+            if (typeof vargs[0] === 'object' && vargs[0] != null && vargs[0].$type === OPTIONS) {
+                const curried = Class.options(options, { $vargs: vargs })
                 return function assert (...vargs) {
                     return _assert(assert, curried, vargs)
                 }
@@ -961,7 +961,7 @@ class Interrupt extends Error {
                     throw construct(Class.options(options, { errors: [ error ] }), vargs, callee, callee)
                 }
             }
-            const curried = Class.options(options, { '#vargs': vargs })
+            const curried = Class.options(options, { $vargs: vargs })
             return function invoker (...vargs) {
                 return _invoke(invoker, curried, vargs)
             }
@@ -977,14 +977,14 @@ class Interrupt extends Error {
                             construct(Class.options(options, { errors: [ AUDIT ] }), vargs)
                         }
                         const poker = typeof vargs[vargs.length - 1] == 'function' ? vargs.pop() : null
-                        const merged = Class.options(options, { '#poker': poker }, { '#vargs': vargs })
-                        callback.apply(null, response.concat({ '#pokers': merged['#pokers'] }))
+                        const merged = Class.options(options, { $poker: poker }, { $vargs: vargs })
+                        callback.apply(null, response.concat({ $pokers: merged.$pokers }))
                     } else {
                         callback(construct(Class.options(options, { errors: [ response[0] ] }), vargs))
                     }
                 }
             }
-            const merged = Class.options(options, { '#vargs': vargs })
+            const merged = Class.options(options, { $vargs: vargs })
             return function wrapper (...vargs) {
                 return _callback(wrapper, merged, vargs)
             }
@@ -1018,7 +1018,7 @@ class Interrupt extends Error {
             ) {
                 return resolve(callee, vargs.shift(), options, vargs)
             }
-            const merged = Class.options(options, { '#vargs': vargs })
+            const merged = Class.options(options, { $vargs: vargs })
             return function resolver (...vargs) {
                 return _resolver(resolver, merged, vargs)
             }
