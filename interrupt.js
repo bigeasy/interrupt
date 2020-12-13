@@ -883,7 +883,6 @@ class Interrupt extends Error {
         }
 
         function _construct (options, vargs, callees) {
-            debugger
             const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
                 ? Class.options(options, { $vargs: vargs }, { $pokers: vargs.pop() })
                 : Class.options(options, { $vargs: vargs })
