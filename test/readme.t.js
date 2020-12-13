@@ -74,7 +74,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(182, async okay => {
+require('proof')(200, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -554,9 +554,6 @@ require('proof')(182, async okay => {
     }
     //
 
-    // **TODO** When you implement multi-line error messages, the description of
-    // how to use them goes here.
-
     // If you provide a code parameter that was not defined when you called
     // `Interrupt.create()` the string value is used as a message.
 
@@ -850,9 +847,12 @@ require('proof')(182, async okay => {
     // or a `JSONError`.
 
 
-    // **TODO** Rewrite pass ends here.
+    // **TODO** Got into the rough draft below, but should restart here. Seems
+    // like there is more code discussion below, probably so that we could
+    // introduce code prototypes after talking about properties.
 
     // **TODO** We probably need sub-headings.
+
     // **TODO** Move this up above symbols.
 
     // **TODO** Additional codes.
@@ -910,14 +910,13 @@ require('proof')(182, async okay => {
         const path = require('path')
         const fs = require('fs').promises
 
-        const ReaderError = Interrupt.create('ConfigError', {
+        const ReaderError = Interrupt.create('ReaderError', {
             FILE_READ_ERROR: 'unable to read file'
         })
 
-        // **TODO** Obviously broken. Please fix.
         async function read (filename) {
             try {
-                return await fs.readdir(dirname)
+                return await fs.readFile(filename)
             } catch (error) {
                 throw new ReaderError('FILE_READ_ERROR', { filename })
             }
@@ -935,8 +934,166 @@ require('proof')(182, async okay => {
     }
     //
 
-    // Properties primarily be used for reporting. Only codes and other flags
-    // should be acted upon in a catch block.
+    // The properties set on the constructed exception are always
+    // non-enumerable. This is because Node.js has developed this annoying habit
+    // of dumping enumberable properties after the stack trace using
+    // `util.inspect()`. This is annoying because we already dumped the
+    // properties using JSON which we can parse post-mortem.
+
+    // We can't parse `util.inspect()` output, so we won't be deferring to
+    // Node.js on this one. We're going to defeat it. We do this by making all
+    // of the properties non-enumerable. You can't dump what you can't see.
+
+    //
+    console.log('\n--- error properties are non-enumerable ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ReaderError', {
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function read (filename, encoding) {
+            try {
+                return await fs.readFile(filename, encoding)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR', { filename, encoding })
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename, 'utf8')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(error.code, 'FILE_READ_ERROR', 'properties property example code set')
+            okay(error.filename, filename, 'error property enumerability example filename property set')
+            okay(error.encoding, 'utf8', 'error property enumerability example encoding property set')
+            okay(Object.keys(error), [], 'no enumerable properties in error')
+            okay('code' in error, 'remember that the in operator works on non-enumerable properties')
+            okay(Object.getOwnPropertyNames(error).sort(), [
+                'code', 'encoding', 'errors', 'filename', 'message', 'name', 'properties', 'stack', 'symbol'
+            ], 'all of the error properties regardless of enumerability')
+        }
+    }
+    //
+
+    // You can see that the `in` operator still works with non-enumerable
+    // properties, so you'll be able to check to see if a property is present.
+
+    // You won't be able to iterate over the properties in an error unless you
+    // use `Object.getOwnPropertyNames()`. Using destructure to copy attempting
+    // to serialize using JSON will create an empty object.
+
+    // We also provide a copy of all the properties with their enumerability
+    // preserved in the `properties` property.
+
+    //
+    console.log('\n--- using the enumerable properties property ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ReaderError', {
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function read (filename, encoding) {
+            try {
+                return await fs.readFile(filename, encoding)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR', { filename, encoding })
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename, 'utf8')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(error.code, 'FILE_READ_ERROR', 'properties property example code set')
+            okay(error.properties.filename, filename, 'properties property example filename property set')
+            okay(error.properties.encoding, 'utf8', 'properties property example encoding property set')
+            okay(Object.keys(error), [], 'no enumerable properties in error')
+            okay(Object.keys(error.properties).sort(), [ 'code', 'encoding', 'filename' ], 'all of the enumerable properties')
+            okay(Object.getOwnPropertyNames(error.properties).sort(), [
+                'code', 'encoding', 'errors', 'filename', 'message', 'name', 'symbol'
+            ], 'all of the properties on the properties property regardless of enumerability (stack and properties are excluded)')
+        }
+    }
+    //
+
+    // The `properties` property is serializable with JSON, can be copied with
+    // destructuring, and the enumerable properties comprise the output see in
+    // the stack trace.
+
+    // While all the properties on the error are always non-enumerable,  the
+    // enumerability of the properties in the properties `property` is
+    // determined by the enumerability of the property in the properties object
+    // given to the constructor.
+
+    // Any property that is non-enumerable in the properties object given to the
+    // constructor will be non-enumberable in the `properties` property.
+
+    // Furthermore, non-enumberable properties in the `properties` property will
+    // not be displayed in the stack trace.
+
+    //
+    console.log('\n--- non-enumerable properties hidden from stack trace  ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ReaderError', {
+            FILE_READ_ERROR: 'unable to read file'
+        })
+
+        async function read (filename, encoding) {
+            try {
+                return await fs.readFile(filename, encoding)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR', Object.defineProperties({}, {
+                    filename: { value: filename, enumerable: true },
+                    encoding: { value: encoding, enumerable: false }
+                }))
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename, 'utf8')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(error.code, 'FILE_READ_ERROR', 'non-enumerable properties example code set')
+            okay(error.filename, filename, 'non-enumerable properties example filename property set')
+            okay(error.encoding, 'utf8', 'non-enumberable encoding property set')
+            okay(Object.keys(error), [], 'non-enumerable properties no enumerable properties in error')
+            okay(Object.keys(error.properties).sort(), [ 'code', 'filename' ], 'non-enumerable trait of property preserved in properties')
+            okay(error.properties.encoding, 'utf8', 'non-enumerable encoding in properties property')
+        }
+    }
+    //
+
+    // Because non-enumerable properties do not appear in the stack trace, they
+    // are particularly useful if you want to set a property with a value that
+    // would be poorly represented in the stack trace. Symbols do not serialize
+    // nicely, so you may choose to suppress a `Symbol` flag from stack trace
+    // output.
+
+    // We're about to talk about how you shouldn't be passing application data
+    // around in exceptions so we're not suggesting that you throw exceptions
+    // with large object trees properties or `Buffer` properties. In fact, we're
+    // going to really bang on about it for a bit.
+
+    // Properties should primarily be used for reporting. Only codes and other
+    // flags should be acted upon in a catch block.
+
+    // In this example we use the `error.filename` property as an argument to
+    // `readOrCreate` when we retry our read.
 
     //
     console.log('\n--- the bad practice of using exception properties in application logic ---\n')
@@ -982,21 +1139,22 @@ require('proof')(182, async okay => {
     }
     //
 
-    // There are many reasons why this is bad, but primarily you've now treating
-    // your exceptions as if they where a part of your interface. If someone
-    // decides they don't like having the directory reported, or they decide to
-    // rename the `dirame` property to `directoryName` the code will break.
-
-    // The exception properties will have to be documented so that users can
-    // depend on then.
-
-    // Instead, admonish your users not to use the properties, they are for
-    // reporting only, except for the error code.
+    // There are many reasons why this is bad.
 
     // Catch blocks that perform recovery should not be at the root of the call
     // stack. They should be as close to the source of the error as possible and
     // they should be able to perform any recovery using the variables visible
-    // within the scope of the catch block.
+    // within the scope of the catch block. There should be no need for a
+    // catch block that is responding to an error to retrieve the arguments it
+    // used to call the function from the properties of the thrown exception.
+
+    // If you do this, you're now treating your exceptions as if they where a
+    // part of your interface. If someone decides they don't like having the
+    // directory reported, or they decide to rename the `dirame` property to
+    // `directoryName` the code will break.
+
+    // Instead, admonish your users not to use these properties, they are for
+    // context in the stack trace only, except for the error code.
 
     //
     console.log('\n--- use the variables in scope in your catch block instead ---\n')
@@ -1088,12 +1246,12 @@ require('proof')(182, async okay => {
     }
     //
 
-    // Actually, how about we don't make a rule? Let's call this an opinion. I
-    // just don't want you, dear reader, to mistakenly think that Interrupt is
-    // encouraging you migrate your application code into the catch blocks.
-    // Interrupt is all about reporting. Exceptions are tricky on a good day.
-    // The error path is fraught with peril. Try to keep your application logic
-    // out of it if you can.
+    // Actually, how about we don't make a rule? If I'm sounding opinionated
+    // it's simply that I don't want you, dear reader, to mistakenly think that
+    // Interrupt is encouraging you to migrate your application code into the
+    // catch blocks. Interrupt is all about reporting. Exceptions are tricky on
+    // a good day. The error path is fraught with peril. Try to keep your
+    // application logic out of it if you can.
 
     // In addition to setting properties at construction, you can assign default
     // properties by code.
@@ -1165,6 +1323,8 @@ require('proof')(182, async okay => {
         }
     }
     //
+
+    // **TODO** Now we're talking about codes again. Shouldn't this be above?
 
     // Once you've started to use codes you may find that one code per error is
     // not enough. You may want to have additional codes to classify errors.
@@ -1934,8 +2094,6 @@ require('proof')(182, async okay => {
     }
     //
 
-    // **TODO** Left off documentation here.
-
     // The `Interrupt.JSON` functions do not support custom `replacer` or
     // `reviver` functions and you cannot adjust the indent, it is always four
     // spaces.
@@ -2141,6 +2299,9 @@ require('proof')(182, async okay => {
         }
     }
     //
+
+    // **TODO** When you implement multi-line error messages, the description of
+    // how to use them goes here.
 
     // ## Message Tables
 

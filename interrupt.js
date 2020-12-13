@@ -601,6 +601,13 @@ class Interrupt extends Error {
             invisible[property] = { ...properties[property], enumerable: false }
         }
 
+        properties.message = {
+            value: instance.message || '',
+            enumerable: false,
+            writable: true,
+            configurable: true
+        }
+
         invisible.properties = {
             value: Object.defineProperties({}, properties),
             enumerable: false,
@@ -953,7 +960,6 @@ class Interrupt extends Error {
             }
         }
 
-        // **TOODO** You cannot curry a poker function.
         function _callback (callee, options, vargs) {
             if (typeof vargs[vargs.length - 1] == 'function') {
                 const callback = vargs.pop()
@@ -996,8 +1002,6 @@ class Interrupt extends Error {
                     throw construct(Class.options(options, { errors: [ error ] }), vargs, callee)
                 }
                 const result = await f
-                // **TODO** No, I don't want to do this merge every time. Yes, just
-                // go ahead and have the test condition here.
                 if (Interrupt.auditing) {
                     construct(Class.options(options, { errors: [ AUDIT ] }), vargs, callee)
                 }
