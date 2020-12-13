@@ -3863,7 +3863,7 @@ require('proof')(200, async okay => {
         console.log('')
 
         okay(Object.keys(object).sort(), [
-            '_errors', 'className', 'errors', 'message', 'properties', 'stack'
+            '$errors', 'className', 'errors', 'message', 'properties', 'stack'
         ], 'properties of parsed object')
 
         okay({
@@ -3877,12 +3877,12 @@ require('proof')(200, async okay => {
                         message: object.message,
                         properties: object.properties,
                         errors: object.errors,
-                        _errors: object.errors,
+                        $errors: object.errors,
                         top: path.basename(object.stack[0].file)
                     }
                 }
             }),
-            _errors: object._errors,
+            $errors: object.$errors,
             top: path.basename(object.stack[0].file)
         }, {
             className: 'Config.Error',
@@ -3893,10 +3893,10 @@ require('proof')(200, async okay => {
                 message: 'nested',
                 properties: { code: 'ERRORED' },
                 errors: [],
-                _errors: [],
+                $errors: [],
                 top: 'readme.t.js'
             }],
-            _errors: [],
+            $errors: [],
             top: 'readme.t.js'
         }, 'parsed stack traces object values')
     }
