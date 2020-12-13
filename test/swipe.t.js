@@ -120,7 +120,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(4, async okay => {
+require('proof')(5, async okay => {
     const Interrupt = require('..')
     // ## Stack Pokers
 
@@ -232,7 +232,7 @@ require('proof')(4, async okay => {
         } catch (error) {
             console.log(`${error.stack}\n`)
             console.log(Interrupt.errors(error))
-            console.log(Interrupt.parse(error.stack))
+            okay(Interrupt.parse(error.stack).$errors, [{ code: 'NULL_ARGUMENT' }], 'parsed construction errors')
         }
     }
     //
