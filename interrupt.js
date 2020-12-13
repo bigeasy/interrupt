@@ -878,8 +878,8 @@ class Interrupt extends Error {
                 return Object.defineProperties({}, options)
             }
 
-            static create (options, vargs, ...callees) {
-                return construct(options, vargs, callees[0], callees[1])
+            static create (options, vargs, $callee) {
+                return construct(options, vargs, coalesce($callee, Class.create))
             }
 
             static assert (...vargs) {
@@ -899,7 +899,7 @@ class Interrupt extends Error {
             }
         }
 
-        function _construct (options, vargs, callees) {
+        function _construct (options, vargs, $callee) {
             const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
                 ? Class.options(options, { $vargs: vargs }, { $pokers: vargs.pop() })
                 : Class.options(options, { $vargs: vargs })
@@ -925,12 +925,12 @@ class Interrupt extends Error {
                 }
                 return error
             } else {
-                return new Class(Class.options({ $callee: callees[0] }, prelimary))
+                return new Class(Class.options({ $callee }, prelimary))
             }
         }
 
-        function construct (options, vargs, ...callees) {
-            const error = _construct(options, vargs, callees)
+        function construct (options, vargs, callee) {
+            const error = _construct(options, vargs, callee)
             if (Interrupt.auditing) {
                 Interrupt.audit(error, Instances.get(error).errors)
             }
@@ -945,9 +945,9 @@ class Interrupt extends Error {
                 }
             } else if (!vargs[0]) {
                 vargs.shift()
-                throw construct(options, vargs, callee, callee)
+                throw construct(options, vargs, callee)
             } else if (Interrupt.auditing) {
-                construct(options, vargs, callee, callee)
+                construct(options, vargs, callee)
             }
         }
 
@@ -957,11 +957,11 @@ class Interrupt extends Error {
                 try {
                     const result = f()
                     if (Interrupt.auditing) {
-                        construct(Class.options(options, { errors: [ AUDIT ] }), vargs, callee, callee)
+                        construct(Class.options(options, { errors: [ AUDIT ] }), vargs, callee)
                     }
                     return result
                 } catch (error) {
-                    throw construct(Class.options(options, { errors: [ error ] }), vargs, callee, callee)
+                    throw construct(Class.options(options, { errors: [ error ] }), vargs, callee)
                 }
             }
             const curried = Class.options(options, { $vargs: vargs })
@@ -1013,7 +1013,7 @@ class Interrupt extends Error {
                 }
                 const result = await f
                 if (Interrupt.auditing) {
-                    construct(Class.options(options, { errors: [ AUDIT ] }), vargs, callee)
+                    construct(Class.options(options, { errors: [ AUDIT ] }), vargs, resolve)
                 }
                 return result
             } catch (error) {
