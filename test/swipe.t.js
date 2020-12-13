@@ -221,7 +221,24 @@ require('proof')(4, async okay => {
             })
         })
     })
-    return
+    //
+
+    // **TODO** Revisiting deferred construction.
+
+    // We can reserve a single argument function for poker functions and use a
+    // no argument function as a deferred constructor. Whatever is returned is
+    // used as an argument.
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARSE_ERROR: 'unable to parse JSON'
+        })
+
+        try {
+            throw new ConfigError(() => 'CONFIG_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+        }
+    }
 
     //
     {
