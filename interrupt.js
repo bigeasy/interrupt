@@ -865,12 +865,6 @@ class Interrupt extends Error {
                 return construct(options, vargs, callees[0], callees[1])
             }
 
-            static audit (options, vargs, ...callees) {
-                if (typeof Interrupt.audit == 'function') {
-                    construct(options, vargs, callees[0], callees[1])
-                }
-            }
-
             static assert (...vargs) {
                 return _assert(Class.assert, {}, vargs)
             }
