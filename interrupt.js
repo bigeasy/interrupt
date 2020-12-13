@@ -975,11 +975,25 @@ class Interrupt extends Error {
                 return _callback(wrapper, merged, vargs)
             }
         }
+        //
 
+        // If we raise an exception before awaiting `f`, our stack trace is
+        // synchronous and includes the the entry point `callee`, it is the
+        // synchronous path we followed to reach this point. If an exception is
+        // raised from the await, then the path that reached this function has
+        // already returned. It returned the `Promise` created for this `async`
+        // function. The user is waiting for this `async` function to resolve
+        // and the `callee` is no longer applicable.
+
+        //
         async function resolve (callee, f, options, vargs) {
             try {
-                if (typeof f == 'function') {
-                    f = f()
+                try {
+                    if (typeof f == 'function') {
+                        f = f()
+                    }
+                } catch (error) {
+                    throw construct(Class.options(options, { errors: [ error ] }), vargs, callee)
                 }
                 const result = await f
                 // **TODO** No, I don't want to do this merge every time. Yes, just
@@ -989,7 +1003,7 @@ class Interrupt extends Error {
                 }
                 return result
             } catch (error) {
-                throw construct(Class.options(options, { errors: [ error ] }), vargs, callee)
+                throw construct(Class.options(options, { errors: [ error ] }), vargs, resolve)
             }
         }
 
