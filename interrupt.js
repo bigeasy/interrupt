@@ -53,6 +53,9 @@ function context (options, instance, stack = true) {
     if (Object.keys(instance.displayed).length != 0) {
         message += '\n\n' + Interrupt.JSON.stringify(instance.displayed)
     }
+    if (instance.errors.length != 0) {
+        message += '\n\n' + Interrupt.JSON.stringify(instance.errors)
+    }
     // **TODO** Without context messages we have more space. We could, if the
     // type is not an Error, serialize the cause as JSON. Parsing would be a
     // matter of detecting if it is an error, if not it is going to be JSON.
@@ -243,13 +246,15 @@ class Interrupt extends Error {
         // message and a stack that starts with `'    at'`.
         static _START = {
             'properties': '{',
+            '$errors': '[',
             'stack': 'stack:',
             'errors': 'cause:'
         }
 
         static _TRANSITION = {
-            'message': [ 'properties', 'errors', 'stack' ],
-            'properties': [ 'errors', 'stack' ],
+            'message': [ 'properties', '$errors', 'errors', 'stack' ],
+            'properties': [ '$errors', 'errors', 'stack' ],
+            '$errors': [ 'errors', 'stack' ],
             'errors': [ 'errors', 'stack' ],
             'stack': [],
             'object': []
@@ -258,6 +263,7 @@ class Interrupt extends Error {
         static _INCLUDE = {
             'message': false,
             'properties': true,
+            '$errors': true,
             'errors': false,
             'stack': 'false'
         }
@@ -271,6 +277,10 @@ class Interrupt extends Error {
                 break
             case 'properties': {
                     this._node.properties = Interrupt.JSON.parse(this._collector.end())
+                }
+                break
+            case '$errors': {
+                    this._node.$errors = Interrupt.JSON.parse(this._collector.end())
                 }
                 break
             case 'stack': {
@@ -347,7 +357,7 @@ class Interrupt extends Error {
                         message: null,
                         properties: {},
                         errors: [],
-                        _errors: [],
+                        $errors: [],
                         stack: []
                     }
                     if (separator != null) {
@@ -586,7 +596,7 @@ class Interrupt extends Error {
         if (
             options.code == null &&
             options.message == null &&
-            options.errors.length == 0 &&
+            options.$errors.length == 0 &&
             Object.keys(options).filter(name => !/^\$|^#|^errors$/.test(name)).length == 0
         ) {
             super()
@@ -726,7 +736,7 @@ class Interrupt extends Error {
                     case 'object': {
                             if (argument == null) {
                                 // **TODO** code = { text, symbol } // name? label? identifier? id? string?
-                                options.$errors.push(combine(Interrupt.Error.codes('NULL_ARGUMENT')))
+                                options.$errors.value.push(combine(Interrupt.Error.code('NULL_ARGUMENT')))
                             } else if (argument instanceof Error) {
                                 options.errors.value.push(argument)
                             } else if (Array.isArray(argument)) {
@@ -1211,6 +1221,14 @@ class Interrupt extends Error {
             return instance.message
         }
         return coalesce(error.message)
+    }
+
+    static errors (error) {
+        const instance = Instances.get(error)
+        if (instance == null) {
+            return []
+        }
+        return instance.errors
     }
 
     static parse (stack) {

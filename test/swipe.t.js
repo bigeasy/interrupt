@@ -222,7 +222,21 @@ require('proof')(4, async okay => {
         })
     })
     //
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARSE_ERROR: 'unable to parse JSON'
+        })
 
+        try {
+            throw new ConfigError(null)
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            console.log(Interrupt.errors(error))
+            console.log(Interrupt.parse(error.stack))
+        }
+    }
+    //
+    return
     // **TODO** Revisiting deferred construction.
 
     // We can reserve a single argument function for poker functions and use a
@@ -256,7 +270,6 @@ require('proof')(4, async okay => {
         console.log(new Config.Error('IO_ERROR', [ new Config.Error(1, 'IO_ERROR', new Error('hello'), { hello: 'world' }) ]))
         okay('done')
     }
-    return
     //
 
     // ## Error Heirarchies
