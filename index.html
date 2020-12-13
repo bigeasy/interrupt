@@ -5,16 +5,45 @@
   <link href="https://fonts.googleapis.com/css?family=Sorts+Mill+Goudy">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/styles/tomorrow-night.min.css" integrity="sha512-Ly91v1PH9MuXZoEzAV762yfHfn7sAaUHOrv5a3d27/Pk6trrRcEJTXQrU3lgxC/v4+CzRqAK68hnHnDx2agvng==" crossorigin="anonymous"></head><body><a href="https://github.com/bigeasy/interrupt/"><img style="position: fixed; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
   <style type="text/css">
+    @font-face {
+        font-family: 'aller-light';
+        src: url('docco/public/fonts/aller-light.eot');
+        src: url('docco/public/fonts/aller-light.eot?#iefix') format('embedded-opentype'),
+             url('docco/public/fonts/aller-light.woff') format('woff'),
+             url('docco/public/fonts/aller-light.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'aller-bold';
+        src: url('docco/public/fonts/aller-bold.eot');
+        src: url('docco/public/fonts/aller-bold.eot?#iefix') format('embedded-opentype'),
+             url('docco/public/fonts/aller-bold.woff') format('woff'),
+             url('docco/public/fonts/aller-bold.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'roboto-black';
+        src: url('docco/public/fonts/roboto-black.eot');
+        src: url('docco/public/fonts/roboto-black.eot?#iefix') format('embedded-opentype'),
+             url('docco/public/fonts/roboto-black.woff') format('woff'),
+             url('docco/public/fonts/roboto-black.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+    }
     body {
         display: flex;
         flex-direction: column;
-        font-family: 'Source Sans Pro', Merriweather, Geneva, "Helvetica Neue", "Gill Sans", Geneva, Times, Georgia, Geneva, Avenir, "Helvetica Neue";
+        font-family: 'aller-light', 'Source Sans Pro', Merriweather, Geneva, "Helvetica Neue", "Gill Sans", Geneva, Times, Georgia, Geneva, Avenir, "Helvetica Neue";
     }
     h1, h2 {
-        font-family: Inconsolata;
+        font-family: Inconsolata, Menlo, Monaco, Consolas, "Lucida Console", monospace;
     }
     h2.invocation {
-      font-family: Inconsolata;
+      font-family: Inconsolata, Menlo, Monaco, Consolas, "Lucida Console", monospace;
       border: 1px dotted gray;
       font-size: 0.95em;
       padding: 0.75em 1em 0.75em 1em;
@@ -26,10 +55,10 @@
       margin-left: 3em;
     }
     ul code {
-        font-family: Inconsolata;
+        font-family: Inconsolata, Menlo, Monaco, Consolas, "Lucida Console", monospace;
     }
     p code {
-        font-family: Inconsolata;
+        font-family: Inconsolata, Menlo, Monaco, Consolas, "Lucida Console", monospace;
         padding-left: 3px;
         padding-right: 3px;
         border: 1px dotted gray;
@@ -49,7 +78,7 @@
         margin-bottom: 0.25em;
     }
     pre > code.hljs {
-        font-family: Inconsolata;
+        font-family: Inconsolata, Menlo, Monaco, Consolas, "Lucida Console", monospace;
         padding: 1em;
     }
     div {
@@ -185,14 +214,19 @@
               An optional type indicator that if given, must always have the value
               <code>Interrupt.OPTIONS</code>.
             </li><li>
-              <code>&apos;#errors&apos; | Array</code> &#x2014;
-              An array of error objects that describe construction errors
-              encountered while constructing the error itself.
+              <code>&apos;#vargs&apos; | [ properties{} | [[ code | message ] | error | errors[] | stackTraceLimit ]*]</code> &#x2014;
+              A single variadic arguments array that will be processed as
+              additional positional arguments appended after the current set of
+              properties in the properties object.
             </li><li>
               <code>&apos;#callee&apos; | Function</code> &#x2014;
               A function used to prune the stack trace, stack frames above the
               given callee will be removed from the stack trace using
               Error.captureStackTrace().
+            </li><li>
+              <code>&apos;#errors&apos; | Array</code> &#x2014;
+              An array of error objects that describe construction errors
+              encountered while constructing the error itself.
           </li></ul>
         </li><li>
           <code>code | message : String</code> &#x2014;
