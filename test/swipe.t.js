@@ -120,7 +120,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(5, async okay => {
+require('proof')(6, async okay => {
     const Interrupt = require('..')
     // ## Stack Pokers
 
@@ -266,6 +266,23 @@ require('proof')(5, async okay => {
             console.log(`${error.stack}\n`)
             console.log(Interrupt.errors(error))
             okay(Interrupt.parse(error.stack).$errors, [{ code: 'NULL_ARGUMENT' }], 'parsed construction errors')
+        }
+    }
+
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARSE_ERROR: `
+                unable to parse JSON
+
+                multi-line message
+            `
+        })
+
+        try {
+            throw new ConfigError('PARSE_ERROR')
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.parse(error.stack).message, 'unable to parse JSON\n\nmulti-line message', 'parse multi-line messaged')
         }
     }
     //

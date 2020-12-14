@@ -74,7 +74,7 @@
 // Out unit test begins here.
 
 //
-require('proof')(200, async okay => {
+require('proof')(206, async okay => {
     // To use Interrupt install it from NPM using the following.
     //
     // ```text
@@ -1253,6 +1253,8 @@ require('proof')(200, async okay => {
     // a good day. The error path is fraught with peril. Try to keep your
     // application logic out of it if you can.
 
+    // ## Error Prototypes
+
     // In addition to setting properties at construction, you can assign default
     // properties by code.
 
@@ -1324,7 +1326,317 @@ require('proof')(200, async okay => {
     }
     //
 
+    // ## Formatted Messages
+
+    // Messages are formatted using `sprintf-fs` which has a named parameter
+    // syntax so we can use our properties object as our `sprintf` parameters.
+
+    //
+    console.log('\n--- formatted messages ---\n')
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            FILE_READ_ERROR: 'unable to read file: %(filename)s'
+        })
+
+        async function read (filename) {
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR', { filename })
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename)
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), `unable to read file: ${filename}`, 'sprintf message formatted')
+            okay(error.filename, filename, 'sprintf example filename property set')
+        }
+    }
+    //
+
+    // If `sprintf` is unable to format the message due to an error in the
+    // message format, the message format will be used as is.
+
+    //
+    {
+        const path = require('path')
+        const fs = require('fs').promises
+
+        const ReaderError = Interrupt.create('ConfigError', {
+            FILE_READ_ERROR: 'unable to read file: %(filename)'
+        })
+
+        async function read (filename) {
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                throw new ReaderError('FILE_READ_ERROR')
+            }
+        }
+
+        const filename = path.join(__dirname, 'missing.txt')
+
+        try {
+            await read(filename)
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(Interrupt.message(error), `unable to read file: %(filename)`, 'format was missing a sprintf type specifier')
+        }
+    }
+    //
+
+    // To use a parameter in the format you **must** put it in the properties
+    // object and it will become a property of the exception. If you really want
+    // to use a parameter but not have it become a property of the exception
+    // prefix add an underbar to both the property in the properties object and
+    // the `sprintf` format.
+
+    //
+    console.log('\n--- sprintf-only properties ---\n')
+    {
+        const ReaderError = Interrupt.create('ConfigError', {
+            INVALID_FILENAME: `filename must be a string, received: %(_type)s`,
+            FILE_READ_ERROR: 'unable to read file: %(filename)s'
+        })
+
+        async function read (filename) {
+            if (typeof filename != 'string') {
+                throw new ReaderError('INVALID_FILENAME', { _type: typeof filename })
+            }
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                throw new ReadError('FILE_READ_ERROR', { filename })
+            }
+        }
+
+        try {
+            await read([])
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(!('_type' in error), 'sprintf-only property is not a property of the exception')
+            okay(Interrupt.message(error), 'filename must be a string, received: object', 'sprintf-only property available for sprintf')
+        }
+    }
+    //
+
+    // In the above example we decided add the incorrect type to the error
+    // message, but decided against making it a property of the exception. For
+    // an assertion that should be raised by unit testing, the message ought to
+    // be enough.
+
+    // Because underbars make properties disappear you should be careful not to
+    // dump arbitrary objects into your properties with destructuring.
+
+    //
+    console.log('\n--- ruining a properties object with destructuring ---\n')
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARAM_MISSING: 'config parameter missing',
+            INVALID_PARAM_TYPE: 'invalid config parameter type'
+        })
+
+        function assertConfig (config) {
+            if (config.settings == null) {
+                throw new ConfigError('PARAM_MISSING', { ...config })
+            }
+            if (config.settings.volume != 'number') {
+                throw new ConfigError('INVALID_PARAM_TYPE', { ...config })
+            }
+        }
+
+        try {
+            assertConfig({ _settings: { volume: 0 } })
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay({ ...error.properties }, { code: 'PARAM_MISSING' }, 'desired context infomration removed because of underbar')
+        }
+    }
+    //
+
+    // This is not a good thing to do in any case.
+
+    // Only properties with underbar'd names at the top level of the properties
+    // object are removed. We do not recursively search for underbar'd
+    // properties to remove.
+
+    // We can fix the above by removing the destructuring.
+
+    //
+    console.log('\n--- explicitly set your property names ---\n')
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARAM_MISSING: 'config parameter missing',
+            INVALID_PARAM_TYPE: 'invalid config parameter type'
+        })
+
+        function assertConfig (config) {
+            if (config.settings == null) {
+                throw new ConfigError('PARAM_MISSING', { config })
+            }
+            if (config.settings.volume != 'number') {
+                throw new ConfigError('INVALID_PARAM_TYPE', { config })
+            }
+        }
+
+        try {
+            assertConfig({ _settings: { volume: 0 } })
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay({ ...error.properties }, {
+                code: 'PARAM_MISSING',
+                config: { _settings: { volume: 0 } }
+            }, 'we know our property names')
+        }
+    }
+    //
+
+    // You declare multi-line messages using string templates.
+
+    //
+    {
+        const ReaderError = Interrupt.create('ReaderError', {
+            INVALID_FILENAME: `
+                filename must be a string
+
+                erroneous type: %(_type)s
+            `,
+            FILE_READ_ERROR: `
+                unable to read file
+
+                erroneous filename: %(filename)s
+            `,
+        })
+
+        async function read (filename) {
+            if (typeof filename != 'string') {
+                throw new ReaderError('INVALID_FILENAME', { _type: typeof filename })
+            }
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                throw new ReadError('FILE_READ_ERROR', { filename })
+            }
+        }
+
+        try {
+            await read([])
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(!('_type' in error), 'sprintf-only property is not a property of the exception')
+            okay(Interrupt.message(error), 'filename must be a string\n\nerroneous type: object', 'sprintf-only property available for sprintf')
+        }
+    }
+    //
+
+    // The string will have its leading and trailing blank line stripped and the
+    // message will be be dedented by the position of left-most non-whitespace
+    // character. Dedenting is only applied to messages that have multiple lines
+    // where the first and last line consist only of whitespace characters.
+
+    // String templates are used to make the message readable in the source
+    // code. They are not used for the sake of substituation.
+
+    // Subsequent lines of a multi-line message are indented in output in order
+    // to allow for parsing the message. You should account for this in the
+    // formatting of your multi-line messages. It cannot be overridden.
+
+    // You can override the dedenting by removing the leading or trailing line.
+
+    //
+    {
+        const ReaderError = Interrupt.create('ReaderError', {
+            INVALID_FILENAME: `
+                filename must be a string
+
+                erroneous type: %(_type)s`,
+            FILE_READ_ERROR: `
+                unable to read file
+
+                erroneous filename: %(filename)s`,
+            INVALID_PARAM_TYPE: `
+                invalid config parameter type
+            `
+        })
+
+        async function read (filename) {
+            if (typeof filename != 'string') {
+                throw new ReaderError('INVALID_FILENAME', { _type: typeof filename })
+            }
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                throw new ReadError('FILE_READ_ERROR', { filename })
+            }
+        }
+
+        try {
+            await read([])
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(!('_type' in error), 'sprintf-only property is not a property of the exception')
+            okay(Interrupt.message(error),
+                '\n                filename must be a string\n\n                erroneous type: object',
+            'sprintf-only property available for sprintf')
+        }
+    }
+    //
+
+    // If for some reason you absoluely **must** have a message that begins and
+    // ends with a blank line you can escape the message with two leading blank
+    // lines. The first blank line is removed.
+
+    //
+    {
+        const ReaderError = Interrupt.create('ReaderError', {
+            INVALID_FILENAME: `\n
+                filename must be a string
+
+                erroneous type: %(_type)s
+            `,
+            FILE_READ_ERROR: `\n
+                unable to read file
+
+                erroneous filename: %(filename)s
+            `,
+        })
+
+        async function read (filename) {
+            if (typeof filename != 'string') {
+                throw new ReaderError('INVALID_FILENAME', { _type: typeof filename })
+            }
+            try {
+                return await fs.readFile(filename)
+            } catch (error) {
+                throw new ReadError('FILE_READ_ERROR', { filename })
+            }
+        }
+
+        try {
+            await read([])
+        } catch (error) {
+            console.log(`${error.stack}\n`)
+            okay(!('_type' in error), 'sprintf-only property is not a property of the exception')
+            okay(Interrupt.message(error),
+                '\n                filename must be a string\n\n                erroneous type: object\n            ',
+            'sprintf-only property available for sprintf')
+        }
+    }
+    //
+
+    // **TODO** When you implement multi-line error messages, the description of
+    // how to use them goes here.
+
     // **TODO** Now we're talking about codes again. Shouldn't this be above?
+
+    // ## Code and Prototype Declaration
 
     // Once you've started to use codes you may find that one code per error is
     // not enough. You may want to have additional codes to classify errors.
@@ -2127,181 +2439,6 @@ require('proof')(200, async okay => {
     // For the most part, you won't be able to parse the JSON and get back the
     // original objects if they are not plain `objects`. That isn't really
     // important for reporting purposes however, just don't be surprised is all.
-
-    // ## Formatted Messages
-
-    // Messages are formatted using `sprintf-fs` which has a named parameter
-    // syntax so we can use our properties object as our `sprintf` parameters.
-
-    //
-    console.log('\n--- formatted messages ---\n')
-    {
-        const path = require('path')
-        const fs = require('fs').promises
-
-        const ReaderError = Interrupt.create('ConfigError', {
-            FILE_READ_ERROR: 'unable to read file: %(filename)s'
-        })
-
-        async function read (filename) {
-            try {
-                return await fs.readFile(filename)
-            } catch (error) {
-                throw new ReaderError('FILE_READ_ERROR', { filename })
-            }
-        }
-
-        const filename = path.join(__dirname, 'missing.txt')
-
-        try {
-            await read(filename)
-        } catch (error) {
-            console.log(`${error.stack}\n`)
-            okay(Interrupt.message(error), `unable to read file: ${filename}`, 'sprintf message formatted')
-            okay(error.filename, filename, 'sprintf example filename property set')
-        }
-    }
-    //
-
-    // If `sprintf` is unable to format the message due to an error in the
-    // message format, the message format will be used as is.
-
-    //
-    {
-        const path = require('path')
-        const fs = require('fs').promises
-
-        const ReaderError = Interrupt.create('ConfigError', {
-            FILE_READ_ERROR: 'unable to read file: %(filename)'
-        })
-
-        async function read (filename) {
-            try {
-                return await fs.readFile(filename)
-            } catch (error) {
-                throw new ReaderError('FILE_READ_ERROR')
-            }
-        }
-
-        const filename = path.join(__dirname, 'missing.txt')
-
-        try {
-            await read(filename)
-        } catch (error) {
-            console.log(`${error.stack}\n`)
-            okay(Interrupt.message(error), `unable to read file: %(filename)`, 'format was missing a sprintf type specifier')
-        }
-    }
-    //
-
-    // To use a parameter in the format you **must** put it in the properties
-    // object and it will become a property of the exception. If you really want
-    // to use a parameter but not have it become a property of the exception
-    // prefix add an underbar to both the property in the properties object and
-    // the `sprintf` format.
-
-    //
-    console.log('\n--- sprintf-only properties ---\n')
-    {
-        const ReaderError = Interrupt.create('ConfigError', {
-            INVALID_FILENAME: `filename must be a string, received: %(_type)s`,
-            FILE_READ_ERROR: 'unable to read file: %(filename)s'
-        })
-
-        async function read (filename) {
-            if (typeof filename != 'string') {
-                throw new ReaderError('INVALID_FILENAME', { _type: typeof filename })
-            }
-            try {
-                return await fs.readFile(filename)
-            } catch (error) {
-                throw new ReadError('FILE_READ_ERROR', { filename })
-            }
-        }
-
-        try {
-            await read([])
-        } catch (error) {
-            console.log(`${error.stack}\n`)
-            okay(!('_type' in error), 'sprintf-only property is not a property of the exception')
-            okay(Interrupt.message(error), 'filename must be a string, received: object', 'sprintf-only property available for sprintf')
-        }
-    }
-    //
-
-    // In the above example we decided add the incorrect type to the error
-    // message, but decided against making it a property of the exception. For
-    // an assertion that should be raised by unit testing, the message ought to
-    // be enough.
-
-    // Because underbars make properties disappear you should be careful not to
-    // dump arbitrary objects into your properties with destructuring.
-
-    //
-    console.log('\n--- ruining a properties object with destructuring ---\n')
-    {
-        const ConfigError = Interrupt.create('ConfigError', {
-            PARAM_MISSING: 'config parameter missing',
-            INVALID_PARAM_TYPE: 'invalid config parameter type'
-        })
-
-        function assertConfig (config) {
-            if (config.settings == null) {
-                throw new ConfigError('PARAM_MISSING', { ...config })
-            }
-            if (config.settings.volume != 'number') {
-                throw new ConfigError('INVALID_PARAM_TYPE', { ...config })
-            }
-        }
-
-        try {
-            assertConfig({ _settings: { volume: 0 } })
-        } catch (error) {
-            console.log(`${error.stack}\n`)
-            okay({ ...error.properties }, { code: 'PARAM_MISSING' }, 'desired context infomration removed because of underbar')
-        }
-    }
-    //
-
-    // This is not a good thing to do in any case.
-
-    // Only properties with underbar'd names at the top level of the properties
-    // object are removed. We do not recursively search for underbar'd
-    // properties to remove.
-
-    // We can fix the above by removing the destructuring.
-
-    //
-    console.log('\n--- explicitly set your property names ---\n')
-    {
-        const ConfigError = Interrupt.create('ConfigError', {
-            PARAM_MISSING: 'config parameter missing',
-            INVALID_PARAM_TYPE: 'invalid config parameter type'
-        })
-
-        function assertConfig (config) {
-            if (config.settings == null) {
-                throw new ConfigError('PARAM_MISSING', { config })
-            }
-            if (config.settings.volume != 'number') {
-                throw new ConfigError('INVALID_PARAM_TYPE', { config })
-            }
-        }
-
-        try {
-            assertConfig({ _settings: { volume: 0 } })
-        } catch (error) {
-            console.log(`${error.stack}\n`)
-            okay({ ...error.properties }, {
-                code: 'PARAM_MISSING',
-                config: { _settings: { volume: 0 } }
-            }, 'we know our property names')
-        }
-    }
-    //
-
-    // **TODO** When you implement multi-line error messages, the description of
-    // how to use them goes here.
 
     // ## Message Tables
 

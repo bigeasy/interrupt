@@ -32,22 +32,45 @@ const OPTIONS = Symbol('OPTIONS')
 // exceptions to audit assertions and guarded functions.
 const AUDIT = new Error('example')
 
+function multiLine (message) {
+    if (/^[^\S\n]*\n[^\S\n]*\n/.exec(message)) {
+        return message.replace(/^[^\S\n]*\n/, '')
+    }
+    if (/^[^\S\n]*\n/.test(message) && /\n[^\S\n]*$/.test(message)) {
+        const trimmed = message.replace(/^[^\S\n]*\n|\n[^\S\n]*$/g, '')
+        let min = Infinity
+        for (const match of trimmed.matchAll(/^$|(^ *)(\S)/gm)) {
+            if (match[1] != null) {
+                min = Math.min(match[1].length, min)
+            }
+        }
+        return trimmed.replace(new RegExp(`^ {${min}}`, 'gm'), '')
+    }
+    return message
+}
+
 // Generate the message for the Goole V8 exception. The message is specially
 // formatted to appear integrated with the stack trace from `error.stack` which
 // includes the message in the stack trace.
 function context (options, instance, stack = true) {
     // Attempt to use the options message as a `sprintf` format. Use the message
     // as is if `sprintf` fails.
-    let message = instance.message = options.message
-    try {
-        message = instance.message = sprintf(options.message, options)
-    } catch (error) {
-        instance.errors.push({
-            code: Interrupt.Error.SPRINTF_ERROR,
-            format: options.format,
-            properties: options.properties,
-            error: error
-        })
+    let message = options.message
+    if (message == null) {
+        message = instance.message = ''
+    } else {
+        message = instance.message = multiLine(message)
+        try {
+            instance.message = sprintf(message, options)
+            message = instance.message.split('\n').map((line, index) => index == 0 ? line : `    ${line}`).join('\n')
+        } catch (error) {
+            instance.errors.push({
+                code: Interrupt.Error.SPRINTF_ERROR,
+                format: options.format,
+                properties: options.properties,
+                error: error
+            })
+        }
     }
     // The enumerable properties, if any, of the object using our special JSON.
     if (Object.keys(instance.displayed).length != 0) {
@@ -421,7 +444,7 @@ class Interrupt extends Error {
                 default: {
                         const dedented = dedent(line, this._depth, this._positioner.position)
                         if (this._transition(dedented)) {
-                            this._collector.push(dedent(dedented, this._mode == 'message' ? 1 : 0, this._positioner.position))
+                            this._collector.push(dedent(dedented, this._mode == 'message' ? 4 : 0, this._positioner.position))
                         }
                     }
                     break
