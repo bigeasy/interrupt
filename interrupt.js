@@ -70,6 +70,12 @@ function context (options, instance, stack = true) {
         }
     }
 
+    if (instance.tracers.length != 0) {
+        message += `\n\ntrace:\n\n${
+            instance.tracers.map(trace => `    at ${trace.file}:${trace.line}:${trace.column}`).join('\n')
+        }`
+    }
+
     // A header for the stack trace unless the stack trace has been suppressed.
     if (stack && (options.$stack == null || options.$stack != 0)) {
         message += '\n\nstack:\n'
@@ -131,7 +137,7 @@ class Interrupt extends Error {
     // Private static initializer. We are committed to Node.js 12 or greater.
     static #initializer = (function () {
         Prototypes.set(Interrupt, {
-            is: new Map, Super: { Codes: {}, Aliases: {} }
+            depth: 1, is: new Map, Super: { Codes: {}, Aliases: {} }
         })
     } ())
 
@@ -247,15 +253,17 @@ class Interrupt extends Error {
         static _START = {
             'properties': '{',
             '$errors': '[',
+            'trace': 'trace:',
             'stack': 'stack:',
             'errors': 'cause:'
         }
 
         static _TRANSITION = {
-            'message': [ 'properties', '$errors', 'errors', 'stack' ],
-            'properties': [ '$errors', 'errors', 'stack' ],
-            '$errors': [ 'errors', 'stack' ],
-            'errors': [ 'errors', 'stack' ],
+            'message': [ 'properties', '$errors', 'errors', 'trace', 'stack' ],
+            'properties': [ '$errors', 'errors', 'trace', 'stack' ],
+            '$errors': [ 'errors', 'trace', 'stack' ],
+            'errors': [ 'errors', 'trace', 'stack' ],
+            'trace': [ 'stack' ],
             'stack': [],
             'object': []
         }
@@ -265,6 +273,7 @@ class Interrupt extends Error {
             'properties': true,
             '$errors': true,
             'errors': false,
+            'trace': false,
             'stack': 'false'
         }
 
@@ -281,6 +290,10 @@ class Interrupt extends Error {
                 break
             case '$errors': {
                     this._node.$errors = Interrupt.JSON.parse(this._collector.end())
+                }
+                break
+            case 'trace': {
+                    this._node.$trace = unstacker.parse(this._collector.end())
                 }
                 break
             case 'stack': {
@@ -356,8 +369,9 @@ class Interrupt extends Error {
                         className: className,
                         message: null,
                         properties: {},
-                        errors: [],
                         $errors: [],
+                        errors: [],
+                        $trace: [],
                         stack: []
                     }
                     if (separator != null) {
@@ -579,11 +593,31 @@ class Interrupt extends Error {
             }
         }
 
-        const instance = { message: null, errors: options.$errors, options, displayed: {} }
+        const instance = { message: null, tracers: [], errors: options.$errors, options, displayed: {} }
 
         for (const property in properties) {
             if (properties[property].enumerable) {
                 instance.displayed[property] = properties[property].value
+            }
+        }
+
+        if (options.$pokers.length != 0) {
+            const depth = Prototype.depth + 1
+
+            const stackTraceLimit = Error.stackTraceLimit
+            Error.stackTraceLimit = depth + options.$pokers.length
+            const prepareStackTrace = Error.prepareStackTrace
+            Error.prepareStackTrace = (_, stack) => stack
+            const stack = new Error().stack
+            Error.prepareStackTrace = prepareStackTrace
+            Error.stackTraceLimit = stackTraceLimit
+
+            for (const site of stack.slice(depth)) {
+                instance.tracers.push({
+                    file: site.getFileName(),
+                    line: site.getLineNumber(),
+                    column: site.getColumnNumber()
+                })
             }
         }
 
@@ -597,6 +631,7 @@ class Interrupt extends Error {
             options.code == null &&
             options.message == null &&
             options.$errors.length == 0 &&
+            instance.tracers.length == 0 &&
             Object.keys(options).filter(name => !/^\$|^#|^errors$/.test(name)).length == 0
         ) {
             super()
@@ -906,7 +941,7 @@ class Interrupt extends Error {
             if (prelimary.$pokers.length != 0) {
                 let error = null
                 const $ = function () { error = new Class(merged) }
-                const merged = Class.options({ $callee: $ }, prelimary)
+                const merged = Class.options({ $callee }, prelimary)
                 const pokers = merged.$pokers.slice()
                 let previous = $
                 while (pokers.length != 0) {
@@ -930,7 +965,7 @@ class Interrupt extends Error {
         }
 
         function construct (options, vargs, callee) {
-            const error = _construct(options, vargs, callee)
+            const error = _construct(options, vargs, coalesce(callee, construct))
             if (Interrupt.auditing) {
                 Interrupt.audit(error, Instances.get(error).errors)
             }
@@ -972,17 +1007,17 @@ class Interrupt extends Error {
 
         function _callback (callee, options, vargs) {
             if (typeof vargs[vargs.length - 1] == 'function') {
-                const callback = vargs.pop()
-                return function (...response) {
+                const _callback = vargs.pop()
+                return function callback (...response) {
                     if (response[0] == null) {
                         if (Interrupt.auditing) {
                             construct(Class.options(options, { errors: [ AUDIT ] }), vargs)
                         }
                         const poker = typeof vargs[vargs.length - 1] == 'function' ? vargs.pop() : null
                         const merged = Class.options(options, { $vargs: vargs }, { $pokers: poker })
-                        callback.apply(null, response.concat({ $pokers: merged.$pokers }))
+                        _callback.apply(null, response.concat({ $pokers: merged.$pokers }))
                     } else {
-                        callback(construct(Class.options(options, { errors: [ response[0] ] }), vargs))
+                        _callback(construct(Class.options(options, { errors: [ response[0] ] }), vargs))
                     }
                 }
             }
@@ -1047,6 +1082,7 @@ class Interrupt extends Error {
         // Running out of names, must tidy.
         const SuperPrototype = Prototypes.get(SuperClass)
         const Prototype = {
+            depth: SuperPrototype.depth + 1,
             name: name,
             is: new Map,
             symbols: new Map,

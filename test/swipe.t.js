@@ -221,6 +221,18 @@ require('proof')(5, async okay => {
             })
         })
     })
+
+    {
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARSE_ERROR: 'unable to parse JSON'
+        })
+
+        console.log(ConfigError.create({}, [ 'PARSE_ERROR' ]).stack)
+        console.log(ConfigError.create({}, [ 'PARSE_ERROR', $ => $() ]).stack)
+        console.log(Interrupt.parse(ConfigError.create({}, [ 'PARSE_ERROR', $ => $() ]).stack))
+    }
+
+    return
     //
     {
         const ConfigError = Interrupt.create('ConfigError', {
