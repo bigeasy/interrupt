@@ -199,6 +199,7 @@ class Interrupt extends Error {
         SPRINTF_ERROR: null,
         NULL_ARGUMENT: 'null argument given to exception constructor',
         INVALID_PROPERTY_NAME: 'invalid property name',
+        DEFFERED_CONSTRUCTION_ERROR: 'error returned during deferred construction',
         INVALID_PROPERTY_TYPE: 'invalid property type',
         INVALID_PROPERTY_NAME: 'invalid property name',
         DEFERRED_CONSTRUCTOR_INVALID_RETURN: null,
@@ -661,17 +662,23 @@ class Interrupt extends Error {
         }
 
         if (options.$trace.length != 0) {
-            const depth = Prototype.depth + 1
-
-            const stackTraceLimit = Error.stackTraceLimit
-            Error.stackTraceLimit = depth + options.$trace.length
-            const prepareStackTrace = Error.prepareStackTrace
-            Error.prepareStackTrace = (_, stack) => stack
-            const stack = new Error().stack
-            Error.prepareStackTrace = prepareStackTrace
-            Error.stackTraceLimit = stackTraceLimit
-
-            for (const site of stack.slice(depth)) {
+            let stack = null
+            let previous = function () {
+                const stackTraceLimit = Error.stackTraceLimit
+                Error.stackTraceLimit = 1 + options.$trace.length
+                const prepareStackTrace = Error.prepareStackTrace
+                Error.prepareStackTrace = (_, stack) => stack
+                stack = new Error().stack
+                Error.prepareStackTrace = prepareStackTrace
+                Error.stackTraceLimit = stackTraceLimit
+            }
+            for (const trace of options.$trace) {
+                previous = function (caller, callee) {
+                    return caller.bind(null, callee)
+                } (trace, previous)
+            }
+            previous()
+            for (const site of stack.slice(1)) {
                 instance.tracers.push({
                     file: site.getFileName(),
                     line: site.getLineNumber(),
@@ -824,6 +831,35 @@ class Interrupt extends Error {
                                 options.$stack = attr(argument)
                             } else {
                                 options.$errors.value.push(combine(Interrupt.Error.codes('INVALID_PROPERTY_TYPE')))
+                            }
+                        }
+                        break
+                    case 'function': {
+                            switch (argument.length) {
+                            case 0: {
+                                    try {
+                                        const nested = Class.options(vargs.shift(argument()))
+                                        if (nested.$errors) {
+                                            options.$errors.value.push(combine(Interrupt.Error.code('DEFFERED_CONSTRUCTION_ERROR'), {
+                                                $errors: nested.$errors
+                                            }))
+                                        }
+                                        vargs.unshift(nested)
+                                    } catch (error) {
+                                        // **TODO** Maybe stackless actual errors instead?
+                                        options.$errors.value.push(combine(Interrupt.Error.code('DEFFERED_CONSTRUCTION_ERROR'), { errors: [ error ] }))
+                                    }
+                                }
+                                break
+                            case 1: {
+                                    options.$trace.value.push(argument)
+                                }
+                                break
+                            default: {
+                                    // **TODO** Add typeof.
+                                    options.$errors.value.push(combine(Interrupt.Error.code('INVALID_ARGUMENT')))
+                                }
+                                break
                             }
                         }
                         break
@@ -993,38 +1029,8 @@ class Interrupt extends Error {
             }
         }
 
-        function _construct (options, vargs, $callee) {
-            const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
-                ? Class.options(options, { $vargs: vargs }, { $trace: vargs.pop() })
-                : Class.options(options, { $vargs: vargs })
-            if (prelimary.$trace.length != 0) {
-                let error = null
-                const $ = function () { error = new Class(merged) }
-                const merged = Class.options({ $callee }, prelimary)
-                const trace = merged.$trace.slice()
-                let previous = $
-                while (trace.length != 0) {
-                    previous = function (caller, callee) {
-                        return caller.bind(null, callee)
-                    } (trace.shift(), previous)
-                }
-                previous()
-                if (error == null) {
-                    const error = new Class(merged)
-                    const instance = Instances.get(error)
-                    instance.errors.push({
-                        code: Interrupt.Error.DEFERRED_CONSTRUCTOR_NOT_CALLED
-                    })
-                    return error
-                }
-                return error
-            } else {
-                return new Class(Class.options({ $callee }, prelimary))
-            }
-        }
-
-        function construct (options, vargs, callee) {
-            const error = _construct(options, vargs, coalesce(callee, construct))
+        function construct (options, $vargs, $callee = construct) {
+            const error = new Class({ $callee }, options, { $vargs })
             if (Interrupt.auditing) {
                 Interrupt.audit(error, Instances.get(error).errors)
             }
