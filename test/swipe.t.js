@@ -137,7 +137,7 @@ require('proof')(6, async okay => {
     // Instead of wrapping error in exceptions, you can add bread crumbs to your
     // stack trace. When the error is constructed it will will include in its
     // stack trace the important stops along the way that brought the program to
-    // its unfortunate state. For this we use poker functions.
+    // its unfortunate state. For this we use trace functions.
 
     // Poker functions where introduced as deferred construction, but the same
     // concept can serve an additional purpose.
@@ -164,9 +164,9 @@ require('proof')(6, async okay => {
                 UNABLE_TO_READ_FILE: 'unable to read file: %(filename)s'
             })
 
-            read (dirname, poker, callback) {
-                poker.top = true
-                fs.readdir(dirname, Reader.Error.callback({ $pokers: poker }, 'UNABLE_TO_READ_DIRECTORY', $ => $(), (error, dir, options) => {
+            read (dirname, trace, callback) {
+                trace.top = true
+                fs.readdir(dirname, Reader.Error.callback({ $trace: trace }, 'UNABLE_TO_READ_DIRECTORY', $ => $(), (error, dir, options) => {
                     if (error) {
                         callback(error)
                     } else {
@@ -193,7 +193,7 @@ require('proof')(6, async okay => {
             readdir (...vargs) {
                 const callback = vargs.pop()
                 const dirname = vargs.shift()
-                const pokers = Reader.Error.options({ $pokers: vargs[0] })
+                const trace = Reader.Error.options({ $trace: vargs[0] })
             }
 
         }
@@ -289,7 +289,7 @@ require('proof')(6, async okay => {
     return
     // **TODO** Revisiting deferred construction.
 
-    // We can reserve a single argument function for poker functions and use a
+    // We can reserve a single argument function for trace functions and use a
     // no argument function as a deferred constructor. Whatever is returned is
     // used as an argument.
     {

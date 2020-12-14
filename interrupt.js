@@ -660,11 +660,11 @@ class Interrupt extends Error {
             }
         }
 
-        if (options.$pokers.length != 0) {
+        if (options.$trace.length != 0) {
             const depth = Prototype.depth + 1
 
             const stackTraceLimit = Error.stackTraceLimit
-            Error.stackTraceLimit = depth + options.$pokers.length
+            Error.stackTraceLimit = depth + options.$trace.length
             const prepareStackTrace = Error.prepareStackTrace
             Error.prepareStackTrace = (_, stack) => stack
             const stack = new Error().stack
@@ -793,7 +793,7 @@ class Interrupt extends Error {
                     $type: attr(OPTIONS),
                     $errors: attr([]),
                     errors: attr([]),
-                    $pokers: attr([]),
+                    $trace: attr([]),
                     $stack: attr(null),
                     $callee: attr(null)
                 }
@@ -853,10 +853,10 @@ class Interrupt extends Error {
                                             }
                                         }
                                         break
-                                    case '$pokers': {
+                                    case '$trace': {
                                             if (argument[property] == null) {
                                             } else if (typeof argument[property] == 'function') {
-                                                options.$pokers.value.push(argument[property])
+                                                options.$trace.value.push(argument[property])
                                             } else if (
                                                 Array.isArray(argument[property]) &&
                                                 argument[property].every(element => typeof element == 'function')
@@ -995,18 +995,18 @@ class Interrupt extends Error {
 
         function _construct (options, vargs, $callee) {
             const prelimary = vargs.length > 0 && typeof vargs[vargs.length - 1] == 'function'
-                ? Class.options(options, { $vargs: vargs }, { $pokers: vargs.pop() })
+                ? Class.options(options, { $vargs: vargs }, { $trace: vargs.pop() })
                 : Class.options(options, { $vargs: vargs })
-            if (prelimary.$pokers.length != 0) {
+            if (prelimary.$trace.length != 0) {
                 let error = null
                 const $ = function () { error = new Class(merged) }
                 const merged = Class.options({ $callee }, prelimary)
-                const pokers = merged.$pokers.slice()
+                const trace = merged.$trace.slice()
                 let previous = $
-                while (pokers.length != 0) {
+                while (trace.length != 0) {
                     previous = function (caller, callee) {
                         return caller.bind(null, callee)
-                    } (pokers.shift(), previous)
+                    } (trace.shift(), previous)
                 }
                 previous()
                 if (error == null) {
@@ -1072,9 +1072,9 @@ class Interrupt extends Error {
                         if (Interrupt.auditing) {
                             construct(Class.options(options, { errors: [ AUDIT ] }), vargs)
                         }
-                        const poker = typeof vargs[vargs.length - 1] == 'function' ? vargs.pop() : null
-                        const merged = Class.options(options, { $vargs: vargs }, { $pokers: poker })
-                        _callback.apply(null, response.concat({ $pokers: merged.$pokers }))
+                        const $trace = typeof vargs[vargs.length - 1] == 'function' ? vargs.pop() : null
+                        const merged = Class.options(options, { $vargs: vargs }, { $trace })
+                        _callback.apply(null, response.concat({ $trace: merged.$trace }))
                     } else {
                         _callback(construct(Class.options(options, { errors: [ response[0] ] }), vargs))
                     }
