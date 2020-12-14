@@ -108,18 +108,38 @@ function get (object, path) {
 
 class Collector {
     constructor () {
-        this._lines = []
+        this.lines = []
     }
 
     push (line) {
-        this._lines.push(line)
+        this.lines.push(line)
     }
 
     end () {
-        if (this._lines[this._lines.length - 1] === '') {
-            this._lines.pop()
+        if (this.lines[this.lines.length - 1] === '') {
+            this.lines.pop()
         }
-        return this._lines.join('\n')
+        return this.lines.join('\n')
+    }
+}
+
+class Positioner {
+    constructor () {
+        this.position = { text: null, line: 0 }
+    }
+
+    push (text) {
+        this.position.text = text
+        this.position.line++
+    }
+}
+
+class NullPositioner {
+    constructor (positioner) {
+        this.position = positioner.position
+    }
+
+    push () {
     }
 }
 
@@ -234,12 +254,14 @@ class Interrupt extends Error {
 
     static Parser = class Parser {
         constructor (scan = false) {
-            this._scannable = scan
             this._scanning = scan
-            this._mode = scan ? 'scan' : 'exception'
+            this._mode = 'exception'
             this._collector = null
+            this._start = null
             this._depth = 0
-            this._position = { line: 1 }
+            this._positioner = new Positioner
+            this.parsed = []
+            this.errors = []
         }
 
         static _DEDENT = {
@@ -274,7 +296,7 @@ class Interrupt extends Error {
             '$errors': true,
             'errors': false,
             'trace': false,
-            'stack': 'false'
+            'stack': false
         }
 
         _complete () {
@@ -319,6 +341,7 @@ class Interrupt extends Error {
                     case 'errors': {
                             this._collector = new Interrupt.Parser
                             this._collector._mode = 'cause'
+                            this._collector._positioner = new NullPositioner(this._positioner)
                         }
                         break
                     default: {
@@ -343,7 +366,8 @@ class Interrupt extends Error {
                     message: null,
                     properties: {},
                     errors: [],
-                    _errors: [],
+                    $trace: [],
+                    $errors: [],
                     stack: []
                 }
                 if (separator != null) {
@@ -356,53 +380,65 @@ class Interrupt extends Error {
         }
 
         push(line) {
-            switch (this._mode) {
-            case 'exception': {
-                    this._position = { line: 1, text: line }
-                    const dedented = dedent(line, this._depth, this._position)
-                    const $ = RE.exceptionStart.exec(line)
-                    assert($ != null, 'PARSE_ERROR', this._position)
-                    const [ , space, className, separator, message ] = $
-                    this._depth = space.length
-                    this._collector = new Collector
-                    this._node = {
-                        className: className,
-                        message: null,
-                        properties: {},
-                        $errors: [],
-                        errors: [],
-                        $trace: [],
-                        stack: []
+            this._positioner.push(line)
+            this._push(line)
+        }
+
+        _push (line) {
+            try {
+                switch (this._mode) {
+                case 'exception': {
+                        assert(this._exception(line) || this._scanning, 'PARSE_ERROR', this._positioner.position)
+                        this._start = { ...this._positioner.position }
                     }
-                    if (separator != null) {
-                        this._collector.push(message)
+                    break
+                case 'cause': {
+                        if (/\S+/.test(line) && ! this._exception(line)) {
+                            this._collector = new Collector
+                            this._collector.push(line)
+                            this._mode = 'object'
+                        }
                     }
-                    this._mode = 'message'
+                    break
+                case 'stack': {
+                        if (this._scanning) {
+                            const $ = /^(.*\S.*)\{\s*$/.exec(line)
+                            if ($ != null) {
+                                this._push($[1])
+                                break
+                            }
+                            if (/^\s*$/.test(line) && this._collector.lines.length == 0) {
+                                break
+                            }
+                            if (
+                                /\S/.test(line.substring(0, this._depth)) || !/^\s*at /.test(line)
+                            ) {
+                                this.end()
+                                break
+                            }
+                        }
+                    }
+                default: {
+                        const dedented = dedent(line, this._depth, this._positioner.position)
+                        if (this._transition(dedented)) {
+                            this._collector.push(dedent(dedented, this._mode == 'message' ? 1 : 0, this._positioner.position))
+                        }
+                    }
+                    break
                 }
-                break
-            case 'cause': {
-                    if (/\S+/.test(line) && ! this._exception(line)) {
-                        console.log('OH, NO!')
-                        this._collector = new Collector
-                        this._collector.push(line)
-                        this._mode = 'object'
-                    }
+            } catch (error) {
+                if (!this._scanning) {
+                    throw error
                 }
-                break
-            default: {
-                    this._position.line++
-                    this._position.text = line
-                    const dedented = dedent(line, this._depth, this._position)
-                    if (this._transition(dedented, 'properties', 'cause', 'stack')) {
-                        this._collector.push(dedent(dedented, this._mode == 'message' ? 1 : 0, this._position))
-                    }
-                }
-                break
+                this.errors.push(error)
+                this._mode = 'exception'
             }
         }
 
         end () {
             this._complete()
+            this.parsed.push({ object: this._node, ...this._start })
+            this._mode = 'exception'
             return this._node
         }
     }

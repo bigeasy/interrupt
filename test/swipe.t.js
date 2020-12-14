@@ -232,7 +232,28 @@ require('proof')(5, async okay => {
         console.log(Interrupt.parse(ConfigError.create({}, [ 'PARSE_ERROR', $ => $() ]).stack))
     }
 
-    return
+    {
+        const util = require('util')
+
+        const ConfigError = Interrupt.create('ConfigError', {
+            PARSE_ERROR: 'unable to parse JSON'
+        })
+
+        const e = ConfigError.create({}, [ 'PARSE_ERROR' ])
+        Interrupt.parse(e.stack)
+        const parser = new Interrupt.Parser(true)
+        e.dumped = true
+        e.reallyDumpy = 'dump dump'
+        e.superDump = [ 1, 2, 3, 4, 5 ]
+        const stack = util.inspect(e)
+        for (const line of stack.split('\n')) {
+            parser.push(line)
+            if (parser.parsed.length != 0) {
+                console.log(parser.parsed.shift())
+            }
+        }
+    }
+
     //
     {
         const ConfigError = Interrupt.create('ConfigError', {
