@@ -218,15 +218,21 @@ class Interrupt extends Error {
     })
 
     static explode (error) {
-        const preamble = error.message == ''
-            ? `${error.name}`
-            : `${error.name}: ${error.message}`
+        let preamble
+        const $ = RE.exceptionStart.exec(error.stack)
+        if ($ != null) {
+            const [ , , className, code ] = $
+            preamble = code == null ? className : `${className} [${code}]`
+            if (error.message != '') {
+                preamble += `: ${error.message}`
+            }
+        }
         if (
+            $ == null ||
             error.name == null ||
             error.message == null ||
             error.stack == null ||
-            error.stack.indexOf(preamble) != 0 ||
-            !RE.identifier.test(error.name)
+            error.stack.indexOf(preamble) != 0
         ) {
             return [{
                 constructor: error.constructor.name,
@@ -380,9 +386,10 @@ class Interrupt extends Error {
         }
 
         _exception (line) {
+            // **TODO** May as well put code in name since `AssertionError` does it.
             const $ = RE.exceptionStart.exec(line)
             if ($ != null) {
-                const [ , space, className, separator, message ] = $
+                const [ , space, className, code, message ] = $
                 this._depth = space.length
                 this._collector = new Collector
                 this._node = {
@@ -394,7 +401,10 @@ class Interrupt extends Error {
                     $errors: [],
                     stack: []
                 }
-                if (separator != null) {
+                if (code) {
+                    this._node.properties.code = code
+                }
+                if (message != null) {
                     this._collector.push(message)
                 }
                 this._mode = 'message'
@@ -1525,7 +1535,7 @@ const identifier = require('./identifier.json')
 
 const RE = {
     identifier: new RegExp(`^${identifier}$`),
-    exceptionStart: new RegExp(`^(\\s*)(${identifier}(?:\.${identifier})*)(:)\\s([\\s\\S]*)`, 'm')
+    exceptionStart: new RegExp(`^(\\s*)(${identifier}(?:\.${identifier})*)(?: \\[(${identifier})\\])?(?::\\s([\\s\\S]*))?$`, 'm')
 }
 
 const unstacker = require('stacktrace-parser')

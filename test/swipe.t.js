@@ -121,6 +121,7 @@
 
 //
 require('proof')(6, async okay => {
+    const semblance = require('semblance')
     const Interrupt = require('..')
     // ## Stack Pokers
 
@@ -286,6 +287,37 @@ require('proof')(6, async okay => {
         }
     }
     //
+
+    // **TODO** This is new. Just realized that `AssertionError` injects the
+    // code into the stack using `name`, forces the stack to generate, then sets
+    // `name` again. This is pretty wicked. As wicked as anythign I do in
+    // Interrupt and good to mention in the `readme.t.js`.
+
+    //
+    {
+        const assert = require('assert')
+
+        try {
+            assert(false, 'wrong')
+        } catch (error) {
+            const parsed = Interrupt.parse(Interrupt.stringify(error))
+            okay(semblance(parsed, {
+                className: 'AssertionError',
+                message: 'wrong',
+                properties: {
+                    generatedMessage: false,
+                    code: 'ERR_ASSERTION',
+                    actual: false,
+                    expected: true,
+                    operator: '=='
+                },
+                errors: { length: 0 },
+                $trace: { length: 0 },
+                $errors: { length: 0 },
+                stack: []
+            }), 'stringify AssertionError')
+        }
+    }
     return
     // **TODO** Revisiting deferred construction.
 

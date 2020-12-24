@@ -27,7 +27,8 @@
     },
     "devDependencies":
     {
-                            "proof":                        "^9.0.0"
+                            "proof":                        "^9.0.0",
+                            "semblance":                    "^2.0.2"
     },
     "main":                 "interrupt",
     "scripts":
