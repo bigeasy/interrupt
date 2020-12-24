@@ -120,7 +120,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(6, async okay => {
+require('proof')(7, async okay => {
     const semblance = require('semblance')
     const Interrupt = require('..')
     // ## Stack Pokers
