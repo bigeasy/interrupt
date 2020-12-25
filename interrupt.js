@@ -184,6 +184,12 @@ class Interrupt extends Error {
         })
     } ())
 
+    static assertTrace (f) {
+        called = false
+        f(() => called = true)
+        Interrupt.Error.assert(called, 'INVALID_TRACE_FUNCTION')
+    }
+
     // **TODO** Maybe a set of common symbols mapped to the existing Node.js
     // error types? No, the ability to specify a symbol, but it must be unique,
     // and we can put those types in `Interrupt.Error`.
@@ -202,6 +208,7 @@ class Interrupt extends Error {
         DEFFERED_CONSTRUCTION_ERROR: 'error returned during deferred construction',
         INVALID_PROPERTY_TYPE: 'invalid property type',
         INVALID_PROPERTY_NAME: 'invalid property name',
+        INVALID_TRACE_FUNCTION: 'the trace function does not invoke the callback',
         DEFERRED_CONSTRUCTOR_INVALID_RETURN: null,
         DEFERRED_CONSTRUCTOR_NOT_CALLED: null
     }, function ({ Codes }) {
