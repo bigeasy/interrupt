@@ -713,6 +713,7 @@ class Interrupt extends Error {
         if (
             options.code == null &&
             options.message == null &&
+            options.errors.length == 0 &&
             options.$errors.length == 0 &&
             instance.tracers.length == 0 &&
             Object.keys(options).filter(name => !/^\$|^#|^errors$/.test(name)).length == 0
