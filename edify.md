@@ -17,6 +17,7 @@ Nested exceptions with elaborate stack traces for Node.js.
 Interrupt installs from NPM.
 
 ```
+//{ "mode": "text" }
 npm install interrupt
 ```
 
@@ -69,7 +70,9 @@ Proof `okay` function to assert out statements in the readme. A Proof unit test
 generally looks like this.
 
 ```javascript
-require('proof')(4, async okay => {
+//{ "code": { "tests": 11 }, "text": { "tests": 4  } }
+require('proof')(%(tests)d, async okay => {
+    //{ "include": "test" }
     okay('always okay')
     okay(true, 'okay if true')
     okay(1, 1, 'okay if equal')
@@ -81,6 +84,7 @@ You can run this unit test yourself. The `--async-stack-traces` flag is not
 necessary on Node.js 14 or above.
 
 ```text
+//{ "mode": "text" }
 git clone git@github.com:bigeasy/interrupt.git
 cd interrupt
 npm install --no-package-lock --no-save
@@ -97,7 +101,38 @@ readme you need to be running Node.js 14.
 The Interrupt module exports a single `Interrupt` object.
 
 ```javascript
+//{ "mode": "text" }
 const Interrupt = require('avenue')
+```
+
+```javascript
+//{ "name": "test", "mode": "code" }
+const Interrupt = require('..')
+```
+
+```javascript
+//{ "name": "test", "mode": "code" }
+{
+    const path = require('path')
+    const fs = require('fs').promises
+
+    const tmp = path.join(__dirname, 'tmp')
+
+    await fs.rmdir(tmp, { recursive: true })
+    await fs.mkdir(path.join(tmp, 'eisdir', 'config.json'), { recursive: true })
+    await fs.mkdir(path.join(tmp, 'enoent'))
+    await fs.mkdir(path.join(tmp, 'good'))
+    await fs.mkdir(path.join(tmp, 'bad'))
+    await fs.mkdir(path.join(tmp, 'create'))
+
+    await fs.writeFile(path.join(tmp, 'good', 'config.json'), JSON.stringify({
+        settings: {
+            volume: 0
+        }
+    }))
+
+    await fs.writeFile(path.join(tmp, 'bad', 'config.json'), '!')
+}
 ```
 
 All of the examples in this code are _contrived_, and in practice, I'm
@@ -141,55 +176,58 @@ The `message` is supposed to be human readable and because of this it
 doesn't serve well as a programmatic indication of error type.
 
 ```javascript
-console.log('\n--- message only Errors ---\n')
+//{ "name": "test", "unblock": true }
+{
+    console.log('\n--- message only Errors ---\n')
 
-const path = require('path')
-const fs = require('fs').promises
+    const path = require('path')
+    const fs = require('fs').promises
 
-async function loadJSONConfiguration (filename) {
-    let json
-    try {
-        json = await fs.readFile(filename, '')
-    } catch (error) {
-        const e = new Error('file unreadable: ' + filename)
-        e.cause = error
-        throw e
+    async function loadJSONConfiguration (filename) {
+        let json
+        try {
+            json = await fs.readFile(filename, '')
+        } catch (error) {
+            const e = new Error('file unreadable: ' + filename)
+            e.cause = error
+            throw e
+        }
+        let config
+        try {
+            config = JSON.parse(json)
+        } catch (error) {
+            const e = new Error('unable to parse configuration')
+            e.cause = error
+            throw e
+        }
+        if (config == null || typeof config != 'object' || Array.isArray(object)) {
+            throw new Error('JSON must be an object')
+        }
+        if (config.size == null) {
+            throw new Error('memory is a require configuration parameter')
+        }
+        if (config.size == null) {
+            throw new Error('memory configuration parameter must be a number')
+        }
+        return config
     }
+
     let config
     try {
-        config = JSON.parse(json)
+        config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
     } catch (error) {
-        const e = new Error('unable to parse configuration')
-        e.cause = error
-        throw e
+        console.log(`${error.stack}\n`)
+        // If the file doesn't exist, use a default configuration, otherwise
+        // rethrow any configuration exceptions.
+        if (/file unreadable/.test(error.message) && error.cause.code == 'ENOENT') {
+            config = { size: 5 }
+        } else {
+            throw error
+        }
     }
-    if (config == null || typeof config != 'object' || Array.isArray(object)) {
-        throw new Error('JSON must be an object')
-    }
-    if (config.size == null) {
-        throw new Error('memory is a require configuration parameter')
-    }
-    if (config.size == null) {
-        throw new Error('memory configuration parameter must be a number')
-    }
-    return config
-}
 
-let config
-try {
-    config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
-} catch (error) {
-    console.log(`${error.stack}\n`)
-    // If the file doesn't exist, use a default configuration, otherwise
-    // rethrow any configuration exceptions.
-    if (/file unreadable/.test(error.message) && error.cause.code == 'ENOENT') {
-        config = { size: 5 }
-    } else {
-        throw error
-    }
+    okay(config, { size: 5 }, 'used a default configuration (example)')
 }
-
-okay(config, { size: 5 }, 'used a default configuration (example)')
 ```
 
 Other languages have the ability to catch an exception by type. This
@@ -205,6 +243,7 @@ them as test conditions. Not only do we have to add this `if`/`else`
 ladder, we have to our `require` statements start to look like this.
 
 ```javascript
+//{ "mode": "text" }
 const { ConfigParseError, ConfigIOError, loadJSONConfiguration } = require('./config')
 ```
 
@@ -224,6 +263,68 @@ and each `code` property has associated documentation.
 
 If you use codes your module can adhere to this practice.
 
+```javascript
+//{ "mode": "test", "unblock": true }
+{
+    console.log('\n--- errors using codes ---\n')
+
+    const path = require('path')
+    const fs = require('fs').promises
+
+    async function loadJSONConfiguration (filename) {
+        let json
+        try {
+            json = await fs.readFile(filename, '')
+        } catch (error) {
+            const e = new Error('file unreadable: ' + filename)
+            e.code = 'IO_ERROR'
+            e.cause = error
+            throw e
+        }
+        let config
+        try {
+            config = JSON.parse(json)
+        } catch (error) {
+            const e = new Error('unable to parse configuration')
+            e.code = 'PARSE_ERROR'
+            throw e
+        }
+        if (config == null || typeof config != 'object' || Array.isArray(object)) {
+            const e = new Error('JSON must be an object')
+            e.code = 'FORMAT_ERROR'
+            throw e
+        }
+        if (config.size == null) {
+            const e = new Error('required parameter missing: memory')
+            e.code = 'CONFIG_PARAM_MISSING'
+            throw e
+        }
+        if (typeof config.size == 'number') {
+            const e = new Error('required parameter wrong type: memory')
+            e.code = 'CONFIG_PARAM_INVALID_TYPE'
+            throw e
+        }
+        return config
+    }
+
+    let config
+    try {
+        config = await loadJSONConfiguration(path.join(__dirname, 'missing.txt'))
+    } catch (error) {
+        console.log(`${error.stack}\n`)
+        if (error.code == 'IO_ERROR'  && error.cause.code == 'ENOENT') {
+            // _If the file doesn't exist, use a default configuration._
+            config = { size: 5 }
+        } else {
+            // _Otherwise report config file errors._
+            throw error
+        }
+    }
+
+    okay(config, { size: 5 }, 'used a default configuration (example)')
+}
+```
+
 Interrupt prefers to use codes as well. Interrupt encourages you to
 create a set of error codes for your module.
 
@@ -238,19 +339,22 @@ that maps the error codes to an error message. We can get a list of the
 codes defined using the `codes` property of the generated class.
 
 ```javascript
-okay(Interrupt.prototype instanceof Error, '`Interrupt` is an `Error`')
+//{ "name": "test", "unblock": true }
+{
+    okay(Interrupt.prototype instanceof Error, '`Interrupt` is an `Error`')
 
-const ConfigError = Interrupt.create('ConfigError', {
-    IO_ERROR: 'unable to read config file',
-    PARSE_ERROR: 'unable to parse config file'
-})
+    const ConfigError = Interrupt.create('ConfigError', {
+        IO_ERROR: 'unable to read config file',
+        PARSE_ERROR: 'unable to parse config file'
+    })
 
-const codes = ConfigError.codes
-okay(codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'set of generated error codes')
+    const codes = ConfigError.codes
+    okay(codes.sort(), [ 'IO_ERROR', 'PARSE_ERROR' ], 'set of generated error codes')
 
-okay(typeof ConfigError.IO_ERROR, 'symbol', 'constant that maps an error code name to a symbol')
-okay(typeof ConfigError.PARSE_ERROR, 'symbol', 'one for each error code')
+    okay(typeof ConfigError.IO_ERROR, 'symbol', 'constant that maps an error code name to a symbol')
+    okay(typeof ConfigError.PARSE_ERROR, 'symbol', 'one for each error code')
 
-okay(ConfigError.prototype instanceof Interrupt, 'generated error is an `Interrupt`')
-okay(ConfigError.prototype instanceof Error, 'generated error is therefore also an `Error`')
+    okay(ConfigError.prototype instanceof Interrupt, 'generated error is an `Interrupt`')
+    okay(ConfigError.prototype instanceof Error, 'generated error is therefore also an `Error`')
+}
 ```
