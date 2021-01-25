@@ -4032,11 +4032,11 @@ require('proof')(206, async okay => {
                 properties: { code: 'ERRORED' },
                 errors: [],
                 $errors: [],
-                top: 'readme.t.js'
+                top: 'old.readme.t.js'
             }],
             $errors: [],
             $trace: [],
-            top: 'readme.t.js'
+            top: 'old.readme.t.js'
         }, 'parsed stack traces object values')
     }
     //
