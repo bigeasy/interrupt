@@ -1,5 +1,5 @@
 // Return the first non-`null` like parameter.
-const coalesce = require('extant')
+const { coalesce } = require('extant')
 
 // Deep differences.
 const Keyify = require('keyify')
