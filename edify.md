@@ -70,14 +70,19 @@ Proof `okay` function to assert out statements in the readme. A Proof unit test
 generally looks like this.
 
 ```javascript
-//{ "code": { "tests": 11 }, "text": { "tests": 4  } }
+//{ "code": { "tests": 7 }, "text": { "tests": 4  } }
 require('proof')(%(tests)d, async okay => {
-    //{ "include": "test" }
-    okay('always okay')
-    okay(true, 'okay if true')
-    okay(1, 1, 'okay if equal')
-    okay({ value: 1 }, { value: 1 }, 'okay if deep strict equal')
+    //{ "include": "test", "mode": "code" }
+    //{ "include": "testDisplay" }
 })
+```
+
+```javascript
+//{ "name": "testDisplay", "mode": "text" }
+okay('always okay')
+okay(true, 'okay if true')
+okay(1, 1, 'okay if equal')
+okay({ value: 1 }, { value: 1 }, 'okay if deep strict equal')
 ```
 
 You can run this unit test yourself. The `--async-stack-traces` flag is not
@@ -101,13 +106,8 @@ readme you need to be running Node.js 14.
 The Interrupt module exports a single `Interrupt` object.
 
 ```javascript
-//{ "mode": "text" }
-const Interrupt = require('avenue')
-```
-
-```javascript
-//{ "name": "test", "mode": "code" }
-const Interrupt = require('..')
+//{ "name": "test", "text": { "require": "interrupt" }, "code": { "require": ".." } }
+const { Interrupt } = require('%(require)s')
 ```
 
 ```javascript

@@ -64,8 +64,17 @@
 // Proof `okay` function to assert out statements in the readme. A Proof unit test
 // generally looks like this.
 
-require('proof')(11, async okay => {
-    const Interrupt = require('..')
+require('proof')(7, async okay => {
+    // The only way to see the elaborate stack trace output is to run this test at the
+    // command line, so please do so. **TODO** No, we're going to fix that.
+    //
+    // Interrupt is targeted for Node.js 12 or greater. Note that we are running with
+    // `--async-stack-traces` enabled and to enjoy all the features discussed in this
+    // readme you need to be running Node.js 14.
+    //
+    // The Interrupt module exports a single `Interrupt` object.
+
+    const { Interrupt } = require('..')
 
     {
         const path = require('path')
@@ -211,24 +220,10 @@ require('proof')(11, async okay => {
         okay(ConfigError.prototype instanceof Interrupt, 'generated error is an `Interrupt`')
         okay(ConfigError.prototype instanceof Error, 'generated error is therefore also an `Error`')
     }
-
-    okay('always okay')
-    okay(true, 'okay if true')
-    okay(1, 1, 'okay if equal')
-    okay({ value: 1 }, { value: 1 }, 'okay if deep strict equal')
 })
 
 // You can run this unit test yourself. The `--async-stack-traces` flag is not
 // necessary on Node.js 14 or above.
-
-// The only way to see the elaborate stack trace output is to run this test at the
-// command line, so please do so. **TODO** No, we're going to fix that.
-//
-// Interrupt is targeted for Node.js 12 or greater. Note that we are running with
-// `--async-stack-traces` enabled and to enjoy all the features discussed in this
-// readme you need to be running Node.js 14.
-//
-// The Interrupt module exports a single `Interrupt` object.
 
 // Other languages have the ability to catch an exception by type. This
 // ability to catch by type is where the idea for an exception class for

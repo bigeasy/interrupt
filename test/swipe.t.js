@@ -122,7 +122,7 @@
 //
 require('proof')(7, async okay => {
     const semblance = require('semblance')
-    const Interrupt = require('..')
+    const { Interrupt } = require('..')
     // ## Stack Pokers
 
     // Because stack traces do not survive across macrotask queues, you have to

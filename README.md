@@ -97,7 +97,7 @@ readme you need to be running Node.js 14.
 The Interrupt module exports a single `Interrupt` object.
 
 ```javascript
-const Interrupt = require('avenue')
+const { Interrupt } = require('interrupt')
 ```
 
 All of the examples in this code are _contrived_, and in practice, I'm
