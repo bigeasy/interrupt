@@ -190,7 +190,11 @@ class Interrupt extends Error {
             const $ = function () {
                 const $ = RE.arrowTrace.exec(squished)
                 if ($ == null) {
-                    return RE.functionTrace.exec(squished)
+                    const $ = RE.functionTrace.exec(squished)
+                    if ($ == null) {
+                        return RE.nycArrowTrace.exec(squished)
+                    }
+                    return $
                 }
                 return $
             } ()
@@ -1556,7 +1560,8 @@ const RE = {
     identifier: new RegExp(`^${identifier}$`),
     exceptionStart: new RegExp(`^(\\s*)(${identifier}(?:\.${identifier})*)(?: \\[(${identifier})\\])?(?::\\s([\\s\\S]*))?$`, 'm'),
     arrowTrace: new RegExp(`^(${identifier})=>(${identifier})\\(\\)$`),
-    functionTrace: new RegExp(`^function\\((${identifier})\\){(${identifier})\\(\\)}$`)
+    functionTrace: new RegExp(`^function\\((${identifier})\\){(${identifier})\\(\\)}$`),
+    nycArrowTrace: new RegExp(`^(${identifier})=>{${identifier}\\(\\)\\.f\\[\\d+]\\+\\+;${identifier}\\(\\).s\\[\\d+]\\+\\+;return(${identifier})\\(\\);}$`)
 }
 
 const unstacker = require('stacktrace-parser')
