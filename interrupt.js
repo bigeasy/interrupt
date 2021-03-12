@@ -1564,4 +1564,4 @@ function dedent (line, depth, position) {
     return $[1]
 }
 
-exports.Interrupt = Interrupt
+module.exports = Interrupt

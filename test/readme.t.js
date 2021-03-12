@@ -72,9 +72,9 @@ require('proof')(7, async okay => {
     // `--async-stack-traces` enabled and to enjoy all the features discussed in this
     // readme you need to be running Node.js 14.
     //
-    // The Interrupt module exports a single `Interrupt` object.
+    // The Interrupt module exports an `Interrupt` constructor.
 
-    const { Interrupt } = require('..')
+    const Interrupt = require('..')
 
     {
         const path = require('path')

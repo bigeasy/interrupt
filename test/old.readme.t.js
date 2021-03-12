@@ -91,7 +91,7 @@ require('proof')(206, async okay => {
     // requiring the root of the project.
 
     //
-    const { Interrupt } = require('..')
+    const Interrupt = require('..')
     //
 
     // In some our examples we're going to pretent to load a config file. Here

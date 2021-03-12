@@ -94,10 +94,10 @@ Interrupt is targeted for Node.js 12 or greater. Note that we are running with
 `--async-stack-traces` enabled and to enjoy all the features discussed in this
 readme you need to be running Node.js 14.
 
-The Interrupt module exports a single `Interrupt` object.
+The Interrupt module exports an `Interrupt` constructor.
 
 ```javascript
-const { Interrupt } = require('interrupt')
+const Interrupt = require('interrupt')
 ```
 
 All of the examples in this code are _contrived_, and in practice, I'm
