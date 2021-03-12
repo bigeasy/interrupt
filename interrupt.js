@@ -184,10 +184,21 @@ class Interrupt extends Error {
         })
     } ())
 
-    static assertTrace (f) {
-        called = false
-        f(() => called = true)
-        Interrupt.Error.assert(called, 'INVALID_TRACE_FUNCTION')
+    static assertTracer (f) {
+        if (Interrupt.auditing) {
+            const squished = f.toString().replace(/\s/g, '')
+            const $ = function () {
+                const $ = RE.arrowTrace.exec(squished)
+                if ($ == null) {
+                    return RE.functionTrace.exec(squished)
+                }
+                return $
+            } ()
+            Interrupt.Error.assert($ != null && $[1] == $[2], 'INVALID_TRACE_FUNCTION', { f: f.toString() })
+            let called = false
+            f(() => called = true)
+            Interrupt.Error.assert(called, 'INVALID_TRACE_FUNCTION', { f: f.toString() })
+        }
     }
 
     // **TODO** Maybe a set of common symbols mapped to the existing Node.js
@@ -1543,7 +1554,9 @@ const identifier = require('./identifier.json')
 
 const RE = {
     identifier: new RegExp(`^${identifier}$`),
-    exceptionStart: new RegExp(`^(\\s*)(${identifier}(?:\.${identifier})*)(?: \\[(${identifier})\\])?(?::\\s([\\s\\S]*))?$`, 'm')
+    exceptionStart: new RegExp(`^(\\s*)(${identifier}(?:\.${identifier})*)(?: \\[(${identifier})\\])?(?::\\s([\\s\\S]*))?$`, 'm'),
+    arrowTrace: new RegExp(`^(${identifier})=>(${identifier})\\(\\)$`),
+    functionTrace: new RegExp(`^function\\((${identifier})\\){(${identifier})\\(\\)}$`)
 }
 
 const unstacker = require('stacktrace-parser')

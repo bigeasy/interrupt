@@ -120,7 +120,7 @@
 // **TODO** Importing codes seems like it would silently fail.
 
 //
-require('proof')(7, async okay => {
+require('proof')(8, async okay => {
     const semblance = require('semblance')
     const Interrupt = require('..')
     // ## Stack Pokers
@@ -318,6 +318,25 @@ require('proof')(7, async okay => {
             }), 'stringify AssertionError')
         }
     }
+    //
+
+    // Can work this into the `README.md` easily.
+    {
+        Interrupt.audit = () => {}
+        Interrupt.assertTracer($ => $())
+        Interrupt.assertTracer(function ($) { $() })
+        const errors = []
+        try {
+            Interrupt.assertTracer(function ($) { console.log('called') })
+        } catch (error) {
+            errors.push(error.code)
+        }
+        okay(errors, [ 'INVALID_TRACE_FUNCTION' ], 'invalid trace detected')
+        Interrupt.audit = null
+        Interrupt.assertTracer(function ($) { console.log('called') })
+    }
+
+    //
     return
     // **TODO** Revisiting deferred construction.
 
