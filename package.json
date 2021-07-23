@@ -21,7 +21,7 @@
     "dependencies":
     {
                             "extant":                       "^2.0.0-alpha.2",
-                            "keyify":                       "^2.0.5",
+                            "keyify":                       "^3.0.0",
                             "sprintf-js":                   "1.1.2",
                             "stacktrace-parser":            "0.1.10"
     },
