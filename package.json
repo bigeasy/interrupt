@@ -1,6 +1,6 @@
 {
     "name":                 "interrupt",
-    "version":              "11.0.0-alpha.21",
+    "version":              "11.0.0-alpha.22",
     "description":
 
       "Nested exceptions with elaborate stack traces for Node.js.",
@@ -20,7 +20,7 @@
     },
     "dependencies":
     {
-                            "extant":                       "^2.0.0-alpha.0",
+                            "extant":                       "^2.0.0-alpha.2",
                             "keyify":                       "^2.0.5",
                             "sprintf-js":                   "1.1.2",
                             "stacktrace-parser":            "0.1.10"
