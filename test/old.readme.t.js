@@ -106,7 +106,7 @@ require('proof')(206, async okay => {
         const tmp = path.join(__dirname, 'tmp')
 
         const { coalesce } = require('extant')
-        await coalesce(fs.rm, fs.rmdir).call(fs, tmp, { recursive: true })
+        await coalesce(fs.rm, fs.rmdir).call(fs, tmp, { force: true, recursive: true })
         await fs.mkdir(path.join(tmp, 'eisdir', 'config.json'), { recursive: true })
         await fs.mkdir(path.join(tmp, 'enoent'))
         await fs.mkdir(path.join(tmp, 'good'))
