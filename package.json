@@ -20,7 +20,7 @@
     },
     "dependencies":
     {
-                            "extant":                       "^2.0.0-alpha.3",
+                            "extant":                       "^2.0.0-alpha.4",
                             "keyify":                       "^3.0.0",
                             "sprintf-js":                   "1.1.2",
                             "stacktrace-parser":            "0.1.10"
