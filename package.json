@@ -1,6 +1,6 @@
 {
     "name":                 "interrupt",
-    "version":              "11.0.0-alpha.25",
+    "version":              "11.0.0-alpha.26",
     "description":
 
       "Nested exceptions with elaborate stack traces for Node.js.",
